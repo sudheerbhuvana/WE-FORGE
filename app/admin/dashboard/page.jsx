@@ -2,15 +2,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Trash2, Edit3, Plus, GripVertical, LogOut, X, Users, Calendar, Clock, CheckCircle, FolderKanban, Bell, Globe, Send, Eye, ArrowUp, ArrowDown, Shield, Download, Search, Image as ImageIcon, Video, Upload } from 'lucide-react';
+import { Trash2, Edit3, Plus, GripVertical, LogOut, X, Users, Calendar, Clock, CheckCircle, FolderKanban, Bell, Globe, Send, Eye, ArrowUp, ArrowDown, Shield, Download, Search, Image as ImageIcon, Video, Upload, Star, Share2, FolderInput, Grid3x3, Tag, Rows3, LayoutGrid } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
-import ReactCrop from 'react-image-crop';
-import 'react-image-crop/dist/ReactCrop.css';
 import authService from '../../../src/services/authService';
 import memberService, { getAvatarUrl } from '../../../src/services/memberService';
 import eventService from '../../../src/services/eventService';
 import noticeService from '../../../src/services/noticeService';
 import projectService from '../../../src/services/projectService';
+import MemberEditModal from '../../../src/components/admin/MemberEditModal';
+import '../../../src/components/admin/MemberEditModal.css';
 import './AdminDashboard.css';
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -27,13 +27,6 @@ const ROLE_WEIGHTS = {
   'Core Member': 30,
   'Associate': 40,
   'Student': 100
-};
-
-const EMPTY_MEMBER_FORM = {
-  name: '', role: 'Core Member', domain: 'General', rollNumber: '', email: '', 
-  description: '', bio: '', skills: '', status: 'Online', 
-  department: '', telegram: '', github: '', linkedin: '', isSuspended: false,
-  color: '#71C4FF'
 };
 
 const EMPTY_EVENT_FORM = {
@@ -73,6 +66,21 @@ const fmtRange = (s, e) => {
 };
 const toInputDate = (iso) => iso ? iso.slice(0, 10) : '';
 
+// ── Permission helpers (mirror lib/permissions.js for the client side) ──
+const canManageMemberClient = (actor, member) => {
+  if (!actor) return false;
+  if (actor.isElite) return true;
+  if (actor.memberId === member.id) return true;
+  // head-of-domain in client's domain
+  if (member.roles && member.roles.some(r => r.domain === actor.domain)) return true;
+  return false;
+};
+const canManageEventClient = (actor, event) => {
+  if (!actor) return false;
+  if (actor.isElite) return true;
+  return event?.domain === actor.domain;
+};
+
 // ─── Component ────────────────────────────────────────────
 
 const AdminDashboard = () => {
@@ -98,16 +106,11 @@ const AdminDashboard = () => {
 
   // Members
   const [members, setMembers] = useState([]);
-  const [memberForm, setMemberForm] = useState(EMPTY_MEMBER_FORM);
-  const [memberEditing, setMemberEditing] = useState(null);
+  const [memberEditing, setMemberEditing] = useState(null);   // member object or null (for "add")
   const [showMemberForm, setShowMemberForm] = useState(false);
-  const [photo, setPhoto] = useState(null);
-  const [photoPreview, setPhotoPreview] = useState(null);
-  const [crop, setCrop] = useState(undefined);
-  const [completedCrop, setCompletedCrop] = useState(null);
   const [memberDeleteConfirm, setMemberDeleteConfirm] = useState(null);
   const [memberSaving, setMemberSaving] = useState(false);
-  const imgRef = useRef(null);
+  const [domainsList, setDomainsList] = useState([]);
 
   // Drag-and-drop ordering
   const dragIndexRef = useRef(null);
@@ -148,8 +151,23 @@ const AdminDashboard = () => {
   const [showMediaUpload, setShowMediaUpload] = useState(false);
   const [mediaUploading, setMediaUploading] = useState(false);
   const [mediaEventTag, setMediaEventTag] = useState('General');
-  const [mediaDeleteConfirm, setMediaDeleteConfirm] = useState(null);
+  const [mediaUploadTitle, setMediaUploadTitle] = useState('');
+  const [mediaUploadTags, setMediaUploadTags] = useState('');
+  const [mediaUploadDesc, setMediaUploadDesc] = useState('');
+  const [mediaUploadFavorite, setMediaUploadFavorite] = useState(false);
+  const [mediaUploadPreview, setMediaUploadPreview] = useState(null); // local preview of selected file
+  const [mediaDeleteConfirm, setMediaDeleteConfirm] = useState(null);  const [editingMediaMeta, setEditingMediaMeta] = useState(null); // { id, title, description } | null
   const [mediaFilterTag, setMediaFilterTag] = useState('all');
+  // New media-library state
+  const [mediaSearch, setMediaSearch] = useState('');
+  const [mediaOnlyFavorites, setMediaOnlyFavorites] = useState(false);
+  const [mediaSort, setMediaSort] = useState('newest'); // newest | oldest | name | size
+  const [mediaLayout, setMediaLayout] = useState('grid'); // grid | list | masonry
+  const [mediaFolders, setMediaFolders] = useState([]);
+  const [selectedMedia, setSelectedMedia] = useState(new Set()); // bulk selection
+  const [lightboxMedia, setLightboxMedia] = useState(null);    // view modal
+  const [moveTarget, setMoveTarget] = useState(null);          // { ids, current } | null
+  const [shareToast, setShareToast] = useState('');
 
   // Event Access & Registrations
   const [showRegsModal, setShowRegsModal] = useState(false);
@@ -174,7 +192,22 @@ const AdminDashboard = () => {
   const fetchEvents = async () => { try { setEvents(await eventService.getAll()); } catch { setError('Failed to load events'); } };
   const fetchNotices = async () => { try { setNotices(await noticeService.getAll()); } catch { setError('Failed to load notices'); } };
   const fetchProjects = async () => { try { setProjects(await projectService.getAll()); } catch { setError('Failed to load projects'); } };
-  const fetchMedia = async () => { setMediaLoading(true); try { const res = await fetch('/api/media'); setMedia(await res.json()); } catch { setError('Failed to load media'); } finally { setMediaLoading(false); } };
+  const fetchMedia = async () => {
+    setMediaLoading(true);
+    try {
+        const [res, foldersRes] = await Promise.all([
+            fetch('/api/media'),
+            fetch('/api/media/folders'),
+        ]);
+        setMedia(await res.json());
+        if (foldersRes.ok) setMediaFolders(await foldersRes.json());
+    } catch {
+        setError('Failed to load media');
+    } finally {
+        setMediaLoading(false);
+    }
+};
+  const fetchMediaFolders = async () => { try { const res = await fetch('/api/media/folders'); if (res.ok) setMediaFolders(await res.json()); } catch { /* ignore */ } };
 
   // ── Fix mobile scroll: stop Lenis and unlock html/body/root ─
   // Lenis in root mode adds overflow:hidden to html+body and intercepts
@@ -212,115 +245,93 @@ const AdminDashboard = () => {
     };
   }, []);
 
-  // ── Password-gate auth (uses JWT cookie from /api/auth/login) ────────
+  // ── Permission-aware auth via NextAuth (Azure AD) ────────────
   const [isAdminAuthed, setIsAdminAuthed] = useState(false);
-  const [pwInput, setPwInput]             = useState('');
-  const [pwError, setPwError]             = useState('');
+
+  // Restore persisted media layout preference (grid / list / masonry)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const saved = window.localStorage.getItem('forge-media-layout');
+      if (saved === 'grid' || saved === 'list' || saved === 'masonry') {
+        setMediaLayout(saved);
+      }
+    } catch { /* ignore */ }
+  }, []);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try { window.localStorage.setItem('forge-media-layout', mediaLayout); } catch { /* ignore */ }
+  }, [mediaLayout]);
 
   useEffect(() => {
-    authService.checkAuth()
-      .then(isAuth => {
-        if (!isAuth) { setLoading(false); return; }
-        return fetch('/api/auth/check')
-          .then(r => r.json())
-          .then(data => {
-            if (data.authenticated) {
-              setAdminInfo(data);
-              setIsAdminAuthed(true);
-              return Promise.all([fetchMembers(), fetchEvents(), fetchNotices(), fetchProjects(), fetchMedia()])
-                .then(() => setLoading(false));
-            }
-            setLoading(false);
-          });
+    fetch('/api/auth/check', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        if (!data.authenticated) {
+          setLoading(false);
+          return;
+        }
+        setAdminInfo(data);
+        setIsAdminAuthed(true);
+
+        // Only fetch sections this user can manage. Notice/Project/Media are elite-only.
+        const tasks = [fetchMembers(), fetchEvents()];
+        if (data.isElite) {
+          tasks.push(fetchNotices(), fetchProjects(), fetchMedia());
+        }
+        return Promise.all(tasks).then(() => setLoading(false));
       })
       .catch(() => setLoading(false));
   }, []);
 
-  const handleAdminPasswordLogin = async (e) => {
-    e.preventDefault();
-    setPwError('');
-    try {
-      await authService.login(pwInput);
-      setIsAdminAuthed(true);
-      setLoading(true);
-      const data = await fetch('/api/auth/check').then(r => r.json());
-      setAdminInfo(data);
-      await Promise.all([fetchMembers(), fetchEvents(), fetchNotices(), fetchProjects(), fetchMedia()]);
-      setLoading(false);
-    } catch (err) {
-      setPwError(err.message || 'Incorrect password');
-    }
-  };
+  const handleAdminPasswordLogin = undefined; // password login removed
 
   // ── Members ──────────────────────────────────────────────
 
-  const openAddMember = () => {
-    setMemberEditing(null); setMemberForm(EMPTY_MEMBER_FORM);
-    setPhoto(null); setPhotoPreview(null); setCrop(undefined); setCompletedCrop(null);
-    setShowMemberForm(true); setError('');
+  const openAddMember = async () => {
+    await ensureDomainsLoaded();
+    setMemberEditing(null);
+    setShowMemberForm(true);
+    setError('');
   };
-  const openEditMember = (m) => {
-    setMemberEditing(m.id);
-    setMemberForm({ 
-      name: m.name, 
-      role: m.role, 
-      domain: m.domain,
-      rollNumber: m.rollNumber, 
-      email: m.email || `${m.rollNumber}@kluniversity.in`,
-      description: m.description, 
-      bio: m.bio, 
-      skills: m.skills.join(', '), 
-      status: m.status, 
-      telegram: m.telegram || '',
-      color: m.color || '#71C4FF'
-    });
-    setPhoto(null); setPhotoPreview(null); setCrop(undefined); setCompletedCrop(null);
-    setShowMemberForm(true); setError('');
+  const openEditMember = async (m) => {
+    await ensureDomainsLoaded();
+    setMemberEditing(m);
+    setShowMemberForm(true);
+    setError('');
   };
-  const handleMemberFormChange = (e) => {
-    const { name, value } = e.target;
-    setMemberForm(prev => ({ ...prev, [name]: value }));
-  };
-
   const closeMemberForm = () => {
-    setShowMemberForm(false); setMemberEditing(null); setMemberForm(EMPTY_MEMBER_FORM);
-    setPhoto(null); setPhotoPreview(null); setCrop(undefined); setCompletedCrop(null); setError('');
+    setShowMemberForm(false);
+    setMemberEditing(null);
+    setError('');
   };
-  const handlePhotoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { setError('Image must be under 5MB'); return; }
-    setPhoto(file); setPhotoPreview(URL.createObjectURL(file)); setCrop(undefined); setCompletedCrop(null);
-  };
-  const onImageLoad = useCallback((e) => {
-    imgRef.current = e.currentTarget;
-    const { width, height } = e.currentTarget;
-    const size = Math.min(width, height);
-    setCrop({ unit: 'px', x: (width - size) / 2, y: (height - size) / 2, width: size, height: size });
-  }, []);
-  const handleMemberSubmit = async (e) => {
-    e.preventDefault(); setMemberSaving(true); setError('');
+  const ensureDomainsLoaded = async () => {
+    if (domainsList.length > 0) return;
     try {
-      const fd = new FormData();
-      fd.append('name', (memberForm.name || '').trim()); 
-      fd.append('role', (memberForm.role || '').trim());
-      if (memberForm.color) fd.append('color', memberForm.color);
-      fd.append('rollNumber', (memberForm.rollNumber || '').trim()); 
-      fd.append('description', (memberForm.description || '').trim());
-      fd.append('bio', (memberForm.bio || '').trim()); 
-      fd.append('status', memberForm.status || 'Online');
-      fd.append('domain', memberForm.domain || 'General');
-      fd.append('isSuspended', !!memberForm.isSuspended);
-      fd.append('skills', JSON.stringify((memberForm.skills || '').split(',').map(s => s.trim()).filter(Boolean)));
-      if (memberForm.telegram && memberForm.telegram.trim()) fd.append('telegram', memberForm.telegram.trim());
-      if (memberForm.github && memberForm.github.trim()) fd.append('github', memberForm.github.trim());
-      if (memberForm.linkedin && memberForm.linkedin.trim()) fd.append('linkedin', memberForm.linkedin.trim());
-      if (memberForm.department && memberForm.department.trim()) fd.append('department', memberForm.department.trim());
-      if (photo && completedCrop && imgRef.current) { fd.append('photo', await getCroppedBlob(imgRef.current, completedCrop), 'cropped.png'); }
-      else if (photo) { fd.append('photo', photo); }
-      if (memberEditing) { await memberService.update(memberEditing, fd); } else { await memberService.add(fd); }
-      closeMemberForm(); await fetchMembers();
-    } catch (err) { setError(err.message); } finally { setMemberSaving(false); }
+      const res = await fetch('/api/domains', { credentials: 'include' });
+      if (res.ok) setDomainsList(await res.json());
+    } catch (e) {
+      // graceful fallback — the modal has its own defaults
+      console.warn('Failed to load domains, using defaults', e);
+    }
+  };
+  const handleMemberSubmit = async (fd) => {
+    setMemberSaving(true);
+    setError('');
+    try {
+      const targetId = memberEditing?.id;
+      if (targetId) {
+        await memberService.update(targetId, fd);
+      } else {
+        await memberService.add(fd);
+      }
+      closeMemberForm();
+      await fetchMembers();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setMemberSaving(false);
+    }
   };
   const handleMemberDelete = async (id) => {
     try { await memberService.remove(id); setMemberDeleteConfirm(null); await fetchMembers(); } catch (err) { setError(err.message); }
@@ -462,18 +473,70 @@ const AdminDashboard = () => {
 
   // ── Media ────────────────────────────────────────────────
   const handleMediaUpload = async (e) => {
-    const file = e.target.files[0];
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Multi-file: upload all sequentially using the same form fields, no preview
+    if (files.length > 1) {
+      await performMultiUpload(files);
+      return;
+    }
+
+    // Single file: build a local preview URL so the user can see what they picked
+    const file = files[0];
+    if (mediaUploadPreview) URL.revokeObjectURL(mediaUploadPreview);
+    setMediaUploadPreview(URL.createObjectURL(file));
+    // Derive title from the file name (e.g. "DSC_5678.jpg" → "DSC 5678")
+    const derived = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+    setMediaUploadTitle(derived);
+  };
+
+  const performUpload = async () => {
+    const fileInput = document.getElementById('media-upload');
+    const file = fileInput?.files?.[0];
     if (!file) return;
+    if (!mediaUploadTags.trim()) {
+      setError('Please add at least one tag before uploading.');
+      return;
+    }
     setMediaUploading(true); setError('');
     try {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('eventName', mediaEventTag);
+      fd.append('eventName', mediaEventTag || 'General');
+      fd.append('title', mediaUploadTitle);
+      fd.append('description', mediaUploadDesc);
+      fd.append('tags', mediaUploadTags);
+      fd.append('favorite', mediaUploadFavorite ? 'true' : 'false');
       const res = await fetch('/api/media/upload', { method: 'POST', body: fd });
-      if (!res.ok) throw new Error('Upload failed');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || 'Upload failed');
+      }
       await fetchMedia();
+      // Reset form
       setShowMediaUpload(false);
+      setMediaUploadTitle('');
+      setMediaUploadTags('');
+      setMediaUploadDesc('');
+      setMediaUploadFavorite(false);
+      if (mediaUploadPreview) URL.revokeObjectURL(mediaUploadPreview);
+      setMediaUploadPreview(null);
+      if (fileInput) fileInput.value = '';
     } catch (err) { setError(err.message); } finally { setMediaUploading(false); }
+  };
+
+  const cancelUpload = () => {
+    setShowMediaUpload(false);
+    setMediaUploadTitle('');
+    setMediaUploadTags('');
+    setMediaUploadDesc('');
+    setMediaUploadFavorite(false);
+    if (mediaUploadPreview) URL.revokeObjectURL(mediaUploadPreview);
+    setMediaUploadPreview(null);
+    const fileInput = document.getElementById('media-upload');
+    if (fileInput) fileInput.value = '';
+    setError('');
   };
 
   const handleMediaDelete = async (id) => {
@@ -484,52 +547,250 @@ const AdminDashboard = () => {
         throw new Error(data.error || 'Delete failed');
       }
       setMediaDeleteConfirm(null);
+      selectedMedia.delete(id);
+      setSelectedMedia(new Set(selectedMedia));
       await fetchMedia();
-    } catch (err) { 
+    } catch (err) {
       console.error('Media delete error:', err);
-      setError(err.message); 
+      setError(err.message);
     }
   };
 
-  const handleLogout = async () => { await authService.logout(); setIsAdminAuthed(false); setPwInput(''); };
+  // Update title / description on an existing media item
+  const updateMediaMeta = async (id, patch) => {
+    try {
+      const res = await fetch(`/api/media/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(patch),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Save failed (${res.status})`);
+      }
+      setEditingMediaMeta(null);
+      await fetchMedia();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+// Toggle single item favorite
+  const toggleFavorite = async (item) => {
+    try {
+      const res = await fetch(`/api/media/${item._id || item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ favorite: !item.favorite }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Favorite failed');
+      }
+      await fetchMedia();
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  // Bulk: favorite / unfavorite / move / delete
+  const bulkFavorite = async (favorite) => {
+    const ids = Array.from(selectedMedia);
+    if (ids.length === 0) return;
+    try {
+      const res = await fetch('/api/media/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, action: 'set', favorite }),
+      });
+      if (!res.ok) throw new Error('Bulk favorite failed');
+      setSelectedMedia(new Set());
+      await fetchMedia();
+    } catch (err) { setError(err.message); }
+  };
+
+  const bulkDelete = async () => {
+    const ids = Array.from(selectedMedia);
+    if (ids.length === 0) return;
+    if (!confirm(`Delete ${ids.length} item${ids.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    try {
+      for (const id of ids) {
+        await fetch(`/api/media/${id}`, { method: 'DELETE' });
+      }
+      setSelectedMedia(new Set());
+      await fetchMedia();
+    } catch (err) { setError(err.message); }
+  };
+
+  const bulkMove = async (folder) => {
+    const ids = Array.from(selectedMedia);
+    if (ids.length === 0 || !folder.trim()) return;
+    try {
+      const res = await fetch('/api/media/bulk', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids, action: 'move', folder }),
+      });
+      if (!res.ok) throw new Error('Move failed');
+      setSelectedMedia(new Set());
+      setMoveTarget(null);
+      await fetchMedia();
+    } catch (err) { setError(err.message); }
+  };
+
+  const moveOne = async (item, folder) => {
+    try {
+      const res = await fetch(`/api/media/${item._id || item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ folder }),
+      });
+      if (!res.ok) throw new Error('Move failed');
+      setMoveTarget(null);
+      await fetchMedia();
+    } catch (err) { setError(err.message); }
+  };
+
+  const copyShareLink = async (item) => {
+    const url = item.url;
+    try {
+      await navigator.clipboard.writeText(url);
+      // simple transient toast via setError (negative slot re-used for success)
+      setError('');
+      // Use a tiny ephemeral flag instead — set media share toast id
+      setShareToast(`Copied link for "${item.title || item.eventName || 'media'}"`);
+      setTimeout(() => setShareToast(''), 2200);
+    } catch {
+      // Fallback: open prompt
+      window.prompt('Copy this link:', url);
+    }
+  };
+
+  // Bulk download — uses JSZip (loaded on demand) to bundle the selected items
+  // into a single zip. If JSZip fails to load, falls back to one-click downloads.
+  const bulkDownload = async () => {
+    const ids = Array.from(selectedMedia);
+    if (ids.length === 0) return;
+    const items = media.filter((m) => ids.includes(m._id || m.id));
+    if (items.length === 0) return;
+
+    setShareToast(`Preparing ${items.length} file${items.length === 1 ? '' : 's'}…`);
+    try {
+      const { default: JSZip } = await import('https://esm.sh/jszip@3.10.1');
+      const zip = new JSZip();
+      const folder = zip.folder('forge-media') || zip;
+      const seen = new Map(); // filename -> count (avoid collisions)
+
+      for (const m of items) {
+        try {
+          const res = await fetch(m.url);
+          if (!res.ok) continue;
+          const blob = await res.blob();
+          const ext = (m.mimeType?.split('/')[1] || (m.type === 'video' ? 'mp4' : 'jpg')).toLowerCase();
+          let base = (m.title || m.folder || m.eventName || 'media')
+            .replace(/[^a-z0-9._-]+/gi, '_')
+            .slice(0, 80) || 'media';
+          // Avoid duplicates inside the zip
+          const count = seen.get(base) || 0;
+          seen.set(base, count + 1);
+          const filename = count === 0 ? `${base}.${ext}` : `${base}_${count + 1}.${ext}`;
+          folder.file(filename, blob);
+        } catch {
+          // skip failures but continue
+        }
+      }
+
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement('a');
+      a.href = url;
+      const ts = new Date().toISOString().slice(0, 10);
+      a.download = `forge-media-${ts}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      setShareToast(`Downloaded ${items.length} file${items.length === 1 ? '' : 's'} as zip`);
+    } catch (err) {
+      // Fallback to direct downloads (browser may prompt for each)
+      for (const m of items) {
+        const a = document.createElement('a');
+        a.href = m.url;
+        a.download = '';
+        a.target = '_blank';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+      setShareToast('Download started (zip library unavailable, individual files)');
+    } finally {
+      setTimeout(() => setShareToast(''), 2400);
+    }
+  };
+
+  // Multi-file upload — send a list of files through the same endpoint sequentially
+  const performMultiUpload = async (files) => {
+    if (!files || files.length === 0) return;
+    if (!mediaUploadTags.trim()) {
+      setError('Please add at least one tag before uploading.');
+      return;
+    }
+    setMediaUploading(true);
+    setError('');
+    let ok = 0;
+    let failed = 0;
+    for (const file of files) {
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('eventName', mediaEventTag || 'General');
+        const derivedTitle = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+        fd.append('title', mediaUploadTitle || derivedTitle);
+        fd.append('description', mediaUploadDesc);
+        fd.append('tags', mediaUploadTags);
+        fd.append('favorite', mediaUploadFavorite ? 'true' : 'false');
+        const res = await fetch('/api/media/upload', { method: 'POST', body: fd });
+        if (!res.ok) failed++;
+        else ok++;
+      } catch {
+        failed++;
+      }
+    }
+    setMediaUploading(false);
+    setShareToast(`Uploaded ${ok}${failed ? `, ${failed} failed` : ''}`);
+    setTimeout(() => setShareToast(''), 2400);
+    await fetchMedia();
+    cancelUpload();
+  };
+
+  // share toast local state — declared at the top of the component with the rest
+
+  const handleLogout = async () => { await signOut({ callbackUrl: '/' }); };
 
   if (loading) return <div className="admin-dash"><div className="admin-dash__loading">Loading...</div></div>;
 
-  if (!isAdminAuthed) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
-      <div style={{ width: 380, padding: '48px 40px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24, display: 'flex', flexDirection: 'column', gap: 24 }}>
-        <div style={{ textAlign: 'center' }}>
-          <Shield size={44} style={{ color: '#fff', marginBottom: 16 }} />
-          <h1 style={{ color: '#fff', fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>Admin Access</h1>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', marginTop: 8 }}>Enter the admin password to continue</p>
-        </div>
-        <form onSubmit={handleAdminPasswordLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-          <input
-            type="password"
-            value={pwInput}
-            onChange={e => setPwInput(e.target.value)}
-            placeholder="Admin password"
-            autoFocus
-            style={{ width: '100%', padding: '14px 18px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 12, color: '#fff', fontSize: '1rem', outline: 'none', boxSizing: 'border-box' }}
-          />
-          {pwError && <p style={{ color: '#ff4d4d', fontSize: '0.85rem', margin: 0 }}>{pwError}</p>}
-          <button type="submit" className="admin-dash__add-btn" style={{ width: '100%', justifyContent: 'center' }}>
-            Unlock Dashboard
-          </button>
-        </form>
+  if (!isAdminAuthed) {
+    if (typeof window !== 'undefined') {
+      // Redirect to Azure AD login. Will bounce back here after auth.
+      window.location.href = '/login?callbackUrl=' + encodeURIComponent('/admin/dashboard');
+    }
+    return (
+      <div className="admin-dash">
+        <div className="admin-dash__loading">Redirecting to sign-in...</div>
       </div>
-    </div>
-  );
+    );
+  }
 
   // ── Nav ───────────────────────────────────────────────────
-
+  // Head-level tabs are visible to everyone with any role. Elite-only
+  // tabs (Notices / Projects / Media) only show to org-wide admins.
   const NAV_ITEMS = [
-    { id: 'members',  label: 'Members',  icon: <Users size={18} />,       count: members.length },
-    { id: 'events',   label: 'Events',   icon: <Calendar size={18} />,     count: events.length },
-    { id: 'projects', label: 'Projects', icon: <FolderKanban size={18} />, count: projects.length },
-    { id: 'notices',  label: 'Notices',  icon: <Bell size={18} />,         count: notices.length },
-    { id: 'media',    label: 'Media',    icon: <ImageIcon size={18} />,    count: media.length },
-  ];
+    { id: 'members',  label: 'Members',  icon: <Users size={18} />,       count: members.length, eliteOnly: false },
+    { id: 'events',   label: 'Events',   icon: <Calendar size={18} />,     count: events.length,   eliteOnly: false },
+    { id: 'projects', label: 'Projects', icon: <FolderKanban size={18} />, count: projects.length, eliteOnly: true },
+    { id: 'notices',  label: 'Notices',  icon: <Bell size={18} />,         count: notices.length,  eliteOnly: true },
+    { id: 'media',    label: 'Media',    icon: <ImageIcon size={18} />,    count: media.length,    eliteOnly: true },
+  ].filter(i => adminInfo.isElite || !i.eliteOnly);
 
   const downloadCSV = () => {
     const headers = ['Name', 'Email', 'Role', 'Domain', 'Roll Number'];
@@ -653,14 +914,16 @@ const AdminDashboard = () => {
                     ) : '-'}
                   </td>
                 <td className="admin-dash__actions-cell">
-                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" onClick={() => openEditMember(m)}><Edit3 size={15} /></button>
+                  {canManageMemberClient(adminInfo, m) && (
+                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" onClick={() => openEditMember(m)} aria-label={`Edit ${m.name}`}><Edit3 size={15} aria-hidden="true" /></button>
+                  )}
                   {memberDeleteConfirm === m.id ? (
                     <span className="admin-dash__delete-confirm">Sure?
                       <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleMemberDelete(m.id)}>Yes</button>
                       <button className="admin-dash__icon-btn" onClick={() => setMemberDeleteConfirm(null)}>No</button>
                     </span>
                   ) : (
-                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => setMemberDeleteConfirm(m.id)}><Trash2 size={15} /></button>
+                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => setMemberDeleteConfirm(m.id)} aria-label={`Delete ${m.name}`}><Trash2 size={15} aria-hidden="true" /></button>
                   )}
                 </td>
               </tr>
@@ -699,8 +962,12 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <div className="admin-mob-card__actions">
+                {canManageMemberClient(adminInfo, m) && (
+                <>
                 <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => openEditMember(m)}><Edit3 size={15} /> Edit</button>
                 <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setMemberDeleteConfirm(m.id)}><Trash2 size={15} /></button>
+                </>
+                )}
               </div>
             )}
           </div>
@@ -743,16 +1010,20 @@ const AdminDashboard = () => {
                 <td className="admin-dash__mono">{ev.registeredCount} / {ev.slots}</td>
                 <td><span className={`admin-dash__status admin-dash__status--${ev.status}`}>{ev.status}</span></td>
                 <td className="admin-dash__actions-cell">
-                  <button className="admin-dash__icon-btn" title="View Event Page" onClick={() => router.push(`/events/${ev.id}`)}><Eye size={15} /></button>
-                  <button className="admin-dash__icon-btn" title="View Registrations" onClick={() => viewRegistrations(ev)}><Users size={15} /></button>
-                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" onClick={() => openEditEvent(ev)}><Edit3 size={15} /></button>
+                  <button className="admin-dash__icon-btn" title="View Event Page" aria-label={`View event ${ev.title}`} onClick={() => router.push(`/events/${ev.id}`)}><Eye size={15} aria-hidden="true" /></button>
+                  {(adminInfo.isElite || canManageEventClient(adminInfo, ev)) && (
+                  <>
+                  <button className="admin-dash__icon-btn" title="View Registrations" aria-label={`View registrations for ${ev.title}`} onClick={() => viewRegistrations(ev)}><Users size={15} aria-hidden="true" /></button>
+                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" aria-label={`Edit event ${ev.title}`} onClick={() => openEditEvent(ev)}><Edit3 size={15} aria-hidden="true" /></button>
+                  </>
+                  )}
                   {eventDeleteConfirm === ev.id ? (
                     <span className="admin-dash__delete-confirm">Sure?
                       <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleEventDelete(ev.id)}>Yes</button>
                       <button className="admin-dash__icon-btn" onClick={() => setEventDeleteConfirm(null)}>No</button>
                     </span>
                   ) : (
-                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => setEventDeleteConfirm(ev.id)}><Trash2 size={15} /></button>
+                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" aria-label={`Delete event ${ev.title}`} onClick={() => setEventDeleteConfirm(ev.id)}><Trash2 size={15} aria-hidden="true" /></button>
                   )}
                 </td>
               </tr>
@@ -790,9 +1061,13 @@ const AdminDashboard = () => {
             ) : (
               <div className="admin-mob-card__actions">
                 <button className="admin-mob-btn" onClick={() => router.push(`/events/${ev.id}`)}><Eye size={15} /> View</button>
+                {(adminInfo.isElite || canManageEventClient(adminInfo, ev)) && (
+                <>
                 <button className="admin-mob-btn" onClick={() => viewRegistrations(ev)}><Users size={15} /> Regs</button>
                 <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => openEditEvent(ev)}><Edit3 size={15} /> Edit</button>
                 <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setEventDeleteConfirm(ev.id)}><Trash2 size={15} /></button>
+                </>
+                )}
               </div>
             )}
           </div>
@@ -824,14 +1099,14 @@ const AdminDashboard = () => {
                 <td><span className="admin-dash__priority-badge" style={{ background: PRIORITY_COLORS[n.priority] || '#555' }}>{n.priority}</span></td>
                 <td className="admin-dash__mono">{fmtDate(n.createdAt)}</td>
                 <td className="admin-dash__actions-cell">
-                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" onClick={() => openEditNotice(n)}><Edit3 size={15} /></button>
+                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" aria-label={`Edit notice ${n.title}`} onClick={() => openEditNotice(n)}><Edit3 size={15} aria-hidden="true" /></button>
                   {noticeDeleteConfirm === n.id ? (
                     <span className="admin-dash__delete-confirm">Sure?
                       <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleNoticeDelete(n.id)}>Yes</button>
                       <button className="admin-dash__icon-btn" onClick={() => setNoticeDeleteConfirm(null)}>No</button>
                     </span>
                   ) : (
-                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => setNoticeDeleteConfirm(n.id)}><Trash2 size={15} /></button>
+                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" aria-label={`Delete notice ${n.title}`} onClick={() => setNoticeDeleteConfirm(n.id)}><Trash2 size={15} aria-hidden="true" /></button>
                   )}
                 </td>
               </tr>
@@ -904,14 +1179,14 @@ const AdminDashboard = () => {
                   {p.github ? <a href={p.github} target="_blank" rel="noopener noreferrer" className="admin-dash__link">GitHub ↗</a> : '—'}
                 </td>
                 <td className="admin-dash__actions-cell">
-                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" onClick={() => openEditProject(p)}><Edit3 size={15} /></button>
+                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" aria-label={`Edit project ${p.name}`} onClick={() => openEditProject(p)}><Edit3 size={15} aria-hidden="true" /></button>
                   {projectDeleteConfirm === p.id ? (
                     <span className="admin-dash__delete-confirm">Sure?
                       <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleProjectDelete(p.id)}>Yes</button>
                       <button className="admin-dash__icon-btn" onClick={() => setProjectDeleteConfirm(null)}>No</button>
                     </span>
                   ) : (
-                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => setProjectDeleteConfirm(p.id)}><Trash2 size={15} /></button>
+                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" aria-label={`Delete project ${p.name}`} onClick={() => setProjectDeleteConfirm(p.id)}><Trash2 size={15} aria-hidden="true" /></button>
                   )}
                 </td>
               </tr>
@@ -961,57 +1236,356 @@ const AdminDashboard = () => {
   );
 
   const renderMediaSection = () => {
-    const eventTags = ['all', 'General', ...Array.from(new Set(events.map(e => e.title)))];
-    const filteredMedia = mediaFilterTag === 'all' ? media : media.filter(m => m.eventName === mediaFilterTag);
+    const tagOptions = ['all', 'General', ...Array.from(new Set(events.map((e) => e.title).filter(Boolean)))];
+    const folders = Array.from(new Set([
+        'General',
+        ...events.map((e) => e.title).filter(Boolean),
+        ...media.map((m) => m.folder || m.eventName || 'General'),
+    ]));
+
+    // ── Filtering pipeline ─────────────────────────────────
+    let list = media.slice();
+    if (mediaFilterTag !== 'all') {
+      list = list.filter((m) => (m.folder || m.eventName) === mediaFilterTag);
+    }
+    if (mediaOnlyFavorites) list = list.filter((m) => m.favorite);
+    if (mediaSearch.trim()) {
+      const q = mediaSearch.trim().toLowerCase();
+      list = list.filter((m) =>
+        (m.title || '').toLowerCase().includes(q) ||
+        (m.description || '').toLowerCase().includes(q) ||
+        (m.folder || m.eventName || '').toLowerCase().includes(q) ||
+        (Array.isArray(m.tags) && m.tags.some((t) => t.toLowerCase().includes(q))),
+      );
+    }
+    // Sort
+    list.sort((a, b) => {
+      if (mediaSort === 'oldest') return new Date(a.createdAt) - new Date(b.createdAt);
+      if (mediaSort === 'name')    return (a.title || a.folder || '').localeCompare(b.title || b.folder || '');
+      if (mediaSort === 'size')    return (b.fileSize || 0) - (a.fileSize || 0);
+      if (a.favorite !== b.favorite) return a.favorite ? -1 : 1;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
+
+    const toggleSelect = (id) => {
+      const next = new Set(selectedMedia);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      setSelectedMedia(next);
+    };
+    const selectAllVisible = () => {
+      if (selectedMedia.size === list.length) setSelectedMedia(new Set());
+      else setSelectedMedia(new Set(list.map((m) => m._id || m.id)));
+    };
 
     return (
       <>
+        {/* Toolbar */}
         <div className="admin-section__header">
           <div>
             <h2 className="admin-section__title">Media Gallery</h2>
-            <p className="admin-section__subtitle">{media.length} asset{media.length !== 1 ? 's' : ''} stored</p>
+            <p className="admin-section__subtitle">
+              {media.length} asset{media.length !== 1 ? 's' : ''} &middot; {media.filter((m) => m.favorite).length} favorited
+            </p>
           </div>
           <div className="admin-dash__filters" style={{ marginTop: 0 }}>
-             <select 
-               value={mediaFilterTag} 
-               onChange={e => setMediaFilterTag(e.target.value)}
-               className="admin-dash__select"
-             >
-               {eventTags.map(tag => <option key={tag} value={tag}>{tag === 'all' ? 'All Events' : tag}</option>)}
-             </select>
-             <button className="admin-dash__add-btn" onClick={() => setShowMediaUpload(true)}>
-               <Upload size={18} /> Upload Media
-             </button>
+            <button className="admin-dash__add-btn" onClick={() => setShowMediaUpload(true)}>
+              <Upload size={18} /> Upload
+            </button>
           </div>
         </div>
 
+        <div className="admin-media__toolbar">
+          <div className="admin-media__toolbar-left">
+            <div className="admin-media__search">
+              <Search size={14} aria-hidden="true" />
+              <input
+                type="search"
+                value={mediaSearch}
+                onChange={(e) => setMediaSearch(e.target.value)}
+                placeholder="Search title, description, folder or #tag…"
+              />
+            </div>
+            <select
+              value={mediaSort}
+              onChange={(e) => setMediaSort(e.target.value)}
+              className="admin-dash__select"
+              aria-label="Sort media"
+            >
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="name">By name</option>
+              <option value="size">By size</option>
+            </select>
+            <label className="admin-media__fav-toggle">
+              <input
+                type="checkbox"
+                checked={mediaOnlyFavorites}
+                onChange={(e) => setMediaOnlyFavorites(e.target.checked)}
+              />
+              <Star size={14} aria-hidden="true" />
+              Favorites only
+            </label>
+          </div>
+          <div className="admin-media__toolbar-right">
+            <div className="admin-media__view-switch" role="group" aria-label="View mode">
+              <button
+                type="button"
+                className={`admin-media__view-btn ${mediaLayout === 'grid' ? 'admin-media__view-btn--active' : ''}`}
+                onClick={() => setMediaLayout('grid')}
+                aria-label="Grid view"
+                aria-pressed={mediaLayout === 'grid'}
+                title="Grid"
+              >
+                <Grid3x3 size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`admin-media__view-btn ${mediaLayout === 'list' ? 'admin-media__view-btn--active' : ''}`}
+                onClick={() => setMediaLayout('list')}
+                aria-label="List view"
+                aria-pressed={mediaLayout === 'list'}
+                title="List"
+              >
+                <Rows3 size={14} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                className={`admin-media__view-btn ${mediaLayout === 'masonry' ? 'admin-media__view-btn--active' : ''}`}
+                onClick={() => setMediaLayout('masonry')}
+                aria-label="Masonry view"
+                aria-pressed={mediaLayout === 'masonry'}
+                title="Masonry"
+              >
+                <LayoutGrid size={14} aria-hidden="true" />
+              </button>
+            </div>
+            <button
+              className="admin-media__bulk-btn"
+              onClick={selectAllVisible}
+              disabled={list.length === 0}
+            >
+              {selectedMedia.size === list.length && list.length > 0 ? 'Deselect all' : 'Select all'}
+            </button>
+          </div>
+        </div>
+
+        {/* Folders chip row */}
+        <div className="admin-media__folders">
+          <button
+            className={`admin-media__folder-chip ${mediaFilterTag === 'all' ? 'admin-media__folder-chip--active' : ''}`}
+            onClick={() => setMediaFilterTag('all')}
+          >
+            <FolderKanban size={12} /> All
+          </button>
+          {folders.map((f) => (
+            <button
+              key={f}
+              className={`admin-media__folder-chip ${mediaFilterTag === f ? 'admin-media__folder-chip--active' : ''}`}
+              onClick={() => setMediaFilterTag(f)}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+
+        {/* Tags chip row — clickable, filters by tag */}
+        {(() => {
+          const allTags = Array.from(new Set(media.flatMap((m) => Array.isArray(m.tags) ? m.tags : []))).sort();
+          if (allTags.length === 0) return null;
+          return (
+            <div className="admin-media__tags-row">
+              <span className="admin-media__tags-label"><Tag size={11} /> Tags</span>
+              <div className="admin-media__tags-chips">
+                {allTags.map((t) => (
+                  <button
+                    key={t}
+                    className={`admin-media__tag-chip ${mediaSearch.trim().toLowerCase() === t.toLowerCase() ? 'admin-media__tag-chip--active' : ''}`}
+                    onClick={() => setMediaSearch(mediaSearch === t ? '' : t)}
+                    title={`Filter by #${t}`}
+                  >
+                    #{t}
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Bulk action bar */}
+        {selectedMedia.size > 0 && (
+          <div className="admin-media__bulkbar">
+            <span className="admin-media__bulkbar-count">
+              {selectedMedia.size} selected
+            </span>
+            <div className="admin-media__bulkbar-actions">
+              <button className="admin-media__bulkbar-btn" onClick={bulkDownload}>
+                <Download size={14} /> Download zip
+              </button>
+              <button className="admin-media__bulkbar-btn" onClick={() => bulkFavorite(true)}>
+                <Star size={14} /> Favorite
+              </button>
+              <button className="admin-media__bulkbar-btn" onClick={() => bulkFavorite(false)}>
+                <Star size={14} /> Unfavorite
+              </button>
+              <button className="admin-media__bulkbar-btn" onClick={() => setMoveTarget({ ids: Array.from(selectedMedia), current: null })}>
+                <FolderInput size={14} /> Move to
+              </button>
+              <button className="admin-media__bulkbar-btn admin-media__bulkbar-btn--danger" onClick={bulkDelete}>
+                <Trash2 size={14} /> Delete
+              </button>
+              <button className="admin-media__bulkbar-btn" onClick={() => setSelectedMedia(new Set())}>
+                <X size={14} /> Clear
+              </button>
+            </div>
+          </div>
+        )}
+
+        {shareToast && (
+          <div className="admin-media__toast" role="status">{shareToast}</div>
+        )}
+
+        {/* Grid */}
         {mediaLoading ? (
           <div className="admin-dash__loading">Syncing with R2...</div>
-        ) : (
-          <div className="admin-media__grid">
-            {filteredMedia.map(m => {
+        ) : list.length === 0 ? (
+          <div className="admin-dash__empty">
+            {mediaSearch.trim() ? `No media matches "${mediaSearch}".` : 'No media in this folder yet. Click "Upload" to add some.'}
+          </div>
+        ) : mediaLayout === 'list' ? (
+          <div className="admin-media__list">
+            <div className="admin-media__list-head">
+              <span className="admin-media__list-th admin-media__list-th--check">Select</span>
+              <span className="admin-media__list-th">Preview</span>
+              <span className="admin-media__list-th">Title</span>
+              <span className="admin-media__list-th">Folder</span>
+              <span className="admin-media__list-th">Type</span>
+              <span className="admin-media__list-th admin-media__list-th--num">Size</span>
+              <span className="admin-media__list-th">Date</span>
+              <span className="admin-media__list-th">Actions</span>
+            </div>
+            {list.map((m) => {
               const mid = m._id || m.id;
+              const selected = selectedMedia.has(mid);
               return (
-                <div key={mid} className="admin-media__card">
-                  <div className="admin-media__preview">
+                <div
+                  key={mid}
+                  className={`admin-media__row ${selected ? 'admin-media__row--selected' : ''}`}
+                >
+                  <label className="admin-media__row-check" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selected}
+                      onChange={() => toggleSelect(mid)}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="admin-media__row-thumb"
+                    onClick={() => setLightboxMedia(m)}
+                    aria-label={`View ${m.title || m.folder || 'media'}`}
+                  >
+                    {m.type === 'video' ? (
+                      <video src={m.url} muted />
+                    ) : (
+                      <img src={m.url} alt={m.title || m.folder} loading="lazy" />
+                    )}
+                    {m.favorite && <span className="admin-media__fav-pill"><Star size={9} /></span>}
+                  </button>
+                  <div className="admin-media__row-title">
+                    {m.title || <span className="muted">Untitled</span>}
+                  </div>
+                  <div className="admin-media__row-folder">
+                    <span className="admin-media__tag">{m.folder || m.eventName || 'General'}</span>
+                  </div>
+                  <div className="admin-media__row-type">{m.type}</div>
+                  <div className="admin-media__row-num">
+                    {m.fileSize ? `${(m.fileSize / 1024 / 1024).toFixed(1)} MB` : '—'}
+                  </div>
+                  <div className="admin-media__row-date">
+                    {m.createdAt ? new Date(m.createdAt).toLocaleDateString() : '—'}
+                  </div>
+                  <div className="admin-media__row-actions">
+                    <button className="admin-media__btn" onClick={() => setEditingMediaMeta({ id: mid, title: m.title || '', description: m.description || '' })} title="Edit title & description"><Edit3 size={14} /></button>
+                    <button className="admin-media__btn" onClick={() => copyShareLink(m)} title="Copy link"><Share2 size={14} /></button>
+                    <button
+                      className={`admin-media__btn ${m.favorite ? 'admin-media__btn--fav-active' : ''}`}
+                      onClick={() => toggleFavorite(m)}
+                      title={m.favorite ? 'Unfavorite' : 'Favorite'}
+                      aria-pressed={!!m.favorite}
+                    >
+                      <Star size={14} fill={m.favorite ? '#ffd86b' : 'none'} />
+                    </button>
+                    <button className="admin-media__btn" onClick={() => setMoveTarget({ ids: [mid], current: m.folder || m.eventName })} title="Move"><FolderInput size={14} /></button>
+                    <button className="admin-media__btn admin-media__btn--danger" onClick={() => setMediaDeleteConfirm(mid)} title="Delete"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className={`admin-media__grid admin-media__grid--${mediaLayout}`}>
+            {list.map((m) => {
+              const mid = m._id || m.id;
+              const selected = selectedMedia.has(mid);
+              return (
+                <div
+                  key={mid}
+                  className={`admin-media__card ${selected ? 'admin-media__card--selected' : ''}`}
+                >
+                  <div className="admin-media__preview" onClick={() => setLightboxMedia(m)}>
                     {m.type === 'video' ? (
                       <video src={m.url} className="admin-media__asset" muted />
                     ) : (
-                      <img src={m.url} alt={m.eventName} className="admin-media__asset" />
+                      <img src={m.url} alt={m.title || m.folder || 'media'} className="admin-media__asset" loading="lazy" />
                     )}
-                    <div className="admin-media__overlay">
-                      <button className="admin-media__btn" onClick={() => window.open(m.url, '_blank')}><Eye size={16} /></button>
-                      <button className="admin-media__btn admin-media__btn--danger" onClick={() => setMediaDeleteConfirm(mid)}><Trash2 size={16} /></button>
+                    <div className="admin-media__hover" onClick={(e) => e.stopPropagation()}>
+                      <button className="admin-media__btn" onClick={() => setLightboxMedia(m)} title="View">
+                        <Eye size={16} />
+                      </button>
+                      <button className="admin-media__btn" onClick={() => setEditingMediaMeta({ id: mid, title: m.title || '', description: m.description || '' })} title="Edit title & description">
+                        <Edit3 size={16} />
+                      </button>
+                      <button className="admin-media__btn" onClick={() => copyShareLink(m)} title="Copy link">
+                        <Share2 size={16} />
+                      </button>
+                      <button className="admin-media__btn" onClick={() => setMoveTarget({ ids: [mid], current: m.folder || m.eventName })} title="Move to…">
+                        <FolderInput size={16} />
+                      </button>
+                      <button
+                        className={`admin-media__btn ${m.favorite ? 'admin-media__btn--fav-active' : ''}`}
+                        onClick={() => toggleFavorite(m)}
+                        title={m.favorite ? 'Unfavorite' : 'Favorite'}
+                        aria-pressed={!!m.favorite}
+                      >
+                        <Star size={16} fill={m.favorite ? '#ffd86b' : 'none'} />
+                      </button>
+                      <button className="admin-media__btn admin-media__btn--danger" onClick={() => setMediaDeleteConfirm(mid)} title="Delete">
+                        <Trash2 size={16} />
+                      </button>
                     </div>
+                    {m.favorite && <span className="admin-media__fav-pill"><Star size={10} /> Fav</span>}
                   </div>
                   <div className="admin-media__info">
-                    <span className="admin-media__tag">{m.eventName}</span>
-                    <span className="admin-media__meta">{(m.fileSize / 1024 / 1024).toFixed(2)} MB &bull; {m.type}</span>
+                    <label className="admin-media__select" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selected}
+                        onChange={() => toggleSelect(mid)}
+                      />
+                      <span>Select</span>
+                    </label>
+                    <span className="admin-media__tag">{m.folder || m.eventName || 'General'}</span>
+                    <span className="admin-media__meta">
+                      {m.fileSize ? `${(m.fileSize / 1024 / 1024).toFixed(2)} MB` : '—'}
+                      {' \u00b7 '}
+                      {m.type}
+                      {m.width && m.height ? ` · ${m.width}×${m.height}` : ''}
+                    </span>
                   </div>
-                  
+
                   {mediaDeleteConfirm === mid && (
                     <div className="admin-media__confirm">
-                      <p>Delete asset?</p>
+                      <p>Delete this asset?</p>
                       <div className="admin-media__confirm-actions">
                         <button className="admin-media__confirm-btn admin-media__confirm-btn--danger" onClick={() => handleMediaDelete(mid)}>Delete</button>
                         <button className="admin-media__confirm-btn" onClick={() => setMediaDeleteConfirm(null)}>Cancel</button>
@@ -1021,49 +1595,289 @@ const AdminDashboard = () => {
                 </div>
               );
             })}
-            {filteredMedia.length === 0 && <div className="admin-dash__empty">No media found for this event.</div>}
           </div>
         )}
 
+        {/* Upload modal (kept) */}
         {showMediaUpload && (
           <div className="admin-dash__overlay">
             <div className="admin-dash__modal" style={{ maxWidth: '480px' }}>
               <div className="admin-dash__modal-header">
-                <h2>Upload to Forge Storage</h2>
-                <button className="admin-dash__close-btn" onClick={() => setShowMediaUpload(false)}><X size={20} /></button>
+                <h2>Upload</h2>
+                <button className="admin-dash__close-btn" onClick={cancelUpload}><X size={20} /></button>
               </div>
               <div className="admin-dash__modal-body">
+                {/* File picker — preview after selection */}
                 <div className="admin-dash__field">
-                  <label>Associate with Event</label>
-                  <select value={mediaEventTag} onChange={e => setMediaEventTag(e.target.value)}>
-                    <option value="General">General (No Event)</option>
-                    {events.map(ev => <option key={ev.id} value={ev.title}>{ev.title}</option>)}
-                  </select>
-                </div>
-                <div className="admin-media__upload-zone">
-                  {mediaUploading ? (
-                    <div className="admin-media__uploading">
-                      <div className="admin-media__spinner"></div>
-                      <p>Uploading to R2...</p>
+                  <label>File</label>
+                  <input
+                    type="file"
+                    id="media-upload"
+                    className="admin-dash__file-input"
+                    accept="image/*,video/*"
+                    multiple
+                    onChange={handleMediaUpload}
+                  />
+                  {mediaUploadPreview && (
+                    <div className="admin-media__upload-preview">
+                      <img src={mediaUploadPreview} alt="preview" />
                     </div>
-                  ) : (
-                    <>
-                      <input type="file" id="media-upload" hidden onChange={handleMediaUpload} accept="image/*,video/*" />
-                      <label htmlFor="media-upload" className="admin-media__upload-label">
-                        <Upload size={32} />
-                        <span>Click to choose file</span>
-                        <small>Images or Videos (Max 50MB)</small>
-                      </label>
-                    </>
                   )}
+                  {!mediaUploadPreview && (
+                    <div className="admin-media__upload-hint">
+                      <Upload size={20} aria-hidden="true" />
+                      <span>Pick one or more images / videos to begin</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="admin-dash__field">
+                  <label>Title</label>
+                  <input
+                    type="text"
+                    value={mediaUploadTitle}
+                    onChange={(e) => setMediaUploadTitle(e.target.value)}
+                    placeholder={mediaUploadTitle ? 'Auto from filename — edit if you like' : 'Auto from filename'}
+                    maxLength={200}
+                  />
+                </div>
+
+                <div className="admin-dash__field">
+                  <label>Tags <span className="admin-dash__req">required</span></label>
+                  <input
+                    type="text"
+                    value={mediaUploadTags}
+                    onChange={(e) => setMediaUploadTags(e.target.value)}
+                    placeholder="opening, keynote, 2026"
+                    required
+                  />
+                </div>
+
+                <div className="admin-dash__field">
+                  <label>Description <span className="admin-dash__opt">optional</span></label>
+                  <textarea
+                    value={mediaUploadDesc}
+                    onChange={(e) => setMediaUploadDesc(e.target.value)}
+                    placeholder="Optional — what does this image show?"
+                    rows={3}
+                    maxLength={1000}
+                  />
+                </div>
+
+                <div className="admin-dash__field">
+                  <label>Folder</label>
+                  <input
+                    type="text"
+                    value={mediaEventTag}
+                    onChange={(e) => setMediaEventTag(e.target.value)}
+                    placeholder="e.g. SIH 2026, Workshops, General"
+                    list="media-folder-suggestions"
+                  />
+                  <datalist id="media-folder-suggestions">
+                    {folders.map((f) => <option key={f} value={f} />)}
+                  </datalist>
+                </div>
+
+                <label className="admin-media__upload-fav">
+                  <input
+                    type="checkbox"
+                    checked={mediaUploadFavorite}
+                    onChange={(e) => setMediaUploadFavorite(e.target.checked)}
+                  />
+                  <Star size={14} aria-hidden="true" />
+                  Mark as favorite (will appear on landing page)
+                </label>
+
+                {error && <p className="profile-projects-error" role="alert">{error}</p>}
+
+                <div className="admin-dash__modal-actions">
+                  <button type="button" className="admin-dash__cancel-btn" onClick={cancelUpload}>Cancel</button>
+                  <button
+                    type="button"
+                    className="admin-dash__save-btn"
+                    onClick={performUpload}
+                    disabled={mediaUploading || !mediaUploadPreview}
+                  >
+                    {mediaUploading ? 'Uploading…' : (<><Upload size={14} /> Upload</>)}
+                  </button>
                 </div>
               </div>
             </div>
           </div>
         )}
+
+        {/* Edit media meta (title/description) */}
+        {editingMediaMeta && (
+          <div className="admin-dash__modal" onClick={() => setEditingMediaMeta(null)}>
+            <div className="admin-dash__modal-inner" onClick={(e) => e.stopPropagation()}>
+              <div className="admin-dash__modal-header">
+                <h2>Edit media</h2>
+                <button className="admin-dash__modal-close" onClick={() => setEditingMediaMeta(null)} aria-label="Close"><X size={18} /></button>
+              </div>
+              <div className="admin-dash__modal-body">
+                <div className="admin-dash__field">
+                  <label>Title</label>
+                  <input
+                    type="text"
+                    value={editingMediaMeta.title}
+                    onChange={(e) => setEditingMediaMeta({ ...editingMediaMeta, title: e.target.value })}
+                    placeholder="e.g. Opening keynote — KLForge launch"
+                    maxLength={200}
+                    autoFocus
+                  />
+                </div>
+                <div className="admin-dash__field">
+                  <label>Description</label>
+                  <textarea
+                    value={editingMediaMeta.description}
+                    onChange={(e) => setEditingMediaMeta({ ...editingMediaMeta, description: e.target.value })}
+                    placeholder="Optional — what does this image show?"
+                    rows={4}
+                    maxLength={1000}
+                  />
+                </div>
+                {error && <p className="profile-projects-error" role="alert">{error}</p>}
+                <div className="admin-dash__modal-actions">
+                  <button type="button" className="admin-dash__cancel-btn" onClick={() => setEditingMediaMeta(null)}>Cancel</button>
+                  <button
+                    type="button"
+                    className="admin-dash__save-btn"
+                    onClick={() => updateMediaMeta(editingMediaMeta.id, { title: editingMediaMeta.title.trim(), description: editingMediaMeta.description.trim() })}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Lightbox */}
+        {lightboxMedia && (
+          <MediaLightbox
+            item={lightboxMedia}
+            onClose={() => setLightboxMedia(null)}
+            onShare={() => copyShareLink(lightboxMedia)}
+            onEdit={() => { const m = lightboxMedia; setLightboxMedia(null); setEditingMediaMeta({ id: m._id || m.id, title: m.title || '', description: m.description || '' }); }}
+            onToggleFavorite={() => toggleFavorite(lightboxMedia)}
+            onMove={() => setMoveTarget({ ids: [lightboxMedia._id || lightboxMedia.id], current: lightboxMedia.folder || lightboxMedia.eventName })}
+            onDelete={() => { setMediaDeleteConfirm(lightboxMedia._id || lightboxMedia.id); setLightboxMedia(null); }}
+          />
+        )}
+
+        {/* Move-to modal */}
+        {moveTarget && (
+          <MoveMediaModal
+            target={moveTarget}
+            folders={folders}
+            onCancel={() => setMoveTarget(null)}
+            onConfirm={(folder) => {
+              if (moveTarget.ids.length === 1) {
+                moveOne({ _id: moveTarget.ids[0] }, folder);
+              } else {
+                bulkMove(folder);
+              }
+            }}
+          />
+        )}
       </>
     );
   };
+
+  // ── Lightbox ───────────────────────────────────────────
+  function MediaLightbox({ item, onClose, onShare, onEdit, onToggleFavorite, onMove, onDelete }) {
+    if (!item) return null;
+    const url = item.url;
+    return (
+      <div className="admin-media__lightbox" onClick={onClose}>
+        <div className="admin-media__lightbox-inner" onClick={(e) => e.stopPropagation()}>
+          <button className="admin-media__lightbox-close" onClick={onClose} aria-label="Close">
+            <X size={20} />
+          </button>
+          <div className="admin-media__lightbox-asset">
+            {item.type === 'video' ? (
+              <video src={url} controls autoPlay />
+            ) : (
+              <img src={url} alt={item.title || item.folder || 'media'} />
+            )}
+          </div>
+          <aside className="admin-media__lightbox-meta">
+            <h3>{item.title || item.folder || 'Untitled'}</h3>
+            {item.description && <p className="admin-media__lightbox-desc">{item.description}</p>}
+            <dl className="admin-media__lightbox-dl">
+              <dt>Folder</dt><dd>{item.folder || item.eventName || 'General'}</dd>
+              <dt>Type</dt><dd>{item.type}</dd>
+              <dt>Size</dt><dd>{item.fileSize ? `${(item.fileSize / 1024 / 1024).toFixed(2)} MB` : '—'}</dd>
+              {item.width && item.height && (<><dt>Dimensions</dt><dd>{item.width} × {item.height}</dd></>)}
+              <dt>Uploaded</dt><dd>{new Date(item.createdAt).toLocaleString()}</dd>
+              {item.uploadedBy && (<><dt>By</dt><dd>{item.uploadedBy}</dd></>)}
+              <dt>URL</dt><dd className="admin-media__lightbox-url">{url}</dd>
+            </dl>
+            <div className="admin-media__lightbox-actions">
+              <button className="admin-media__lightbox-btn" onClick={onEdit}>
+                <Edit3 size={14} /> Edit
+              </button>
+              <button className="admin-media__lightbox-btn" onClick={onShare}>
+                <Share2 size={14} /> Copy link
+              </button>
+              <button className={`admin-media__lightbox-btn ${item.favorite ? 'admin-media__lightbox-btn--fav' : ''}`} onClick={onToggleFavorite} aria-pressed={!!item.favorite}>
+                <Star size={14} fill={item.favorite ? '#ffd86b' : 'none'} /> {item.favorite ? 'Unfavorite' : 'Favorite'}
+              </button>
+              <button className="admin-media__lightbox-btn" onClick={onMove}>
+                <FolderInput size={14} /> Move
+              </button>
+              <button className="admin-media__lightbox-btn admin-media__lightbox-btn--danger" onClick={onDelete}>
+                <Trash2 size={14} /> Delete
+              </button>
+            </div>
+          </aside>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Move-to modal ──────────────────────────────────────
+  function MoveMediaModal({ target, folders, onCancel, onConfirm }) {
+    const [picked, setPicked] = useState(target.current || 'General');
+    const [newFolder, setNewFolder] = useState('');
+    return (
+      <div className="admin-dash__overlay" onClick={onCancel}>
+        <div className="admin-dash__modal" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="admin-dash__modal-header">
+            <h2>Move {target.ids.length > 1 ? `${target.ids.length} items` : 'item'}</h2>
+            <button className="admin-dash__close-btn" onClick={onCancel}><X size={20} /></button>
+          </div>
+          <div className="admin-dash__modal-body">
+            <div className="admin-dash__field">
+              <label>Pick an existing folder</label>
+              <select value={picked} onChange={(e) => { setPicked(e.target.value); setNewFolder(''); }}>
+                {folders.map((f) => <option key={f} value={f}>{f}</option>)}
+              </select>
+            </div>
+            <div className="admin-dash__field">
+              <label>Or create a new one</label>
+              <input
+                type="text"
+                value={newFolder}
+                onChange={(e) => { setNewFolder(e.target.value); if (e.target.value) setPicked(''); }}
+                placeholder="e.g. SIH 2026"
+              />
+            </div>
+            <div className="admin-dash__modal-actions">
+              <button className="admin-dash__cancel-btn" onClick={onCancel}>Cancel</button>
+              <button
+                className="admin-dash__save-btn"
+                onClick={() => onConfirm(newFolder.trim() || picked)}
+                disabled={!newFolder.trim() && !picked}
+              >
+                <FolderInput size={14} /> Move
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const renderPlaceholderSection = (title, description, icon) => (
     <div className="admin-section__placeholder">
@@ -1103,21 +1917,67 @@ const AdminDashboard = () => {
 
       {/* ── Desktop Sidebar (hidden on mobile via CSS) ── */}
       <aside className="admin-sidebar">
-        <div className="admin-sidebar__brand" style={{ display: 'none' }}>
+        <div className="admin-sidebar__brand">
           <div className="admin-sidebar__logo">KF</div>
           <span className="admin-sidebar__brand-name">KLFORGE</span>
         </div>
+
         <nav className="admin-sidebar__nav">
-          {NAV_ITEMS.map(item => (
-            <button key={item.id} className={`admin-sidebar__item ${activeSection === item.id ? 'admin-sidebar__item--active' : ''}`} onClick={() => handleTabChange(item.id)}>
-              {item.icon}
-              <span>{item.label}</span>
-              {item.count !== undefined && <span className="admin-sidebar__badge">{item.count}</span>}
-            </button>
-          ))}
+          <div className="admin-sidebar__group">
+            <span className="admin-sidebar__group-label">Club</span>
+            {NAV_ITEMS.filter((i) => i.id === 'members' || i.id === 'events').map((item) => (
+              <button
+                key={item.id}
+                className={`admin-sidebar__item ${activeSection === item.id ? 'admin-sidebar__item--active' : ''}`}
+                onClick={() => handleTabChange(item.id)}
+              >
+                <span className="admin-sidebar__item-icon">{item.icon}</span>
+                <span className="admin-sidebar__item-label">{item.label}</span>
+                {item.count !== undefined && (
+                  <span className="admin-sidebar__badge">{item.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
+
+          {NAV_ITEMS.some((i) => i.eliteOnly) && (
+            <div className="admin-sidebar__group">
+              <span className="admin-sidebar__group-label">Content</span>
+              {NAV_ITEMS.filter((i) => i.eliteOnly).map((item) => (
+                <button
+                  key={item.id}
+                  className={`admin-sidebar__item ${activeSection === item.id ? 'admin-sidebar__item--active' : ''}`}
+                  onClick={() => handleTabChange(item.id)}
+                >
+                  <span className="admin-sidebar__item-icon">{item.icon}</span>
+                  <span className="admin-sidebar__item-label">{item.label}</span>
+                  {item.count !== undefined && (
+                    <span className="admin-sidebar__badge">{item.count}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
         </nav>
+
         <div className="admin-sidebar__bottom">
-          <button className="admin-sidebar__logout" onClick={handleLogout}><LogOut size={16} /><span>Logout</span></button>
+          {(adminInfo.name || adminInfo.email) && (
+            <div className="admin-sidebar__user" title={adminInfo.email || ''}>
+              <div className="admin-sidebar__user-avatar">
+                {(adminInfo.name || adminInfo.email || '?').slice(0, 1).toUpperCase()}
+              </div>
+              <div className="admin-sidebar__user-text">
+                <span className="admin-sidebar__user-name">{adminInfo.name || 'Admin'}</span>
+                <span className="admin-sidebar__user-role">
+                  {adminInfo.isElite ? 'Elite' : adminInfo.role || adminInfo.domain || 'Member'}
+                </span>
+              </div>
+            </div>
+          )}
+          <button className="admin-sidebar__logout" onClick={handleLogout}>
+            <LogOut size={16} />
+            <span>Logout</span>
+          </button>
         </div>
       </aside>
 
@@ -1148,139 +2008,15 @@ const AdminDashboard = () => {
       </nav>
 
       {/* ── Member Modal ─────────────────────────────────── */}
-      {showMemberForm && (
-        <div className="admin-dash__overlay" data-lenis-prevent="true" onClick={closeMemberForm}>
-          <form className="admin-dash__modal" onClick={e => e.stopPropagation()} onSubmit={handleMemberSubmit}>
-            <div className="admin-dash__modal-header">
-              <h2>{memberEditing ? 'Edit Member' : 'Add New Member'}</h2>
-              <button type="button" className="admin-dash__close-btn" onClick={closeMemberForm}><X size={20} /></button>
-            </div>
-            {error && <div className="admin-dash__error">{error}</div>}
-            <div className="admin-dash__form-grid">
-              <div className="admin-dash__field"><label>Name *</label><input required value={memberForm.name} onChange={e => setMemberForm({ ...memberForm, name: e.target.value })} placeholder="Full Name" /></div>
-              <div className="admin-dash__field"><label>Roll Number *</label><input required value={memberForm.rollNumber} onChange={e => {
-                const roll = e.target.value;
-                setMemberForm({ ...memberForm, rollNumber: roll, email: roll ? `${roll}@kluniversity.in` : '' });
-              }} placeholder="e.g. 2400000001" /></div>
-              
-              <div className="admin-dash__field"><label>Email (Auto-generated)</label><input disabled value={memberForm.email} placeholder="ID@kluniversity.in" /></div>
-              
-              {adminInfo.isElite ? (
-                <>
-                <div className="admin-dash__field">
-                  <label>Department</label>
-                  <input type="text" name="department" value={memberForm.department || ''} onChange={handleMemberFormChange} placeholder="e.g. CSE" />
-                </div>
-                <div className="admin-dash__field">
-                  <label>Telegram Handle</label>
-                  <input type="text" name="telegram" value={memberForm.telegram} onChange={handleMemberFormChange} placeholder="e.g. johndoe" />
-                </div>
-                <div className="admin-dash__field">
-                  <label>GitHub Username</label>
-                  <input type="text" name="github" value={memberForm.github} onChange={handleMemberFormChange} placeholder="e.g. johndoe" />
-                </div>
-                <div className="admin-dash__field">
-                  <label>LinkedIn Username/ID</label>
-                  <input type="text" name="linkedin" value={memberForm.linkedin} onChange={handleMemberFormChange} placeholder="e.g. john-doe-123" />
-                </div>
-                <div className="admin-dash__field admin-dash__field--full" style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: '12px', background: 'rgba(255, 77, 77, 0.05)', borderRadius: 12, border: '1px solid rgba(255, 77, 77, 0.1)' }}>
-                  <input 
-                    type="checkbox" 
-                    id="isSuspended" 
-                    name="isSuspended" 
-                    checked={!!memberForm.isSuspended} 
-                    onChange={(e) => setMemberForm(prev => ({ ...prev, isSuspended: !!e.target.checked }))}
-                    style={{ width: 20, height: 20, cursor: 'pointer' }}
-                  />
-                  <label htmlFor="isSuspended" style={{ margin: 0, cursor: 'pointer', color: '#ff4d4d', fontWeight: 700 }}>Suspend Account</label>
-                </div>
-                  <div className="admin-dash__field">
-                    <label>Domain *</label>
-                    <select value={memberForm.domain || 'General'} onChange={e => {
-                      const newDomain = e.target.value;
-                      let newRole = memberForm.role;
-                      if (newDomain === 'Zero Order') newRole = 'President';
-                      else if (newDomain === 'Advisor') newRole = 'Advisor';
-                      else if (newDomain === 'General') newRole = 'Student';
-                      else if (['Protocol & Operations', 'Creative & Content', 'Media & Broadcasting', 'Public Speaking', 'Tech & Innovation'].includes(newDomain)) {
-                        newRole = 'Core Member';
-                      }
-                      setMemberForm({ ...memberForm, domain: newDomain, role: newRole });
-                    }}>
-                      <option value="Zero Order">Zero Order</option>
-                      <option value="Advisor">Advisor</option>
-                      <option value="Protocol & Operations">Protocol & Operations</option>
-                      <option value="Creative & Content">Creative & Content</option>
-                      <option value="Media & Broadcasting">Media & Broadcasting</option>
-                      <option value="Public Speaking">Public Speaking</option>
-                      <option value="Tech & Innovation">Tech & Innovation</option>
-                      <option value="General">General (Student)</option>
-                    </select>
-                  </div>
-                  <div className="admin-dash__field">
-                    <label>Role *</label>
-                    <select
-                      value={memberForm.role}
-                      onChange={e => setMemberForm({ ...memberForm, role: e.target.value })}
-                    >
-                      {memberForm.domain === 'Zero Order' ? (
-                        <>
-                          <option value="Head of the Department">Head of the Department</option>
-                          <option value="Alternate Head of Department">Alternate Head of Department</option>
-                          <option value="President">President</option>
-                          <option value="Chief Secretary">Chief Secretary</option>
-                          <option value="Treasurer">Treasurer</option>
-                        </>
-                      ) : memberForm.domain === 'Advisor' ? (
-                        <option value="Advisor">Advisor</option>
-                      ) : memberForm.domain === 'Student' || !memberForm.domain || memberForm.domain === 'General' ? (
-                        <option value="Student">Student</option>
-                      ) : (
-                        <>
-                          <option value="Chief">Chief</option>
-                          <option value="Lead">Lead</option>
-                          <option value="Core Member">Core Member</option>
-                          <option value="Associate">Associate</option>
-                          <option value="Student">Student</option>
-                        </>
-                      )}
-                    </select>
-                  </div>
-                </>
-              ) : (
-                <div className="admin-dash__field"><label>Role</label><input disabled value={memberForm.role} title="Only Zero Order can change roles/domains" /></div>
-              )}
-              
-              <div className="admin-dash__field">
-                <label>Color</label>
-                <input type="color" value={memberForm.color} onChange={e => setMemberForm({ ...memberForm, color: e.target.value })} style={{ padding: '0', height: '37px', cursor: 'pointer', border: 'none', background: 'transparent' }} title="Choose Role Color" />
-              </div>
-              <div className="admin-dash__field"><label>Status</label><select value={memberForm.status} onChange={e => setMemberForm({ ...memberForm, status: e.target.value })}><option>Online</option><option>Away</option><option>Busy</option></select></div>
-              <div className="admin-dash__field admin-dash__field--full"><label>Short Description</label><input value={memberForm.description} onChange={e => setMemberForm({ ...memberForm, description: e.target.value })} placeholder="One-liner for team cards" /></div>
-              <div className="admin-dash__field admin-dash__field--full"><label>Bio</label><textarea rows="3" value={memberForm.bio} onChange={e => setMemberForm({ ...memberForm, bio: e.target.value })} placeholder="About this member..." /></div>
-              <div className="admin-dash__field admin-dash__field--full"><label>Skills (comma-separated)</label><input value={memberForm.skills} onChange={e => setMemberForm({ ...memberForm, skills: e.target.value })} placeholder="React, CSS, Figma" /></div>
-              <div className="admin-dash__field admin-dash__field--full admin-dash__field--divider"><label className="admin-dash__field-section-label">Contact</label></div>
-              <div className="admin-dash__field admin-dash__field--full"><label><Send size={12} /> Telegram Username</label><input value={memberForm.telegram} onChange={e => setMemberForm({ ...memberForm, telegram: e.target.value })} placeholder="username (without @)" /></div>
-              <div className="admin-dash__field admin-dash__field--full admin-dash__field--divider"><label className="admin-dash__field-section-label">Photo</label></div>
-              <div className="admin-dash__field admin-dash__field--full"><label>Upload Photo (JPEG/PNG/WebP, max 5MB)</label><input type="file" accept="image/jpeg,image/png,image/webp" onChange={handlePhotoChange} /></div>
-              {photoPreview && (
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Crop Photo</label>
-                  <div className="admin-dash__crop-area">
-                    <ReactCrop crop={crop} onChange={c => setCrop(c)} onComplete={c => setCompletedCrop(c)}>
-                      <img src={photoPreview} alt="Crop preview" onLoad={onImageLoad} className="admin-dash__crop-img" />
-                    </ReactCrop>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="admin-dash__modal-actions">
-              <button type="button" className="admin-dash__cancel-btn" onClick={closeMemberForm}>Cancel</button>
-              <button type="submit" className="admin-dash__save-btn" disabled={memberSaving}>{memberSaving ? 'Saving...' : memberEditing ? 'Update Member' : 'Add Member'}</button>
-            </div>
-          </form>
-        </div>
-      )}
+      <MemberEditModal
+        open={showMemberForm}
+        member={memberEditing}
+        domainsList={domainsList}
+        actor={adminInfo}
+        saving={memberSaving}
+        onClose={closeMemberForm}
+        onSubmit={handleMemberSubmit}
+      />
 
       {/* ── Event Modal ──────────────────────────────────── */}
       {showEventForm && (

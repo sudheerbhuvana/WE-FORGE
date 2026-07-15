@@ -5,26 +5,8 @@ async function safeJson(res) {
 }
 
 const authService = {
-  async login(password) {
-    const res = await fetch(`${API_BASE}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ password }),
-    });
-    if (!res.ok) {
-      const data = await safeJson(res);
-      throw new Error(data.error || 'Login failed');
-    }
-    return safeJson(res);
-  },
-
-  async logout() {
-    await fetch(`${API_BASE}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-    });
-  },
+  // Password-based login has been removed. Sign-in happens through NextAuth (Azure AD).
+  // Use next-auth/react's signIn() / signOut() in the UI directly.
 
   async checkAuth() {
     try {

@@ -8,12 +8,23 @@ async function safeJson(res) {
 
 // ── Helpers ──────────────────────────────────────────────
 
+// Canonical slug resolver used both client-side and server-side.
+// A member's URL slug is always the local-part of their @kluniversity.in email
+// (or the roll number when no email exists). Keep this in sync with lib/slug.js.
+function memberSlugLocal({ email, rollNumber, id }) {
+  const e = (email || '').split('@')[0].trim();
+  if (e) return e;
+  if (rollNumber) return String(rollNumber).trim();
+  if (id) return String(id).trim();
+  return '';
+}
+
 export const nameToSlug = (name) => {
   if (!name) return '';
-  // Remove all non-alphanumeric, split by space, join first and second name, ignore extra names
+  // Legacy helper kept for any caller that still needs a *name*-derived slug
+  // (we just don't use it as the primary lookup key anymore).
   const parts = name.trim().toLowerCase().split(/\s+/);
   if (parts.length === 1) return parts[0].replace(/[^a-z0-9]/g, '');
-  // Only use first and second name, remove non-alphanumeric, join
   return (parts[0] + parts[1]).replace(/[^a-z0-9]/g, '');
 };
 
@@ -32,8 +43,21 @@ export const toTeamCards = (members) =>
     color: m.color || '#71C4FF',
   }));
 
-export const findBySlug = (members, slug) =>
-  members.find((m) => m.id === slug || nameToSlug(m.name) === slug) || null;
+export const findBySlug = (members, slug) => {
+  if (!slug) return null;
+  const target = String(slug).toLowerCase();
+  return (
+    members.find((m) => {
+      if (m.id === slug) return true;
+      if (m.rollNumber && String(m.rollNumber) === slug) return true;
+      const ml = memberSlugLocal(m);
+      if (ml && ml.toLowerCase() === target) return true;
+      // Fallback for legacy rows whose id differs from the email local-part.
+      if (m.email && m.email.split('@')[0].toLowerCase() === target) return true;
+      return false;
+    }) || null
+  );
+};
 
 // ── API ──────────────────────────────────────────────────
 

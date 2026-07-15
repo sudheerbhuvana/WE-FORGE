@@ -3,6 +3,7 @@ import connectDB from '@/lib/db';
 import Project from '@/lib/models/Project';
 import { saveFile } from '@/lib/uploadHelper';
 import path from 'path';
+import { requirePermission, canManageProjects } from '@/lib/permissions';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/projects');
 const toSlug = (str) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -18,6 +19,9 @@ export async function GET() {
 }
 
 export async function POST(request) {
+    const { response } = await requirePermission(canManageProjects);
+    if (response) return response;
+
     try {
         await connectDB();
         const formData = await request.formData();

@@ -25,16 +25,33 @@ const MemberSchema = new mongoose.Schema({
 const Member = mongoose.models.Member || mongoose.model('Member', MemberSchema);
 
 async function run() {
-  const uri = process.env.MONGODB_URI || 'mongodb+srv://praveen:Praveen123@myatlasclusteredu.tsy40ac.mongodb.net/klforge?retryWrites=true&w=majority';
-  await mongoose.connect(uri, { dbName: 'klforge' });
+  const uri =
+    process.env.MONGODB_URI ||
+    process.env.MONGO_URI ||
+    'mongodb+srv://praveen:Praveen123@myatlasclusteredu.tsy40ac.mongodb.net/klforge?retryWrites=true&w=majority';
+
+  // Fail fast instead of waiting 30s on DNS / TCP timeouts.
+  await mongoose.connect(uri, {
+    dbName: 'klforge',
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 10000,
+  });
+
   const csv = fs.readFileSync('forge_members.csv', 'utf-8');
   const lines = csv.split('\n').filter(l => l.trim() && !l.startsWith('Name,'));
-  
+
+  // Pull every existing name once — avoids a per-row findOne round trip.
+  const existing = new Set(
+    (await Member.find({}, { name: 1 }).lean()).map(d => d.name.trim().toLowerCase())
+  );
+  const startCount = await Member.countDocuments();
+
+  const docs = [];
+  let skipped = 0;
+
   for (const line of lines) {
     const parts = line.split(',');
     if (parts.length < 5) continue;
-    
-    // Check if the first line is header just in case
     if (parts[0].trim().toLowerCase() === 'name') continue;
 
     const name = parts[0].trim();
@@ -50,22 +67,43 @@ async function run() {
       domain = temp;
     }
 
-    const exists = await Member.findOne({ name: new RegExp(`^${name}$`, 'i') });
-    if (!exists) {
-      console.log(`Adding ${name}...`);
-      const count = await Member.countDocuments();
-      const newMember = new Member({
-        id: String(Date.now() + Math.random()),
-        name, email, role, domain, rollNumber,
-        department: '', description: '', bio: '', skills: [],
-        telegram: '', github: '', linkedin: '', status: 'Online',
-        photoUrl: '', orderIndex: count
-      });
-      await newMember.save();
+    if (existing.has(name.toLowerCase())) {
+      skipped++;
+      continue;
     }
+
+    docs.push({
+      id: String(Date.now() + Math.random()),
+      name,
+      email,
+      role,
+      domain,
+      rollNumber,
+      department: '',
+      description: '',
+      bio: '',
+      skills: [],
+      telegram: '',
+      github: '',
+      linkedin: '',
+      status: 'Online',
+      photoUrl: '',
+      orderIndex: startCount + docs.length,
+    });
   }
-  console.log('Data synchronization completed!');
+
+  if (docs.length === 0) {
+    console.log(`Nothing to insert (${skipped} already existed). Done.`);
+    return process.exit(0);
+  }
+
+  // One round trip instead of N.
+  const inserted = await Member.insertMany(docs, { ordered: false });
+  console.log(`Inserted ${inserted.length} new members (${skipped} already existed).`);
   process.exit(0);
 }
 
-run().catch(console.error);
+run().catch(err => {
+  console.error('Import failed:', err.message);
+  process.exit(1);
+});

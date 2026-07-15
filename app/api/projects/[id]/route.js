@@ -3,11 +3,15 @@ import connectDB from '@/lib/db';
 import Project from '@/lib/models/Project';
 import { saveFile, deleteFile } from '@/lib/uploadHelper';
 import path from 'path';
+import { requirePermission, canManageProjects } from '@/lib/permissions';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/projects');
 const toSlug = (str) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 export async function PUT(request, { params }) {
+    const { response } = await requirePermission(canManageProjects);
+    if (response) return response;
+
     try {
         await connectDB();
         const { id } = await params;
@@ -40,6 +44,9 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+    const { response } = await requirePermission(canManageProjects);
+    if (response) return response;
+
     try {
         await connectDB();
         const { id } = await params;
@@ -48,7 +55,7 @@ export async function DELETE(request, { params }) {
 
         await deleteFile(project.imageUrl, UPLOAD_DIR);
         await Project.findOneAndDelete({ id });
-        
+
         return NextResponse.json({ success: true });
     } catch (err) {
         return NextResponse.json({ error: err.message }, { status: 500 });

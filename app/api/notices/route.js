@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Notice from '@/lib/models/Notice';
+import { requirePermission, canManageNotices } from '@/lib/permissions';
 
 export async function GET() {
     try {
@@ -13,6 +14,9 @@ export async function GET() {
 }
 
 export async function POST(request) {
+    const { response } = await requirePermission(canManageNotices);
+    if (response) return response;
+
     try {
         await connectDB();
         const { title, message, priority } = await request.json();

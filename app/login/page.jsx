@@ -22,7 +22,7 @@ function LoginContent() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-card__icon">
-          <ShieldCheck size={48} className="icon-glow" />
+          <ShieldCheck size={48} className="icon-glow" aria-hidden="true" />
         </div>
         
         <h1 className="login-card__title">Member Portal</h1>
@@ -31,7 +31,7 @@ function LoginContent() {
         </p>
 
         <div className="login-card__notice">
-          <Mail size={16} />
+          <Mail size={16} aria-hidden="true" />
           <span>Only @kluniversity.in domains allowed</span>
         </div>
 
@@ -49,20 +49,20 @@ function LoginContent() {
             marginTop: '16px',
             lineHeight: '1.4'
           }}>
-            <AlertCircle size={20} style={{ flexShrink: 0 }} />
+            <AlertCircle size={20} style={{ flexShrink: 0 }} aria-hidden="true" />
             <span>
               Your account is suspended. If you think this is an error, contact <strong>forge@kluniversity.in</strong>
             </span>
           </div>
         )}
 
-        <button 
+        <button
           onClick={() => signIn('azure-ad', { callbackUrl: '/profile' })}
           className="login-btn"
         >
-          <img src="https://authjs.dev/img/providers/azure.svg" alt="Microsoft" width={20} />
+          <img src="https://authjs.dev/img/providers/azure.svg" alt="Microsoft" width={20} height={20} />
           Continue with Microsoft
-          <ChevronRight size={16} />
+          <ChevronRight size={16} aria-hidden="true" />
         </button>
 
         <p className="login-card__footer">

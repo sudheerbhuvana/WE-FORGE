@@ -30,11 +30,25 @@ export async function PUT(request) {
   try {
     const body = await request.json();
     console.log('[API ME PUT] body:', body);
-    const { bio, skills, telegram, github, linkedin } = body;
+    const { bio, skills, telegram, github, linkedin, school, cgpa } = body;
+    // Normalise cgpa: trim, accept empty/null, store as Number or null.
+    let cgpaValue = null;
+    if (cgpa !== undefined && cgpa !== null && String(cgpa).trim() !== '') {
+      const n = Number(cgpa);
+      if (Number.isFinite(n)) cgpaValue = n;
+    }
     await connectDB();
     const member = await Member.findOneAndUpdate(
       { email: session.user.email },
-      { $set: { bio, skills, telegram, github, linkedin } },
+      { $set: {
+          bio,
+          skills,
+          telegram,
+          github,
+          linkedin,
+          school: school ?? '',
+          cgpa: cgpaValue,
+      } },
       { returnDocument: 'after' }
     );
     return NextResponse.json(member);
