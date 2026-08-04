@@ -398,39 +398,10 @@ export default function ContestManagePage({ params }) {
       <main className="admin-main">
         <div className="admin-main__content" data-lenis-prevent="true">
 
-          <div className="cm-topbar">
-            <button className="cm-back" onClick={() => router.push('/admin/dashboard?tab=contests')}>
-              <ArrowLeft size={16} /> Back to Contests
-            </button>
-            <div className="cm-topbar__actions">
-              <button className="cm-btn" onClick={() => window.open(`/contests/${slug}`, '_blank')}>
-                <Eye size={14} /> View Public
-              </button>
-              <button className="cm-btn cm-btn--primary" onClick={openEdit}>
-                <Edit3 size={14} /> Edit Contest
-              </button>
-              <button className="cm-btn" disabled={actionBusy} onClick={() => triggerAction(template?.isPublished ? 'unpublish' : 'publish')}>
-                {template?.isPublished ? <><Eye size={14} /> Unpublish</> : <><Sparkles size={14} /> Publish</>}
-              </button>
-              <button className="cm-btn" disabled={actionBusy} onClick={() => triggerAction(template?.isPaused ? 'resume' : 'pause')}>
-                {template?.isPaused ? <><Play size={14} /> Resume</> : <><Pause size={14} /> Pause</>}
-              </button>
-              {activeCycle && (
-                <button className="cm-btn cm-btn--accent" onClick={() => openWinners(activeCycle)}>
-                  <Trophy size={14} /> Declare Winners
-                </button>
-              )}
-              <button className="cm-btn" onClick={exportSubmissions}>
-                <Download size={14} /> Export
-              </button>
-              <button className="cm-btn" disabled={actionBusy} onClick={duplicateContest}>
-                <Copy size={14} /> Duplicate
-              </button>
-              <button className="cm-btn cm-btn--danger" disabled={actionBusy} onClick={deleteContest} title="Delete this contest">
-                <Trash2 size={14} /> Delete
-              </button>
-            </div>
-          </div>
+          {/* ===== Back link (compact) ===== */}
+          <button className="cm-back" onClick={() => router.push('/admin/dashboard?tab=contests')}>
+            <ArrowLeft size={14} /> Back to Contests
+          </button>
 
           {error && (
             <div className="admin-dash__alert admin-dash__alert--error">
@@ -443,17 +414,17 @@ export default function ContestManagePage({ params }) {
             </div>
           )}
 
-          <section className="cm-hero">
-            <div className="cm-hero__banner">
+          {/* ===== Page header — single horizontal row ===== */}
+          <header className="cm-page-header">
+            <div className="cm-page-header__thumb">
               {template?.bannerUrl ? (
                 <img src={template.bannerUrl} alt={template.title} />
               ) : (
-                <div className="cm-hero__banner-fallback"><Trophy size={48} /></div>
+                <div className="cm-page-header__thumb-fallback"><Trophy size={28} /></div>
               )}
-              <div className="cm-hero__overlay" />
             </div>
-            <div className="cm-hero__body">
-              <div className="cm-statusbar">
+            <div className="cm-page-header__main">
+              <div className="cm-page-header__chips">
                 <span className={`cm-badge cm-badge--${statusVariant}`}>
                   {status === 'active' && <span style={{ width: 6, height: 6, borderRadius: 999, background: 'currentColor', display: 'inline-block' }} />}
                   {statusLabel}
@@ -472,49 +443,89 @@ export default function ContestManagePage({ params }) {
                   {template?.visibility === 'private' ? 'Private' : 'Public'}
                 </span>
               </div>
-              <h1 className="cm-hero__title">{template?.title}</h1>
-              <p className="cm-hero__slug">/contests/{template?.slug}</p>
-              {template?.description && <p className="cm-hero__desc">{template.description}</p>}
+              <h1 className="cm-page-header__title">{template?.title}</h1>
+              {template?.description && (
+                <p className="cm-page-header__desc">{template.description}</p>
+              )}
             </div>
-          </section>
+            <div className="cm-page-header__actions">
+              <button className="cm-btn cm-btn--primary" onClick={openEdit}>
+                <Edit3 size={14} /> Edit Contest
+              </button>
+              <button className="cm-btn" disabled={actionBusy}
+                onClick={() => triggerAction(template?.isPublished ? 'unpublish' : 'publish')}>
+                {template?.isPublished ? <><Eye size={14} /> Unpublish</> : <><Sparkles size={14} /> Publish</>}
+              </button>
+              <button className="cm-btn" disabled={actionBusy}
+                onClick={() => triggerAction(template?.isPaused ? 'resume' : 'pause')}>
+                {template?.isPaused ? <><Play size={14} /> Resume</> : <><Pause size={14} /> Pause</>}
+              </button>
+              {activeCycle && (
+                <button className="cm-btn cm-btn--accent" onClick={() => openWinners(activeCycle)}>
+                  <Trophy size={14} /> Winners
+                </button>
+              )}
+              <button className="cm-btn" onClick={() => window.open(`/contests/${slug}`, '_blank')}>
+                <Eye size={14} /> View
+              </button>
+              <button className="cm-btn" onClick={exportSubmissions}>
+                <Download size={14} /> Export
+              </button>
+              <button className="cm-btn" disabled={actionBusy} onClick={duplicateContest}>
+                <Copy size={14} /> Duplicate
+              </button>
+              <button className="cm-btn cm-btn--danger" disabled={actionBusy} onClick={deleteContest} title="Delete contest">
+                <Trash2 size={14} /> Delete
+              </button>
+            </div>
+          </header>
 
-          <div className="cm-grid cm-grid--stat cm-mb-0">
-            <div className="cm-stat cm-stat--mini">
-              <div className="cm-stat__icon"><Clock size={18} /></div>
-              <div className="cm-stat__body">
-                <div className="cm-stat__value" key={tick}>
+          {/* ===== Stats strip — horizontal row ===== */}
+          <div className="cm-stats-strip">
+            <div className="cm-stats-strip__cell">
+              <div className="cm-stats-strip__icon"><Clock size={16} /></div>
+              <div className="cm-stats-strip__body">
+                <div className="cm-stats-strip__value" key={tick}>
                   {activeCycle?.status === 'active' ? relTime(activeCycle.endTime)
                     : activeCycle?.status === 'upcoming' ? relTime(activeCycle.startTime)
                     : '—'}
                 </div>
-                <div className="cm-stat__label">
+                <div className="cm-stats-strip__label">
                   {activeCycle?.status === 'active' ? 'Ends In' : activeCycle?.status === 'upcoming' ? 'Starts In' : 'No active cycle'}
                 </div>
               </div>
             </div>
-            <div className="cm-stat cm-stat--mini">
-              <div className="cm-stat__icon cm-stat__icon--purple"><Users size={18} /></div>
-              <div className="cm-stat__body">
-                <div className="cm-stat__value">{totalParticipants}</div>
-                <div className="cm-stat__label">Participants</div>
+            <div className="cm-stats-strip__cell">
+              <div className="cm-stats-strip__icon cm-stats-strip__icon--purple"><Users size={16} /></div>
+              <div className="cm-stats-strip__body">
+                <div className="cm-stats-strip__value">{totalParticipants}</div>
+                <div className="cm-stats-strip__label">Participants</div>
               </div>
             </div>
-            <div className="cm-stat cm-stat--mini">
-              <div className="cm-stat__icon cm-stat__icon--green"><Upload size={18} /></div>
-              <div className="cm-stat__body">
-                <div className="cm-stat__value">{totalSubmissions}</div>
-                <div className="cm-stat__label">Submissions</div>
+            <div className="cm-stats-strip__cell">
+              <div className="cm-stats-strip__icon cm-stats-strip__icon--green"><Upload size={16} /></div>
+              <div className="cm-stats-strip__body">
+                <div className="cm-stats-strip__value">{totalSubmissions}</div>
+                <div className="cm-stats-strip__label">Submissions</div>
               </div>
             </div>
-            <div className="cm-stat cm-stat--mini">
-              <div className="cm-stat__icon cm-stat__icon--orange"><CalendarClock size={18} /></div>
-              <div className="cm-stat__body">
-                <div className="cm-stat__value">{activeCycle?.cycleLabel || '—'}</div>
-                <div className="cm-stat__label">Current Cycle</div>
+            <div className="cm-stats-strip__cell">
+              <div className="cm-stats-strip__icon cm-stats-strip__icon--orange"><Trophy size={16} /></div>
+              <div className="cm-stats-strip__body">
+                <div className="cm-stats-strip__value">{winnersPublished}</div>
+                <div className="cm-stats-strip__label">Winners Published</div>
+              </div>
+            </div>
+            <div className="cm-stats-strip__cell">
+              <div className="cm-stats-strip__icon cm-stats-strip__icon--orange"><CalendarClock size={16} /></div>
+              <div className="cm-stats-strip__body">
+                <div className="cm-stats-strip__value">{totalPreviousCycles}</div>
+                <div className="cm-stats-strip__label">Total Cycles</div>
               </div>
             </div>
           </div>
 
+          {/* ===== Tabs ===== */}
           <nav className="cm-tabs" role="tablist">
             {TABS.map((tab) => {
               const Icon = tab.icon;
@@ -761,20 +772,20 @@ export default function ContestManagePage({ params }) {
 
       {editing && editForm && (
         <div className="admin-dash__overlay" onClick={() => !editSaving && setEditing(false)}>
-          <div className="admin-dash__modal" style={{ maxWidth: '780px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="admin-dash__modal" style={{ maxWidth: '1100px' }} onClick={(e) => e.stopPropagation()}>
             <div className="admin-dash__modal-header">
               <h2>Edit Contest Template</h2>
               <button className="admin-dash__close-btn" onClick={() => setEditing(false)} disabled={editSaving}><X size={20} /></button>
             </div>
             <form onSubmit={saveEdit} className="admin-dash__modal-body">
-              <div className="admin-dash__form-grid">
+              <div className="admin-dash__form-grid admin-dash__form-grid--3col">
                 <div className="admin-dash__field admin-dash__field--full">
                   <label>Title *</label>
                   <input type="text" required value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
                 </div>
                 <div className="admin-dash__field admin-dash__field--full">
                   <label>Description</label>
-                  <textarea rows={3} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+                  <textarea rows={2} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
                 </div>
                 <div className="admin-dash__field">
                   <label>Banner URL</label>
@@ -783,6 +794,19 @@ export default function ContestManagePage({ params }) {
                 <div className="admin-dash__field">
                   <label>Tags (comma-separated)</label>
                   <input type="text" value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} />
+                </div>
+                <div className="admin-dash__field">
+                  <label>Visibility flags</label>
+                  <div style={{ display: 'flex', gap: 14, paddingTop: 8, fontSize: '0.82rem' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+                      <input type="checkbox" checked={editForm.featured} onChange={(e) => setEditForm({ ...editForm, featured: e.target.checked })} />
+                      Featured
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+                      <input type="checkbox" checked={editForm.isPublished} onChange={(e) => setEditForm({ ...editForm, isPublished: e.target.checked })} />
+                      Published
+                    </label>
+                  </div>
                 </div>
                 <div className="admin-dash__field admin-dash__field--full">
                   <label>Rules</label>
@@ -803,9 +827,9 @@ export default function ContestManagePage({ params }) {
                       <Plus size={14} /> Add Field
                     </button>
                   </div>
-                  {editForm.customFields.map((field, idx) => (
-                    <div key={idx} style={{ background: 'rgba(255,255,255,0.04)', padding: 10, borderRadius: 8, marginBottom: 8 }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr auto auto', gap: 8, alignItems: 'center' }}>
+                  <div className="admin-dash__fields-grid">
+                    {editForm.customFields.map((field, idx) => (
+                      <div key={idx} className="admin-dash__field-row">
                         <input type="text" className="admin-dash__input" placeholder="Field label" value={field.label} onChange={(e) => updateField(idx, { label: e.target.value })} />
                         <select className="admin-dash__input" value={field.type} onChange={(e) => updateField(idx, { type: e.target.value })}>
                           <option value="text">Text</option>
@@ -817,47 +841,23 @@ export default function ContestManagePage({ params }) {
                           <option value="link">Work Link</option>
                           <option value="select">Dropdown</option>
                         </select>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', margin: 0 }}>
+                        <label className="admin-dash__req-check">
                           <input type="checkbox" checked={!!field.required} onChange={(e) => updateField(idx, { required: e.target.checked })} /> Req
                         </label>
-                        <div style={{ display: 'flex', gap: 2 }}>
+                        {(field.type === 'image' || field.type === 'video' || field.type === 'file') && (
+                          <label className="admin-dash__num-inline">MB <input type="number" min={1} max={1000} className="admin-dash__input" value={field.maxSizeMB || 10} onChange={(e) => updateField(idx, { maxSizeMB: parseInt(e.target.value, 10) || 10 })} /></label>
+                        )}
+                        {(field.type === 'image' || field.type === 'link') && (
+                          <label className="admin-dash__num-inline">Count <input type="number" min={1} max={20} className="admin-dash__input" value={field.maxCount || 1} onChange={(e) => updateField(idx, { maxCount: parseInt(e.target.value, 10) || 1 })} /></label>
+                        )}
+                        <div className="admin-dash__field-actions">
                           <button type="button" className="admin-dash__icon-btn" onClick={() => moveField(idx, -1)} disabled={idx === 0}><ChevronUp size={13} /></button>
                           <button type="button" className="admin-dash__icon-btn" onClick={() => moveField(idx, 1)} disabled={idx === editForm.customFields.length - 1}><ChevronDown size={13} /></button>
                           <button type="button" className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => removeField(idx)}><Trash2 size={13} /></button>
                         </div>
                       </div>
-                      {(field.type === 'image' || field.type === 'video' || field.type === 'file' || field.type === 'link') && (
-                        <div style={{ display: 'flex', gap: 10, marginTop: 6, fontSize: '0.78rem' }}>
-                          {(field.type === 'image' || field.type === 'video' || field.type === 'file') && (
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              Max MB:
-                              <input type="number" min={1} max={1000} style={{ width: 60 }} className="admin-dash__input" value={field.maxSizeMB || 10} onChange={(e) => updateField(idx, { maxSizeMB: parseInt(e.target.value, 10) || 10 })} />
-                            </label>
-                          )}
-                          {(field.type === 'image' || field.type === 'link') && (
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                              Max count:
-                              <input type="number" min={1} max={20} style={{ width: 60 }} className="admin-dash__input" value={field.maxCount || 1} onChange={(e) => updateField(idx, { maxCount: parseInt(e.target.value, 10) || 1 })} />
-                            </label>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="admin-dash__field">
-                  <label>Featured</label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
-                    <input type="checkbox" checked={editForm.featured} onChange={(e) => setEditForm({ ...editForm, featured: e.target.checked })} />
-                    Spotlight on landing
-                  </label>
-                </div>
-                <div className="admin-dash__field">
-                  <label>Published</label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
-                    <input type="checkbox" checked={editForm.isPublished} onChange={(e) => setEditForm({ ...editForm, isPublished: e.target.checked })} />
-                    Visible publicly
-                  </label>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="admin-dash__modal-actions">

@@ -70,29 +70,6 @@ export default function OverviewTab({
 
   return (
     <>
-      {/* ===== Stats row ===== */}
-      <div className="cm-grid cm-grid--stat cm-mb-0">
-        <StatCard icon={Users} value={totalParticipants} label="Participants" />
-        <StatCard icon={Upload} value={totalSubmissions} label="Total Submissions" />
-        <StatCard
-          icon={CalendarClock}
-          value={activeCycle ? `Cycle #${activeCycle.cycleNumber}` : '—'}
-          label="Current Cycle"
-        />
-        <StatCard icon={Trophy} value={winnersPublished} label="Winners Published" />
-        <StatCard
-          icon={Timer}
-          value={daysRemaining > 0 ? `${daysRemaining}d` : (activeCycle ? 'Ended' : '—')}
-          label="Days Remaining"
-        />
-        <StatCard
-          icon={Zap}
-          value={{ one_time: 'One-Time', immediate: 'Immediate', recurring_weekly: 'Weekly', recurring_monthly: 'Monthly' }[template?.type] || 'One-Time'}
-          label="Frequency"
-        />
-        <StatCard icon={Flag} value={totalPreviousCycles} label="Previous Cycles" />
-      </div>
-
       {/* ===== Schedule + details ===== */}
       <div className="cm-grid cm-grid--2">
         <div className="cm-card">
@@ -201,7 +178,10 @@ export default function OverviewTab({
       <div className="cm-card">
         <div className="cm-row cm-row--between" style={{ marginBottom: 12 }}>
           <h3 className="cm-card__title" style={{ margin: 0 }}>
-            <ListChecks size={14} /> Submission Form Summary
+            <ListChecks size={14} /> Submission Form
+            <span className="cm-badge cm-badge--neutral" style={{ marginLeft: 8, fontSize: '0.7rem' }}>
+              {template?.customFields?.length || 0} field{template?.customFields?.length === 1 ? '' : 's'}
+            </span>
           </h3>
           <button className="cm-btn cm-btn--sm" onClick={openEdit}>
             <Edit3 size={12} /> Edit Form
@@ -214,19 +194,28 @@ export default function OverviewTab({
             <p className="cm-empty__desc">Add fields to collect participant entries.</p>
           </div>
         ) : (
-          <div className="cm-req-list">
+          <div className="cm-fields-grid">
             {template.customFields.map((f, i) => (
-              <div key={i} className="cm-req">
-                <span className="cm-req__check"><Check size={14} /></span>
-                <span className="cm-req__name">{f.label}</span>
-                <span className="cm-badge cm-badge--neutral" style={{ fontSize: '0.7rem' }}>{f.type}</span>
-                {f.required && <span className="cm-req__required">REQUIRED</span>}
-                {(f.type === 'image' || f.type === 'video' || f.type === 'file') && (
-                  <span className="cm-req__meta">≤ {f.maxSizeMB || 10} MB</span>
-                )}
-                {(f.type === 'image' || f.type === 'link') && (
-                  <span className="cm-req__meta">max {f.maxCount || 1}</span>
-                )}
+              <div key={i} className="cm-field-chip">
+                <span className="cm-field-chip__num">{i + 1}</span>
+                <div className="cm-field-chip__body">
+                  <div className="cm-field-chip__name">
+                    {f.label}
+                    {f.required && <span className="cm-field-chip__required">*</span>}
+                  </div>
+                  <div className="cm-field-chip__meta">
+                    <span className="cm-badge cm-badge--neutral">{f.type}</span>
+                    {(f.type === 'image' || f.type === 'video' || f.type === 'file') && (
+                      <span className="cm-field-chip__sub">≤ {f.maxSizeMB || 10} MB</span>
+                    )}
+                    {(f.type === 'image' || f.type === 'link') && f.maxCount > 1 && (
+                      <span className="cm-field-chip__sub">max {f.maxCount}</span>
+                    )}
+                    {f.type === 'select' && f.options?.length > 0 && (
+                      <span className="cm-field-chip__sub">{f.options.length} options</span>
+                    )}
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -238,6 +227,12 @@ export default function OverviewTab({
         <div className="cm-row cm-row--between" style={{ marginBottom: 12 }}>
           <h3 className="cm-card__title" style={{ margin: 0 }}>
             <CalendarClock size={14} /> Active Cycle
+            {activeCycle && (
+              <>
+                <span className="cm-badge cm-badge--neutral" style={{ marginLeft: 8 }}>#{activeCycle.cycleNumber}</span>
+                <span className="cm-badge cm-badge--neutral" style={{ marginLeft: 6, fontSize: '0.75rem' }}>{activeCycle.cycleLabel}</span>
+              </>
+            )}
           </h3>
           {activeCycle && (
             <span className={`cm-badge cm-badge--${activeCycle.status === 'active' ? 'success' : 'warning'}`}>
@@ -253,71 +248,69 @@ export default function OverviewTab({
             <p className="cm-empty__desc">Trigger a new cycle or wait for the schedule.</p>
           </div>
         ) : (
-          <>
-            <div className="cm-grid cm-grid--2">
-              <div className="cm-detail-list__row">
-                <div className="cm-detail-list__label">Cycle Name</div>
-                <div className="cm-detail-list__value">{activeCycle.cycleLabel}</div>
+          <div className="cm-cycle-layout">
+            {/* Left: horizontal stats strip */}
+            <div className="cm-cycle-stats">
+              <div className="cm-cycle-stat">
+                <div className="cm-cycle-stat__label">Participants</div>
+                <div className="cm-cycle-stat__value">{activeCycle.participantCount || 0}</div>
               </div>
-              <div className="cm-detail-list__row">
-                <div className="cm-detail-list__label">Cycle Number</div>
-                <div className="cm-detail-list__value">#{activeCycle.cycleNumber}</div>
+              <div className="cm-cycle-stat">
+                <div className="cm-cycle-stat__label">Entries</div>
+                <div className="cm-cycle-stat__value">{activeCycle.submissionCount || 0}</div>
               </div>
-              <div className="cm-detail-list__row">
-                <div className="cm-detail-list__label">Start Time</div>
-                <div className="cm-detail-list__value">{fmtDate(activeCycle.startTime)}</div>
+              <div className="cm-cycle-stat">
+                <div className="cm-cycle-stat__label">Starts</div>
+                <div className="cm-cycle-stat__value">{fmtDate(activeCycle.startTime)}</div>
               </div>
-              <div className="cm-detail-list__row">
-                <div className="cm-detail-list__label">End Time</div>
-                <div className="cm-detail-list__value">{fmtDate(activeCycle.endTime)}</div>
+              <div className="cm-cycle-stat">
+                <div className="cm-cycle-stat__label">Ends</div>
+                <div className="cm-cycle-stat__value">{fmtDate(activeCycle.endTime)}</div>
               </div>
-              <div className="cm-detail-list__row">
-                <div className="cm-detail-list__label">Countdown</div>
-                <div className="cm-detail-list__value">
-                  {activeCycle.status === 'active' ? `Ends in ${relTime(activeCycle.endTime)}`
-                    : activeCycle.status === 'upcoming' ? `Starts in ${relTime(activeCycle.startTime)}`
+              <div className="cm-cycle-stat cm-cycle-stat--accent">
+                <div className="cm-cycle-stat__label">
+                  {activeCycle.status === 'active' ? 'Time Left' : activeCycle.status === 'upcoming' ? 'Starts In' : 'Status'}
+                </div>
+                <div className="cm-cycle-stat__value">
+                  {activeCycle.status === 'active' ? relTime(activeCycle.endTime)
+                    : activeCycle.status === 'upcoming' ? relTime(activeCycle.startTime)
                     : 'Ended'}
                 </div>
               </div>
-              <div className="cm-detail-list__row">
-                <div className="cm-detail-list__label">Participants</div>
-                <div className="cm-detail-list__value">{activeCycle.participantCount || 0}</div>
-              </div>
-              <div className="cm-detail-list__row">
-                <div className="cm-detail-list__label">Entries</div>
-                <div className="cm-detail-list__value">{activeCycle.submissionCount || 0}</div>
-              </div>
             </div>
 
-            <div className="cm-progress" style={{ marginTop: 14 }}>
-              <div
-                className="cm-progress__fill"
-                style={{
-                  width: `${Math.min(100, Math.max(0,
-                    ((Date.now() - new Date(activeCycle.startTime).getTime()) /
-                    Math.max(1, new Date(activeCycle.endTime).getTime() - new Date(activeCycle.startTime).getTime())) * 100
-                  ))}%`,
-                }}
-              />
-            </div>
-
-            <div className="cm-row" style={{ marginTop: 14 }}>
-              <button className="cm-btn cm-btn--sm" onClick={() => openJudging && openJudging(activeCycle)}>
-                <Eye size={12} /> View Entries
+            {/* Right: action buttons stacked vertically */}
+            <div className="cm-cycle-actions">
+              <button className="cm-btn cm-btn--accent" onClick={() => openWinners(activeCycle)}>
+                <Trophy size={13} /> Declare Winners
               </button>
-              <button className="cm-btn cm-btn--sm" disabled={actionBusy}
+              <button className="cm-btn" onClick={() => openJudging && openJudging(activeCycle)}>
+                <Eye size={13} /> View Entries
+              </button>
+              <button className="cm-btn" disabled={actionBusy}
                 onClick={() => triggerAction('extend_deadline', { hours: 24 })}>
-                <Timer size={12} /> Extend +24h
+                <Timer size={13} /> Extend +24h
               </button>
-              <button className="cm-btn cm-btn--sm" disabled={actionBusy}
+              <button className="cm-btn cm-btn--danger" disabled={actionBusy}
                 onClick={() => triggerAction('end_early')}>
-                <Flag size={12} /> End Cycle
-              </button>
-              <button className="cm-btn cm-btn--accent cm-btn--sm" onClick={() => openWinners(activeCycle)}>
-                <Trophy size={12} /> Declare Winners
+                <Flag size={13} /> End Cycle
               </button>
             </div>
-          </>
+          </div>
+        )}
+
+        {activeCycle && (
+          <div className="cm-progress" style={{ marginTop: 14 }}>
+            <div
+              className="cm-progress__fill"
+              style={{
+                width: `${Math.min(100, Math.max(0,
+                  ((Date.now() - new Date(activeCycle.startTime).getTime()) /
+                  Math.max(1, new Date(activeCycle.endTime).getTime() - new Date(activeCycle.startTime).getTime())) * 100
+                ))}%`,
+              }}
+            />
+          </div>
         )}
       </div>
     </>
