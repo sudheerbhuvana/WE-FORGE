@@ -395,22 +395,14 @@ export default function ContestsSection({ contestsList = [], refreshData }) {
                     <td>
                       <div className="admin-dash__title-actions">
                         <button className="admin-dash__icon-btn" title="View Public Page" onClick={() => router.push(`/contests/${c.slug}`)}><Eye size={15} /></button>
-                        <button className="admin-dash__icon-btn" title="Cycle History" onClick={() => openHistoryInspector(c.slug)}><Calendar size={15} /></button>
-                        {cycle && (
-                          <button className="admin-dash__icon-btn" title="Submissions & Judging" onClick={() => openJudgingModal(c.slug, cycle)}><Users size={15} /></button>
-                        )}
-                        {cycle && (
-                          <button className="admin-dash__icon-btn" title="Declare Winners" onClick={() => openDeclareWinnersModal(c.slug, cycle)}><Trophy size={15} style={{ color: '#f59e0b' }} /></button>
-                        )}
-                        <button className="admin-dash__icon-btn" title="Extend Deadline (+24h)" onClick={() => triggerAction(c.slug, 'extend_deadline', { hours: 24 })}><Clock size={15} style={{ color: '#71C4FF' }} /></button>
-                        <button className="admin-dash__icon-btn" title="Duplicate Contest" onClick={() => triggerAction(c.slug, 'duplicate')}><Copy size={15} /></button>
-                        <button className="admin-dash__icon-btn" title={c.isPublished ? 'Unpublish' : 'Publish'} onClick={() => triggerAction(c.slug, c.isPublished ? 'unpublish' : 'publish')}>
-                          {c.isPublished ? '👁️' : '🔒'}
+                        <button
+                          className="admin-dash__icon-btn"
+                          title="Manage this contest"
+                          onClick={() => router.push(`/admin/dashboard/contests/${c.slug}`)}
+                          style={{ background: 'rgba(113,196,255,0.12)', borderColor: 'rgba(113,196,255,0.35)', color: '#71C4FF' }}
+                        >
+                          Manage →
                         </button>
-                        <button className="admin-dash__icon-btn" title={c.isPaused ? 'Resume' : 'Pause'} onClick={() => triggerAction(c.slug, c.isPaused ? 'resume' : 'pause')}>
-                          {c.isPaused ? <Play size={15} style={{ color: '#5cdb95' }} /> : <Pause size={15} style={{ color: '#ffb44d' }} />}
-                        </button>
-                        <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" title="Edit Template" onClick={() => openEditContest(c)}><Edit3 size={15} /></button>
                         <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" title="Delete Contest" onClick={() => deleteContest(c.slug)}><Trash2 size={15} /></button>
                       </div>
                     </td>
@@ -776,6 +768,28 @@ export default function ContestsSection({ contestsList = [], refreshData }) {
                               <a href={s.fileUrl} target="_blank" rel="noreferrer" className="admin-rec-link-pill" style={{ marginRight: 4, marginBottom: 4 }}>
                                 <ExternalLink size={11} /> File Attachment
                               </a>
+                            )}
+                            {Array.isArray(s.files) && s.files.length > 0 && (
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+                                {s.files.map((f, fi) => (
+                                  <a
+                                    key={fi}
+                                    href={f.url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="admin-rec-link-pill"
+                                    style={{ marginRight: 0, marginBottom: 0 }}
+                                    title={`${f.fieldLabel || 'File'}: ${f.originalName || ''} (${Math.round((f.fileSize || 0) / 1024)} KB)`}
+                                  >
+                                    {f.fieldType === 'image' && f.url ? (
+                                      <img src={f.url} alt={f.originalName} style={{ width: 22, height: 22, objectFit: 'cover', borderRadius: 3, marginRight: 4 }} />
+                                    ) : (
+                                      <ExternalLink size={11} />
+                                    )}
+                                    {f.originalName || `${f.fieldLabel || 'File'} ${fi + 1}`}
+                                  </a>
+                                ))}
+                              </div>
                             )}
                             {Array.isArray(s.workLinks) && s.workLinks.map((l, i) => (
                               <a key={i} href={l.url} target="_blank" rel="noreferrer" className="admin-rec-link-pill" style={{ marginRight: 4, marginBottom: 4 }}>

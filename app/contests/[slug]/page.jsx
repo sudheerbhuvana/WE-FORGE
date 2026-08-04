@@ -5,7 +5,8 @@ import { useSession, signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { 
   Trophy, Clock, Calendar, Users, Award, ShieldCheck, CheckCircle2, Plus, Trash2, 
-  ExternalLink, FileText, Send, Lock, Zap, History, Sparkles, AlertCircle, Eye, ArrowRight
+  ExternalLink, FileText, Send, Lock, Zap, History, Sparkles, AlertCircle, Eye, ArrowRight,
+  Image as ImageIcon, Video as VideoIcon, FileIcon, Upload, X
 } from 'lucide-react';
 import BackButton from '../../../src/components/BackButton';
 import Footer from '../../../src/components/Footer';
@@ -36,6 +37,14 @@ export default function SingleContestPage({ params }) {
   const [subFileUrl, setSubFileUrl] = useState('');
   const [subLinks, setSubLinks] = useState([{ title: 'Project / GitHub Link', url: '' }]);
   const [formAnswers, setFormAnswers] = useState({});
+
+  // Per-field uploaded files keyed by fieldId.
+  // Each value is an array of File objects (queued for upload).
+  // `uploadedFiles` holds files that are already on the server from a prior submission
+  // (so the user can review/edit and resubmit without re-uploading).
+  const [filesByField, setFilesByField] = useState({}); // { fieldId: [File, ...] }
+  const [uploadedFiles, setUploadedFiles] = useState({}); // { fieldId: [{ url, s3Key, originalName, fileSize, mimeType }, ...] }
+  const [fileErrors, setFileErrors] = useState({}); // { fieldId: 'message' }
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -75,6 +84,16 @@ export default function SingleContestPage({ params }) {
               sData.submission.customAnswers.forEach(ca => { map[ca.fieldId] = ca.value; });
               setFormAnswers(map);
             }
+
+            // Group existing uploaded files by fieldId for display
+            if (Array.isArray(sData.submission.files)) {
+              const grouped = {};
+              sData.submission.files.forEach(f => {
+                if (!grouped[f.fieldId]) grouped[f.fieldId] = [];
+                grouped[f.fieldId].push(f);
+              });
+              setUploadedFiles(grouped);
+            }
           }
         }
       }
@@ -100,6 +119,171 @@ export default function SingleContestPage({ params }) {
     setSubLinks(next);
   };
 
+  // File-queue helpers for image / video / file fields
+  const handleAddFiles = (fieldId, fileList) => {
+    const incoming = Array.from(fileList || []);
+    if (incoming.length === 0) return;
+    const customFields = template?.customFields || [];
+    const fieldDef = customFields.find(f => f.id === fieldId);
+    if (!fieldDef) return;
+
+    const maxCount = fieldDef.maxCount || 999;
+    const maxBytes = (fieldDef.maxSizeMB || 25) * 1024 * 1024;
+    const queued = filesByField[fieldId] || [];
+    const alreadyUploaded = uploadedFiles[fieldId] || [];
+    const remainingSlots = Math.max(0, maxCount - alreadyUploaded.length - queued.length);
+
+    const accepted = [];
+    let err = '';
+    for (const file of incoming) {
+      if (accepted.length >= remainingSlots) {
+        err = `Limit is ${maxCount} file(s) for "${fieldDef.label}".`;
+        break;
+      }
+      if (file.size > maxBytes) {
+        err = `"${file.name}" exceeds the ${fieldDef.maxSizeMB} MB limit.`;
+        break;
+      }
+      if (fieldDef.type === 'image' && !file.type.startsWith('image/')) {
+        err = `"${file.name}" is not an image.`;
+        break;
+      }
+      if (fieldDef.type === 'video' && !file.type.startsWith('video/')) {
+        err = `"${file.name}" is not a video.`;
+        break;
+      }
+      accepted.push(file);
+    }
+
+    setFilesByField(prev => ({
+      ...prev,
+      [fieldId]: [...(prev[fieldId] || []), ...accepted],
+    }));
+    setFileErrors(prev => ({ ...prev, [fieldId]: err }));
+  };
+
+  const handleRemoveQueuedFile = (fieldId, idx) => {
+    setFilesByField(prev => ({
+      ...prev,
+      [fieldId]: (prev[fieldId] || []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const handleRemoveUploadedFile = (fieldId, idx) => {
+    // Mark as "removed" — easiest UX is to remove from the local map so it
+    // doesn't display; on next submit the server keeps it (merge logic only
+    // replaces fields that have new files). To truly delete from server we'd
+    // need a dedicated endpoint — for now this gives the user a clean UI.
+    setUploadedFiles(prev => ({
+      ...prev,
+      [fieldId]: (prev[fieldId] || []).filter((_, i) => i !== idx),
+    }));
+  };
+
+  const formatBytes = (bytes) => {
+    if (!bytes && bytes !== 0) return '';
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const renderFileField = (field) => {
+    const queued = filesByField[field.id] || [];
+    const existing = uploadedFiles[field.id] || [];
+    const totalCount = queued.length + existing.length;
+    const maxCount = field.maxCount || 999;
+    const maxMB = field.maxSizeMB || 25;
+    const atCapacity = totalCount >= maxCount;
+    const Icon = field.type === 'image' ? ImageIcon : field.type === 'video' ? VideoIcon : FileIcon;
+    const accept = field.type === 'image' ? 'image/*' : field.type === 'video' ? 'video/*' : '*/*';
+
+    return (
+      <div className="sc-file-field">
+        <div className="sc-file-field__header">
+          <span className="sc-file-field__count">
+            {totalCount} / {maxCount} file{totalCount === 1 ? '' : 's'}
+          </span>
+          <span className="sc-file-field__limit">≤ {maxMB} MB each</span>
+        </div>
+
+        {!atCapacity && (
+          <label className="sc-file-drop">
+            <input
+              type="file"
+              accept={accept}
+              multiple={maxCount > 1}
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                handleAddFiles(field.id, e.target.files);
+                e.target.value = '';
+              }}
+            />
+            <div className="sc-file-drop__inner">
+              <Upload size={20} />
+              <span>Click to upload {field.type === 'image' ? 'image' : field.type === 'video' ? 'video' : 'file'}{maxCount > 1 ? 's' : ''}</span>
+              <small>{accept === '*/*' ? 'Any file type' : `${accept} only`}</small>
+            </div>
+          </label>
+        )}
+
+        {fileErrors[field.id] && (
+          <div className="sc-file-error">{fileErrors[field.id]}</div>
+        )}
+
+        {existing.length > 0 && (
+          <ul className="sc-file-list">
+            {existing.map((f, i) => (
+              <li key={`ex-${i}`} className="sc-file-row sc-file-row--uploaded">
+                {field.type === 'image' && f.url ? (
+                  <img src={f.url} alt={f.originalName} className="sc-file-thumb" />
+                ) : field.type === 'video' ? (
+                  <video src={f.url} className="sc-file-thumb" muted />
+                ) : (
+                  <div className="sc-file-thumb sc-file-thumb--icon"><Icon size={18} /></div>
+                )}
+                <div className="sc-file-row__meta">
+                  <a href={f.url} target="_blank" rel="noreferrer" className="sc-file-row__name">{f.originalName || 'View file'}</a>
+                  <span className="sc-file-row__size">{formatBytes(f.fileSize)}</span>
+                </div>
+                <button
+                  type="button"
+                  className="sc-file-row__remove"
+                  onClick={() => handleRemoveUploadedFile(field.id, i)}
+                  title="Remove from view"
+                >
+                  <X size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {queued.length > 0 && (
+          <ul className="sc-file-list">
+            {queued.map((file, i) => (
+              <li key={`q-${i}`} className="sc-file-row sc-file-row--queued">
+                <div className="sc-file-thumb sc-file-thumb--icon"><Icon size={18} /></div>
+                <div className="sc-file-row__meta">
+                  <span className="sc-file-row__name">{file.name}</span>
+                  <span className="sc-file-row__size">{formatBytes(file.size)}</span>
+                </div>
+                <span className="sc-file-row__status">Queued</span>
+                <button
+                  type="button"
+                  className="sc-file-row__remove"
+                  onClick={() => handleRemoveQueuedFile(field.id, i)}
+                  title="Remove"
+                >
+                  <X size={14} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    );
+  };
+
   const handleSubmission = async (e) => {
     e.preventDefault();
     setError('');
@@ -113,18 +297,58 @@ export default function SingleContestPage({ params }) {
       value: formAnswers[field.id] !== undefined ? formAnswers[field.id] : '',
     }));
 
+    // Pre-flight validation: count + size for any newly-added files
+    for (const f of customFields) {
+      if (f.type !== 'image' && f.type !== 'video' && f.type !== 'file') continue;
+      const queued = filesByField[f.id] || [];
+      const existing = uploadedFiles[f.id] || [];
+      const totalCount = queued.length + existing.length;
+      if (totalCount > (f.maxCount || 999)) {
+        setError(`Too many files for "${f.label}". Limit is ${f.maxCount}.`);
+        return;
+      }
+      for (const file of queued) {
+        const maxMB = f.maxSizeMB || 25;
+        if (file.size > maxMB * 1024 * 1024) {
+          setError(`"${file.name}" exceeds ${maxMB} MB limit for "${f.label}".`);
+          return;
+        }
+        if (f.type === 'image' && !file.type.startsWith('image/')) {
+          setError(`"${file.name}" is not an image.`);
+          return;
+        }
+        if (f.type === 'video' && !file.type.startsWith('video/')) {
+          setError(`"${file.name}" is not a video.`);
+          return;
+        }
+      }
+    }
+
+    // Build multipart form
+    const formData = new FormData();
+    formData.append('title', subTitle || (customAnswers.find(a => a.value && typeof a.value === 'string')?.value) || 'Contest Entry');
+    formData.append('description', subDesc);
+    formData.append('fileUrl', subFileUrl);
+    formData.append('customAnswers', JSON.stringify(customAnswers));
+    formData.append('workLinks', JSON.stringify(subLinks.filter(l => l.url && l.url.trim())));
+
+    // Append each newly-queued file with parallel fieldId/label/type metadata
+    for (const f of customFields) {
+      if (f.type !== 'image' && f.type !== 'video' && f.type !== 'file') continue;
+      const queued = filesByField[f.id] || [];
+      queued.forEach(file => {
+        formData.append('files', file);
+        formData.append('fileFieldIds', f.id);
+        formData.append('fileFieldLabels', f.label);
+        formData.append('fileFieldTypes', f.type);
+      });
+    }
+
     setSubmitting(true);
     try {
       const res = await fetch(`/api/contests/${slug}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: subTitle || (customAnswers.find(a => a.value && typeof a.value === 'string')?.value) || 'Contest Entry',
-          description: subDesc,
-          fileUrl: subFileUrl,
-          workLinks: subLinks.filter(l => l.url && l.url.trim()),
-          customAnswers,
-        }),
+        body: formData,
       });
 
       const data = await res.json();
@@ -133,6 +357,17 @@ export default function SingleContestPage({ params }) {
       }
 
       setUserSubmission(data.submission);
+
+      // Clear local queues (they're now on the server) and refresh uploadedFiles map
+      const grouped = {};
+      (data.submission.files || []).forEach(f => {
+        if (!grouped[f.fieldId]) grouped[f.fieldId] = [];
+        grouped[f.fieldId].push(f);
+      });
+      setUploadedFiles(grouped);
+      setFilesByField({});
+      setFileErrors({});
+
       setSuccessMsg('Your contest entry has been submitted successfully!');
     } catch (err) {
       setError(err.message);
@@ -151,6 +386,9 @@ export default function SingleContestPage({ params }) {
       setSubDesc('');
       setSubFileUrl('');
       setSubLinks([{ title: 'Project / GitHub Link', url: '' }]);
+      setFilesByField({});
+      setUploadedFiles({});
+      setFileErrors({});
       setSuccessMsg('Submission withdrawn.');
     } catch (err) {
       setError(err.message);
@@ -185,7 +423,10 @@ export default function SingleContestPage({ params }) {
     );
   }
 
-  if (error || !template) {
+  // Only treat the page as "Contest Not Found" when there is genuinely no
+  // template loaded (initial fetch failed). Submit / mutation errors should
+  // stay inline above the form, not boot the user to the not-found screen.
+  if (!template && !loading) {
     return (
       <div className="single-contest-page">
         <BackButton href="/contests" label="Back to Contests" />
@@ -415,38 +656,11 @@ export default function SingleContestPage({ params }) {
                             />
                           )}
 
-                          {field.type === 'image' && (
-                            <input
-                              type="url"
-                              className="sc-input"
-                              placeholder="https://... (Image URL or Upload)"
-                              value={val}
-                              onChange={e => setFormAnswers({ ...formAnswers, [field.id]: e.target.value })}
-                              required={field.required}
-                            />
-                          )}
+                          {field.type === 'image' && renderFileField(field)}
 
-                          {field.type === 'video' && (
-                            <input
-                              type="url"
-                              className="sc-input"
-                              placeholder="https://... (Video Demo Link or Cloud Drive)"
-                              value={val}
-                              onChange={e => setFormAnswers({ ...formAnswers, [field.id]: e.target.value })}
-                              required={field.required}
-                            />
-                          )}
+                          {field.type === 'video' && renderFileField(field)}
 
-                          {field.type === 'file' && (
-                            <input
-                              type="url"
-                              className="sc-input"
-                              placeholder="https://... (File Attachment URL)"
-                              value={val}
-                              onChange={e => setFormAnswers({ ...formAnswers, [field.id]: e.target.value })}
-                              required={field.required}
-                            />
-                          )}
+                          {field.type === 'file' && renderFileField(field)}
 
                           {field.type === 'select' && (
                             <select
@@ -509,7 +723,7 @@ export default function SingleContestPage({ params }) {
                         Withdraw Submission
                       </button>
                     )}
-                    <button type="submit" className="sc-btn sc-btn--primary" disabled={submitting || !subTitle.trim()}>
+                    <button type="submit" className="sc-btn sc-btn--primary" disabled={submitting}>
                       {submitting ? 'Submitting...' : userSubmission ? 'Update Entry' : 'Submit Entry'}
                     </button>
                   </div>
