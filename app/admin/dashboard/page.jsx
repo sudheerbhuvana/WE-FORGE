@@ -782,7 +782,8 @@ const AdminDashboard = () => {
 
   if (loading) return <div className="admin-dash"><div className="admin-dash__loading">Loading...</div></div>;
 
-  if (!isAdminAuthed) return (
+  if (!isAdminAuthed) {
+    return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
       <div style={{ width: 400, padding: '48px 40px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 24, display: 'flex', flexDirection: 'column', gap: 24, alignItems: 'center' }}>
         <Shield size={44} style={{ color: '#fff' }} />
@@ -814,6 +815,7 @@ const AdminDashboard = () => {
           </button>
         )}
       </div>
+    </div>
     );
   }
 
