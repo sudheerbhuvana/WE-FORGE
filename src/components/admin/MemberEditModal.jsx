@@ -397,7 +397,6 @@ export default function MemberEditModal({
                                     value={form.name}
                                     onBlur={() => setTouched(t => ({ ...t, name: true }))}
                                     onChange={(e) => setField('name', e.target.value)}
-                                    placeholder="Praveen Kanaparthy"
                                 />
                             </Field>
 
@@ -415,7 +414,6 @@ export default function MemberEditModal({
                                     value={form.rollNumber}
                                     onBlur={() => setTouched(t => ({ ...t, rollNumber: true }))}
                                     onChange={(e) => setField('rollNumber', e.target.value.replace(/\D/g, ''))}
-                                    placeholder="2400080202"
                                 />
                             </Field>
 

@@ -410,20 +410,29 @@
   gap: 6px;
   padding: 10px 20px;
   border-radius: 10px;
-  border: none;
-  background: rgba(125, 190, 255, 0.15);
-  color: rgba(125, 190, 255, 0.9);
+  border: 1px solid rgba(125, 190, 255, 0.2);
+  background: rgba(125, 190, 255, 0.1);
+  color: #7dbeff;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   white-space: nowrap;
   outline: none;
   -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(8px);
 }
 
 .admin-dash__add-btn:hover {
-  background: rgba(125, 190, 255, 0.25);
+  background: rgba(125, 190, 255, 0.2);
+  border-color: rgba(125, 190, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(125, 190, 255, 0.2);
+}
+
+.admin-dash__add-btn:active {
+  transform: translateY(0);
 }
 
 /* Error */
@@ -723,6 +732,12 @@ tr[draggable]:active {
   font-weight: 700;
 }
 
+.admin-dash__modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .admin-dash__close-btn {
   padding: 4px;
   border: none;
@@ -869,32 +884,43 @@ select option {
   padding: 10px 20px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: transparent;
-  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.6);
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .admin-dash__cancel-btn:hover {
   color: #fff;
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .admin-dash__save-btn {
   padding: 10px 24px;
   border-radius: 10px;
-  border: none;
-  background: rgba(125, 190, 255, 0.2);
-  color: rgba(125, 190, 255, 0.95);
+  border: 1px solid rgba(125, 190, 255, 0.25);
+  background: rgba(125, 190, 255, 0.15);
+  backdrop-filter: blur(8px);
+  color: #7dbeff;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 12px rgba(125, 190, 255, 0.1);
 }
 
 .admin-dash__save-btn:hover:not(:disabled) {
-  background: rgba(125, 190, 255, 0.3);
+  background: rgba(125, 190, 255, 0.25);
+  border-color: rgba(125, 190, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(125, 190, 255, 0.2);
+}
+
+.admin-dash__save-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .admin-dash__save-btn:disabled {
@@ -1111,26 +1137,35 @@ select option {
 .admin-media__btn {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .admin-media__btn:hover {
-  background: #7dbfff;
-  color: #000;
-  border-color: #7dbfff;
+  background: rgba(125, 191, 255, 0.2);
+  color: #7dbfff;
+  border-color: rgba(125, 191, 255, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.admin-media__btn:active {
+  transform: translateY(0);
 }
 
 .admin-media__btn--danger:hover {
-  background: #ef4444;
-  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
 }
 
 .admin-media__info {
@@ -2116,19 +2151,30 @@ select option {
 .admin-media__bulkbar-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 10px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.8);
-  font-size: 0.78rem;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
-  font-family: inherit;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
-.admin-media__bulkbar-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.admin-media__bulkbar-btn:hover { 
+  background: rgba(125, 190, 255, 0.15); 
+  border-color: rgba(125, 190, 255, 0.3);
+  color: #7dbfff;
+  transform: translateY(-1px);
+}
+.admin-media__bulkbar-btn:active {
+  transform: translateY(0);
+}
 .admin-media__bulkbar-btn--danger { color: #ff8585; border-color: rgba(255, 80, 80, 0.2); }
-.admin-media__bulkbar-btn--danger:hover { background: rgba(255, 80, 80, 0.1); }
+.admin-media__bulkbar-btn--danger:hover { background: rgba(255, 80, 80, 0.15); color: #ff8585; border-color: rgba(255, 80, 80, 0.3); }
 
 .admin-media__toast {
   margin-top: 12px;

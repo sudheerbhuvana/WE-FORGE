@@ -1,0 +1,26 @@
+--- app/[memberId]/page.jsx
++++ app/[memberId]/page.jsx
+@@ -167,7 +167,16 @@
+                 {/* ════════════ LEFT RAIL — avatar + role + quick contact ════════════ */}
+                 <aside className="profile-rail">
+                     <div className="profile-rail__avatar" aria-hidden="true" style={{ overflow: 'visible', background: 'transparent', border: 'none' }}>
++                        <style>{`
++                            .member-profile-card .pc-card {
++                                height: 100% !important;
++                                max-height: none !important;
++                                width: 100% !important;
++                                aspect-ratio: 1 / 1 !important;
++                                border-radius: 18px !important;
++                            }
++                        `}</style>
+                         <ProfileCard
+                             name={member.name}
+                             title={displayRole}
+@@ -183,7 +192,7 @@
+                             }}
+                             behindGlowEnabled={false}
+                             innerGradient={`linear-gradient(145deg, ${accent}8c 0%, ${accent}44 100%)`}
+-                            className="w-full h-full"
++                            className="member-profile-card"
+                         />
+                     </div>

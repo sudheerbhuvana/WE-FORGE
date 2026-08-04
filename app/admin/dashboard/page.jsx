@@ -150,6 +150,8 @@ const AdminDashboard = () => {
   const [media, setMedia] = useState([]);
   const [mediaLoading, setMediaLoading] = useState(false);
   const [showMediaUpload, setShowMediaUpload] = useState(false);
+  const [showFolderCreateModal, setShowFolderCreateModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
   const [mediaUploading, setMediaUploading] = useState(false);
   const [mediaEventTag, setMediaEventTag] = useState('General');
   const [mediaUploadTitle, setMediaUploadTitle] = useState('');
@@ -169,6 +171,8 @@ const AdminDashboard = () => {
   const [lightboxMedia, setLightboxMedia] = useState(null);    // view modal
   const [moveTarget, setMoveTarget] = useState(null);          // { ids, current } | null
   const [shareToast, setShareToast] = useState('');
+  const [crop, setCrop] = useState();
+  const [completedCrop, setCompletedCrop] = useState(null);
 
   // Event Access & Registrations
   const [showRegsModal, setShowRegsModal] = useState(false);
@@ -1424,6 +1428,16 @@ const AdminDashboard = () => {
               {f}
             </button>
           ))}
+          <button
+            className="admin-media__folder-chip"
+            style={{ borderStyle: 'dashed', background: 'transparent' }}
+            onClick={() => {
+              setNewFolderName('');
+              setShowFolderCreateModal(true);
+            }}
+          >
+            <Plus size={12} /> New Folder
+          </button>
         </div>
 
         {/* Tags chip row — clickable, filters by tag */}
@@ -1633,6 +1647,62 @@ const AdminDashboard = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* Create Folder Modal */}
+        {showFolderCreateModal && (
+          <div className="admin-dash__overlay">
+            <div className="admin-dash__modal" style={{ maxWidth: '400px' }}>
+              <div className="admin-dash__modal-header">
+                <h2>Create Folder</h2>
+                <button className="admin-dash__close-btn" onClick={() => setShowFolderCreateModal(false)}>
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="admin-dash__modal-body">
+                <div className="admin-dash__field">
+                  <label>Folder Name</label>
+                  <input
+                    type="text"
+                    value={newFolderName}
+                    onChange={(e) => setNewFolderName(e.target.value)}
+                    placeholder="e.g. Bootcamp 2025"
+                    className="admin-dash__input"
+                    autoFocus
+                  />
+                </div>
+                <div className="admin-dash__modal-actions">
+                  <button className="admin-dash__cancel-btn" onClick={() => setShowFolderCreateModal(false)}>
+                    Cancel
+                  </button>
+                  <button
+                    className="admin-dash__save-btn"
+                    disabled={!newFolderName.trim()}
+                    onClick={async () => {
+                      const name = newFolderName.trim();
+                      if (!name) return;
+                      try {
+                        const res = await fetch('/api/media/folders', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ name }),
+                        });
+                        if (res.ok) {
+                          await fetchMediaFolders();
+                          setShowFolderCreateModal(false);
+                          setMediaFilterTag(name);
+                        }
+                      } catch (e) {
+                        console.error('Failed to create folder:', e);
+                      }
+                    }}
+                  >
+                    Create
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

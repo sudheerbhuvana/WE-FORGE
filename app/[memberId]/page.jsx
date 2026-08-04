@@ -9,6 +9,7 @@ import {
     GraduationCap, School, Trophy, BadgeCheck,
 } from 'lucide-react';
 import BackButton from '../../src/components/BackButton';
+import ProfileCard from '../../src/components/ProfileCard';
 import { getAvatarUrl } from '../../src/services/memberService';
 import '../../src/styles/profile.css';
 
@@ -167,21 +168,40 @@ const ProfilePage = () => {
             <div className="profile-layout">
                 {/* ════════════ LEFT RAIL — avatar + role + quick contact ════════════ */}
                 <aside className="profile-rail">
-                    <div className="profile-rail__avatar" aria-hidden="true">
-                        {avatarUrl ? (
-                            <img
-                                src={avatarUrl}
-                                alt=""
-                                width={240}
-                                height={240}
-                                loading="lazy"
-                                className="profile-rail__avatar-img"
-                            />
-                        ) : (
-                            <div className="profile-rail__avatar-placeholder">
-                                {(member.name || '?').slice(0, 1).toUpperCase()}
-                            </div>
-                        )}
+                    <div className="profile-rail__avatar" aria-hidden="true" style={{ overflow: 'visible', background: 'transparent', border: 'none', maxWidth: '320px', aspectRatio: 'auto', margin: '0 0 16px 0' }}>
+                        <style>{`
+                            .member-profile-card {
+                                width: 100%;
+                                height: 100%;
+                            }
+                            .member-profile-card .pc-card {
+                                height: auto !important;
+                                width: 100% !important;
+                                max-height: none !important;
+                                aspect-ratio: 0.75 !important;
+                                border-radius: 20px !important;
+                            }
+                        `}</style>
+                        <ProfileCard
+                            name={member.name}
+                            title={displayRole}
+                            handle={member.rollNumber || member.id}
+                            status={member.status || 'Online'}
+                            contactText="Contact"
+                            avatarUrl={avatarUrl}
+                            showUserInfo={true}
+                            enableTilt={true}
+                            onContactClick={() => {
+                                if (member.telegram) {
+                                    window.open(`https://t.me/${member.telegram.replace('@', '')}`, '_blank', 'noopener,noreferrer');
+                                } else if (member.email) {
+                                    window.open(`mailto:${member.email}`);
+                                }
+                            }}
+                            behindGlowEnabled={false}
+                            innerGradient={`linear-gradient(145deg, ${accent}8c 0%, ${accent}44 100%)`}
+                            className="member-profile-card"
+                        />
                     </div>
 
                     {/* Identity header — name + tagline only. Role/status pills dropped. */}

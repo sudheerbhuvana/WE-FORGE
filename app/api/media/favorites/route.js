@@ -1,15 +1,10 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Media from '@/lib/models/Media';
+import { requirePermission, canManageMedia } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * GET /api/media/favorites
- *
- * Public. Returns only favorited media, sorted newest first.
- * Capped at 24 by default.
- */
 export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const limit = Math.min(Number(searchParams.get('limit')) || 24, 48);
@@ -26,6 +21,29 @@ export async function GET(req) {
             tags: Array.isArray(m.tags) ? m.tags : [],
         }));
         return NextResponse.json(out);
+    } catch (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
+export async function PATCH(req) {
+    const { response } = await requirePermission(canManageMedia);
+    if (response) return response;
+
+    try {
+        await connectDB();
+        const { ids, favorite } = await req.json();
+
+        if (!Array.isArray(ids) || typeof favorite !== 'boolean') {
+            return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+        }
+
+        await Media.updateMany(
+            { _id: { $in: ids } },
+            { $set: { favorite } }
+        );
+
+        return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
