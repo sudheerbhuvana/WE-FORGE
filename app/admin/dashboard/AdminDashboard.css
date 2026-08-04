@@ -2842,3 +2842,292 @@ select option {
     max-height: 220px;
   }
 }
+
+/* ── Recruitments Management ──────────────────────────────── */
+.admin-rec-settings-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.admin-rec-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 16px;
+}
+
+.admin-rec-status-badge-row p {
+  margin: 4px 0 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.admin-rec-status-badge-row code {
+  color: #71C4FF;
+}
+
+.admin-rec-status-indicator {
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  padding: 6px 14px;
+  border-radius: 20px;
+}
+
+.admin-rec-status-indicator--open {
+  background: rgba(76, 175, 129, 0.15);
+  color: #4caf81;
+  border: 1px solid rgba(76, 175, 129, 0.3);
+}
+
+.admin-rec-status-indicator--closed {
+  background: rgba(255, 180, 77, 0.15);
+  color: #ffb44d;
+  border: 1px solid rgba(255, 180, 77, 0.3);
+}
+
+.admin-rec-toggle-btn {
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(255, 180, 77, 0.4);
+  background: rgba(255, 180, 77, 0.15);
+  color: #ffb44d;
+  transition: all 0.2s;
+}
+
+.admin-rec-toggle-btn--open {
+  border-color: rgba(255, 100, 100, 0.4);
+  background: rgba(255, 100, 100, 0.15);
+  color: #ff7070;
+}
+
+.admin-rec-settings-footer {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.admin-rec-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.admin-rec-stat-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-rec-stat-card__val {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.admin-rec-stat-card__lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.06em;
+}
+
+.admin-rec-stat-card--pending .admin-rec-stat-card__val { color: #ffb44d; }
+.admin-rec-stat-card--shortlisted .admin-rec-stat-card__val { color: #71C4FF; }
+.admin-rec-stat-card--accepted .admin-rec-stat-card__val { color: #4caf81; }
+.admin-rec-stat-card--rejected .admin-rec-stat-card__val { color: #ff7070; }
+
+.admin-rec-year-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: rgba(113, 196, 255, 0.12);
+  color: #71C4FF;
+  border: 1px solid rgba(113, 196, 255, 0.3);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.admin-rec-domain-tag {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.admin-rec-domain-tag--sec {
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.admin-rec-links-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-rec-link-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #71C4FF;
+  font-size: 0.72rem;
+  text-decoration: none;
+}
+
+.admin-rec-link-pill:hover {
+  background: rgba(113, 196, 255, 0.15);
+}
+
+.admin-rec-status-select {
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: #111;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  cursor: pointer;
+}
+
+.admin-rec-status-select--pending { border-color: rgba(255, 180, 77, 0.5); color: #ffb44d; }
+.admin-rec-status-select--shortlisted { border-color: rgba(113, 196, 255, 0.5); color: #71C4FF; }
+.admin-rec-status-select--accepted { border-color: rgba(76, 175, 129, 0.5); color: #4caf81; }
+.admin-rec-status-select--rejected { border-color: rgba(255, 100, 100, 0.5); color: #ff7070; }
+
+/* Modal details */
+.admin-rec-app-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-rec-app-detail-header h3 {
+  margin: 0 0 4px;
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.admin-rec-app-detail-header p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.admin-rec-app-domain-pills {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.admin-rec-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.admin-rec-motivation-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 14px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  white-space: pre-wrap;
+}
+
+.admin-rec-modal-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-rec-modal-link-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #71C4FF;
+  font-size: 0.85rem;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.admin-rec-modal-link-item:hover {
+  background: rgba(113, 196, 255, 0.1);
+}
+
+.admin-rec-modal-status-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-rec-modal-status-btns {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-rec-status-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid rgba(113, 196, 255, 0.3);
+  background: rgba(113, 196, 255, 0.1);
+  color: #71C4FF;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.admin-rec-status-btn--acc {
+  border-color: rgba(76, 175, 129, 0.3);
+  background: rgba(76, 175, 129, 0.1);
+  color: #4caf81;
+}
+
+.admin-rec-status-btn--rej {
+  border-color: rgba(255, 100, 100, 0.3);
+  background: rgba(255, 100, 100, 0.1);
+  color: #ff7070;
+}
+
+.admin-rec-status-btn--reset {
+  border-color: rgba(255, 180, 77, 0.3);
+  background: rgba(255, 180, 77, 0.1);
+  color: #ffb44d;
+}
+
+.admin-rec-status-btn.active {
+  box-shadow: 0 0 0 2px #fff;
+}

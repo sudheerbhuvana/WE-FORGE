@@ -32,12 +32,46 @@ A centralized control panel for managing the entire platform. Protected by role-
 - **Domains (`/domains`)**: Visual breakdown of the club's departments (Tech, Media, Content, Operations, Speaking) using GSAP ScrollTrigger for drop-in animations.
 - **Events (`/events`)**: Public-facing event listings.
 
-### 3. Core Database Models (`lib/models/`)
-- `Member.js`: Stores user details, roles, and slugs.
-- `Media.js`: Tracks S3 keys, URLs, types (image/video), folders, and favorites.
-- `Folder.js`: Stores explicitly created media folders.
-- `Event.js`: Event metadata, dates, and poster URLs.
-- `Project.js` & `Notice.js`: Content management models.
+### 4. Recruitments System ("Join Us" - `/join` & `/join-us`)
+- **Candidate Application Workflow**:
+  - Requires Microsoft authentication (`@kluniversity.in`).
+  - Auto-extracts applicant year from student roll number (e.g. `24...` $\rightarrow$ `Y24`, `25...` $\rightarrow$ `Y25`).
+  - Dynamic domain selection: Applicants pick a **Primary Domain** (required) and optional **Secondary Domain**.
+  - Detailed motivation statement ("Why this domain?").
+  - Work Links manager allowing applicants to attach portfolio links (GitHub, Figma, Behance, Drive, etc.).
+  - Real-time application status tracking (`Pending Review`, `Shortlisted`, `Accepted`, `Rejected`).
+- **Admin Recruitment Management**:
+  - **Drive Control**: Toggle recruitment status (`Open` vs `Closed`) and customize page hero banner image/copy.
+  - **Review Dashboard**: Filter applicants by Domain, Year (Y24, Y25...), and Status (`pending`, `shortlisted`, `accepted`, `rejected`).
+  - **Candidate Detail Modal**: Review motivation essays, click portfolio links, update status, and write internal admin review notes.
+  - **CSV Export**: Export all applicant data for offline committee review.
+
+### 5. Contest System (`/contests` & `/contests/[slug]`)
+- **Template vs Cycle Architecture**:
+  - `ContestTemplate`: Stores permanent metadata, rules, prize info, and schedule rules (One-Time, Immediate with Deadline, Weekly Recurring, Monthly Recurring).
+  - `ContestCycle`: Generated per recurrence (e.g. *Week 31*, *August 2026*). Holds participant entries, submission counts, deadline status, and winner podiums.
+  - `ContestSubmission`: Tracks candidate entries, work links (GitHub, Figma, Live Link), score, and judge remarks.
+- **Permanent Contest URLs**:
+  - The public route `/contests/[slug]` (e.g. `/contests/photography`) **never changes** across recurring cycles.
+  - Automatic `contestEngine.js` resolves the active cycle or lets users browse historical cycle archives via `?cycle=N`.
+- **Multi-Tab Experience**:
+  - `Overview`: Live countdown timer (*Starts In* / *Ends In*), prize details, eligibility, rules.
+  - `Submit`: Participant entry submission form with work link manager and withdrawal options.
+  - `Rules`: Contest guidelines.
+  - `Winners`: Podium showcase for 🥇 1st Place, 🥈 2nd Place, 🥉 3rd Place, and Special Mentions with judge notes.
+  - `History`: Interactive cycle archive timeline.
+- **Admin Contest Studio**:
+  - Template creator/editor, pause/resume toggle, submissions & judging inspector, and Declare Winners studio.
+
+---
+
+## 🛠 Recent Changelog & System Updates
+- **Admin Dashboard Modularization**: Refactored the monolithic `app/admin/dashboard/page.jsx` file into 7 modular section components (`MembersSection.jsx`, `EventsSection.jsx`, `ContestsSection.jsx`, `ProjectsSection.jsx`, `NoticesSection.jsx`, `MediaSection.jsx`, `RecruitmentsSection.jsx`) inside `src/components/admin/`.
+- **Contest Module**: Added `ContestTemplate`, `ContestCycle`, and `ContestSubmission` models, automated recurrence engine (`contestEngine.js`), `/api/contests/*` API endpoints, permanent URL routing at `/contests/[slug]`, 5-tab public UI, and Admin Dashboard Contest Control Center.
+- **Recruitments Feature**: Added `/join` candidate application workflow, `RecruitmentSettings` & `RecruitmentApplication` models, `/api/recruitments/*` API routes, and Admin Dashboard recruitments tab.
+- **Folder Management**: Added explicit `Folder` model, multi-file queue-based upload modal with per-file status & remove controls, and folder select dropdowns.
+- **Favorites & Caching**: Added `revalidatePath('/')` and optimistic UI updates for favorite toggling.
+
 
 ---
 

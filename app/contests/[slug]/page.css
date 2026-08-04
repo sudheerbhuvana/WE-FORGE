@@ -1,0 +1,609 @@
+/* ── Single Contest Page Styles ─────────────────────────── */
+.single-contest-page {
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  font-family: inherit;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.single-contest__loading,
+.single-contest__error-box {
+  min-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  color: rgba(255, 255, 255, 0.6);
+  text-align: center;
+}
+
+.single-contest__spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #f59e0b;
+  border-radius: 50%;
+  animation: scSpin 0.8s linear infinite;
+}
+
+@keyframes scSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Hero Banner ─────────────────────────────────────── */
+.sc-hero {
+  position: relative;
+  padding: 80px 24px 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.sc-hero__banner-wrap {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: 300px;
+  background: #0d0e15;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 24px;
+}
+
+.sc-hero__banner-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sc-hero__banner-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.15);
+}
+
+.sc-hero__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.92) 100%);
+}
+
+.sc-hero__top-row {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sc-type-badge {
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
+
+.sc-status-pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
+.sc-status-pill--active { background: rgba(76, 175, 129, 0.2); border: 1px solid rgba(76, 175, 129, 0.4); color: #4caf81; }
+.sc-status-pill--upcoming { background: rgba(113, 196, 255, 0.2); border: 1px solid rgba(113, 196, 255, 0.4); color: #71C4FF; }
+.sc-status-pill--results_published { background: rgba(245, 158, 11, 0.2); border: 1px solid rgba(245, 158, 11, 0.4); color: #f59e0b; }
+.sc-status-pill--submission_closed,
+.sc-status-pill--judging { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: rgba(255, 255, 255, 0.7); }
+
+.sc-hero__content {
+  position: relative;
+  z-index: 2;
+  margin-top: 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sc-hero__title {
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.sc-hero__desc {
+  font-size: 0.98rem;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 720px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.sc-hero__meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.sc-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sc-meta-item--highlight {
+  background: rgba(113, 196, 255, 0.15);
+  border-color: rgba(113, 196, 255, 0.35);
+  color: #71C4FF;
+  font-weight: 700;
+}
+
+.sc-historical-notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: #ffb44d;
+  background: rgba(255, 180, 77, 0.1);
+  border: 1px solid rgba(255, 180, 77, 0.3);
+  padding: 8px 14px;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+.sc-historical-notice button {
+  background: none;
+  border: none;
+  color: #fff;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ── Container & Tabs ─────────────────────────────────── */
+.sc-container {
+  max-width: 1100px;
+  margin: 0 auto 80px;
+  padding: 0 24px;
+}
+
+.sc-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 32px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.sc-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.sc-tab:hover {
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.sc-tab--active {
+  color: #f59e0b;
+  border-bottom-color: #f59e0b;
+}
+
+.sc-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f59e0b;
+}
+
+/* ── Cards & Grid ─────────────────────────────────────── */
+.sc-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sc-grid-two {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 24px;
+}
+
+.sc-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 28px;
+}
+
+.sc-card--center {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 500px;
+  margin: 40px auto;
+}
+
+.sc-card h2 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0 0 12px;
+}
+
+.sc-subtext {
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: -8px 0 20px;
+}
+
+.sc-text-p {
+  font-size: 0.95rem;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.6;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Prize Box */
+.sc-prize-card {
+  margin-top: 24px;
+  padding: 20px;
+  background: rgba(245, 158, 11, 0.06);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 16px;
+}
+
+.sc-prize-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #f59e0b;
+  margin-bottom: 8px;
+}
+
+.sc-prize-header h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Info List */
+.sc-info-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+
+.sc-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.88rem;
+}
+
+.sc-info-lbl {
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.sc-action-cta {
+  margin-top: 20px;
+}
+
+/* ── Forms ────────────────────────────────────────────── */
+.sc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 16px;
+}
+
+.sc-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-field label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.sc-req { color: #ff6b6b; }
+
+.sc-input,
+.sc-textarea {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 12px 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.sc-input:focus,
+.sc-textarea:focus {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.05);
+}
+
+.sc-links-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sc-link-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sc-input--title { flex: 1; }
+.sc-input--url { flex: 2; }
+
+.sc-link-remove {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 100, 100, 0.25);
+  background: rgba(255, 100, 100, 0.08);
+  color: #ff7070;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.sc-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.sc-submitted-box {
+  padding: 16px;
+  background: rgba(76, 175, 129, 0.08);
+  border: 1px solid rgba(76, 175, 129, 0.25);
+  border-radius: 14px;
+  margin-bottom: 20px;
+}
+
+.sc-submitted-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.sc-submitted-header h4 { margin: 0 0 2px; font-size: 0.98rem; }
+.sc-submitted-header p { margin: 0; font-size: 0.78rem; color: rgba(255,255,255,0.4); }
+
+/* ── Buttons ─────────────────────────────────────────── */
+.sc-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+}
+
+.sc-btn--primary {
+  background: #f59e0b;
+  color: #000;
+}
+
+.sc-btn--primary:hover {
+  background: #ffb44d;
+  transform: translateY(-1px);
+}
+
+.sc-btn--ghost {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.sc-btn--danger {
+  background: rgba(255, 100, 100, 0.15);
+  border: 1px solid rgba(255, 100, 100, 0.3);
+  color: #ff7070;
+}
+
+/* ── Winners Podium ───────────────────────────────────── */
+.sc-winners-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sc-announcement-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 20px;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 18px;
+  color: #f59e0b;
+}
+
+.sc-announcement-card h3 { margin: 0 0 4px; font-size: 1.05rem; }
+.sc-announcement-card p { margin: 0; font-size: 0.9rem; color: rgba(255,255,255,0.8); line-height: 1.5; }
+
+.sc-podium-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.sc-podium-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-podium-card--rank-1 {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.sc-podium-card__rank-badge {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+.sc-podium-card__name {
+  font-size: 1.2rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.sc-podium-card__sub {
+  font-size: 0.82rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0;
+}
+
+.sc-podium-card__award {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #71C4FF;
+  margin-top: 4px;
+}
+
+.sc-podium-card__notes {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+  font-style: italic;
+  margin: 8px 0 0;
+}
+
+/* ── History List ─────────────────────────────────────── */
+.sc-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.sc-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sc-history-row:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+.sc-history-row--active {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.sc-history-row__info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sc-history-row__info h4 { margin: 0 0 2px; font-size: 0.98rem; }
+.sc-history-row__info p { margin: 0; font-size: 0.8rem; color: rgba(255,255,255,0.45); }
+
+.sc-history-row__right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.sc-rules-box,
+.sc-guidelines-box {
+  line-height: 1.7;
+  color: rgba(255, 255, 255, 0.75);
+  white-space: pre-wrap;
+}
+
+.sc-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  font-size: 0.9rem;
+}
+
+.sc-alert--error { background: rgba(255,100,100,0.1); border: 1px solid rgba(255,100,100,0.3); color: #ff8080; }
+.sc-alert--success { background: rgba(76,175,129,0.1); border: 1px solid rgba(76,175,129,0.3); color: #5cdb95; }
+
+@media (max-width: 768px) {
+  .sc-grid-two { grid-template-columns: 1fr; }
+  .sc-link-row { flex-direction: column; }
+  .sc-input--title, .sc-input--url { width: 100%; }
+}

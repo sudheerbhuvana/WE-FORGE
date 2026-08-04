@@ -32,15 +32,35 @@ body {
   min-height: 100vh;
 }
 
-/* Global Navbar Offset for non-home pages */
+/* Global Sticky Footer Flex Layout for all page wrappers */
 .team-page, 
 .events-page, 
 .projects-page, 
 .faq-page, 
 .notices-page,
 .admin-page,
-.profile-page {
+.profile-page,
+.contests-page,
+.contest-detail-page,
+.join-page {
   padding-top: var(--navbar-offset) !important;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+.team-page > main,
+.events-page > main,
+.projects-page > main,
+.faq-page > main,
+.notices-page > main,
+.profile-page > main,
+.contests-page > main,
+.contest-detail-page > main,
+.join-page > main,
+.join-container {
+  flex: 1 0 auto;
 }
 
 .hero-spacer {

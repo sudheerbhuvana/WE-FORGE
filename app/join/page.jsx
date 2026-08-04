@@ -163,70 +163,94 @@ export default function JoinPage() {
     <div className="join-page">
       <BackButton href="/" label="Back to Home" />
 
-      {/* Hero Section */}
-      <section className="join-hero">
-        <div className="join-hero__glow" />
-        <div className="join-hero__content">
-          <div className="join-hero__badge">
-            <Sparkles size={14} className="join-hero__badge-icon" />
-            <span>KLFORGE RECRUITMENTS</span>
-          </div>
-          <h1 className="join-hero__title">{settings.title || 'Join KLFORGE'}</h1>
-          <p className="join-hero__subtitle">{settings.subtitle || 'Shape the future of technology, design, media, and leadership.'}</p>
-          {settings.description && (
-            <p className="join-hero__desc">{settings.description}</p>
-          )}
-
-          {settings.heroImageUrl && (
-            <div className="join-hero__banner-wrap">
-              <img src={settings.heroImageUrl} alt="Recruitment Banner" className="join-hero__banner-img" />
+      <main className="join-main">
+        {/* Hero Section */}
+        <section className="join-hero">
+          <div className="join-hero__glow" />
+          <div className="join-hero__content">
+            <div className="join-hero__badge">
+              <Sparkles size={14} className="join-hero__badge-icon" />
+              <span>KLFORGE RECRUITMENTS</span>
             </div>
-          )}
-        </div>
-      </section>
+            <h1 className="join-hero__title">{settings.title || 'Join KLFORGE'}</h1>
+            <p className="join-hero__subtitle">{settings.subtitle || 'Shape the future of technology, design, media, and leadership.'}</p>
+            {settings.description && (
+              <p className="join-hero__desc">{settings.description}</p>
+            )}
 
-      {/* Main Content Area */}
-      <main className="join-container">
-        {/* Unauthenticated View */}
-        {status !== 'authenticated' && (
-          <div className="join-card join-card--auth">
-            <div className="join-card__icon-badge">
-              <Lock size={28} />
-            </div>
-            <h2>Authentication Required</h2>
-            <p>You must log in with your official KL University Microsoft account (e.g. <code>2400080210@kluniversity.in</code>) to apply for recruitments.</p>
-            <button className="join-btn join-btn--primary" onClick={() => signIn('azure-ad', { callbackUrl: '/join' })}>
-              <UserCheck size={18} /> Sign In with Microsoft
-            </button>
-          </div>
-        )}
-
-        {/* Closed Recruitment View */}
-        {status === 'authenticated' && !settings.isOpen && (
-          <div className="join-card join-card--closed">
-            <div className="join-card__icon-badge join-card__icon-badge--closed">
-              <Clock size={32} />
-            </div>
-            <h2>Recruitments Closed</h2>
-            <p>Recruitments are currently closed. Follow our official announcements and notices for updates on upcoming recruitment drives!</p>
-            
-            {existingApp && (
-              <div className="join-app-status">
-                <h3>Your Last Application</h3>
-                <div className="join-app-status__badge-row">
-                  <span className={`join-status-pill join-status-pill--${existingApp.status}`}>
-                    {existingApp.status.toUpperCase()}
-                  </span>
-                  <span className="join-app-status__meta">Submitted: {new Date(existingApp.submittedAt).toLocaleDateString()}</span>
-                </div>
-                <div className="join-app-status__details">
-                  <p><strong>Primary Domain:</strong> {existingApp.primaryDomain}</p>
-                  {existingApp.secondaryDomain && <p><strong>Secondary Domain:</strong> {existingApp.secondaryDomain}</p>}
-                </div>
+            {settings.heroImageUrl && (
+              <div className="join-hero__banner-wrap">
+                <img src={settings.heroImageUrl} alt="Recruitment Banner" className="join-hero__banner-img" />
               </div>
             )}
           </div>
-        )}
+        </section>
+
+        {/* Main Content Area */}
+        <div className="join-container">
+          {/* Unauthenticated View */}
+          {status !== 'authenticated' && (
+            <div className="join-card join-card--auth">
+              <div className="join-card__icon-badge">
+                <Lock size={28} />
+              </div>
+              <h2>Authentication Required</h2>
+              <p>You must log in with your official KL University Microsoft account (e.g. <code>2400080210@kluniversity.in</code>) to apply for recruitments.</p>
+              <button className="join-btn join-btn--primary" onClick={() => signIn('azure-ad', { callbackUrl: '/join' })}>
+                <UserCheck size={18} /> Sign In with Microsoft
+              </button>
+            </div>
+          )}
+
+          {/* Closed Recruitment View */}
+          {status === 'authenticated' && !settings.isOpen && (
+            <div className="join-card join-card--closed" style={{ padding: '44px 32px' }}>
+              <div className="join-card__icon-badge join-card__icon-badge--closed">
+                <Clock size={32} />
+              </div>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: '8px 0 4px' }}>Recruitments Closed</h2>
+              <p style={{ color: 'rgba(255, 255, 255, 0.65)', maxWidth: '460px', margin: '0 auto 16px', lineHeight: 1.6 }}>
+                Recruitments are currently closed for this phase. Follow our official announcements and notices for updates on upcoming recruitment drives!
+              </p>
+
+              {/* Available Domains Preview */}
+              <div style={{ marginTop: 12, marginBottom: 20 }}>
+                <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>DOMAINS AT KLFORGE</span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 12 }}>
+                  {domains.map((dom) => (
+                    <span key={dom.id} style={{ background: 'rgba(113, 196, 255, 0.08)', border: '1px solid rgba(113, 196, 255, 0.2)', color: '#71C4FF', padding: '6px 14px', borderRadius: 20, fontSize: '0.82rem', fontWeight: 600 }}>
+                      {dom.title}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, marginTop: 8 }}>
+                <button type="button" className="join-btn join-btn--secondary" onClick={() => router.push('/projects')}>
+                  Explore Club Projects <ArrowRight size={14} />
+                </button>
+                <button type="button" className="join-btn join-btn--primary" onClick={() => router.push('/notices')}>
+                  Check Notices
+                </button>
+              </div>
+
+              {existingApp && (
+                <div className="join-app-status" style={{ marginTop: 24, width: '100%', maxWidth: 440, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', padding: 20, borderRadius: 16 }}>
+                  <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 10px', color: '#fff' }}>Your Submission</h3>
+                  <div className="join-app-status__badge-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
+                    <span className={`join-status-pill join-status-pill--${existingApp.status}`}>
+                      {existingApp.status.toUpperCase()}
+                    </span>
+                    <span className="join-app-status__meta" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)' }}>Submitted: {new Date(existingApp.submittedAt).toLocaleDateString()}</span>
+                  </div>
+                  <div className="join-app-status__details" style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)' }}>
+                    <p><strong>Primary Domain:</strong> {existingApp.primaryDomain}</p>
+                    {existingApp.secondaryDomain && <p><strong>Secondary Domain:</strong> {existingApp.secondaryDomain}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
         {/* Active Application Form */}
         {status === 'authenticated' && settings.isOpen && (
@@ -255,40 +279,46 @@ export default function JoinPage() {
               </div>
             </div>
 
-            {/* Existing Submission Status Alert */}
-            {existingApp && (
-              <div className="join-card join-card--existing">
-                <div className="join-existing-header">
-                  <div>
-                    <h4>Application Status</h4>
-                    <p>Submitted on {new Date(existingApp.submittedAt).toLocaleDateString()}</p>
+            {/* Submitted Application View */}
+            {existingApp ? (
+              <div className="join-card join-card--existing" style={{ padding: '36px 28px', textAlign: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                  <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'rgba(92, 219, 149, 0.15)', border: '1px solid rgba(92, 219, 149, 0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#5cdb95' }}>
+                    <CheckCircle2 size={36} />
                   </div>
+                </div>
+
+                <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>Application Submitted!</h3>
+                <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.95rem', maxWidth: 480, margin: '0 auto 24px' }}>
+                  Your recruitment application for <strong>KLFORGE</strong> has been received on {new Date(existingApp.submittedAt).toLocaleDateString()}.
+                </p>
+
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 20px', borderRadius: 20, background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: 28 }}>
+                  <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.4)', fontWeight: 600 }}>STATUS:</span>
                   <span className={`join-status-pill join-status-pill--${existingApp.status}`}>
                     {existingApp.status === 'pending' ? 'UNDER REVIEW' : existingApp.status.toUpperCase()}
                   </span>
                 </div>
-                <p className="join-existing-note">
-                  You have already submitted an application. You can update your domain preferences or motivation text below while recruitments remain open.
-                </p>
-              </div>
-            )}
 
-            {/* Feedback Messages */}
-            {error && (
-              <div className="join-alert join-alert--error">
-                <AlertCircle size={18} />
-                <span>{error}</span>
+                <div className="join-meta-summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, textAlign: 'left', background: 'rgba(0,0,0,0.3)', padding: 20, borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Primary Domain</span>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: '#71C4FF', marginTop: 4 }}>{existingApp.primaryDomain}</div>
+                  </div>
+                  {existingApp.secondaryDomain && (
+                    <div>
+                      <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Secondary Domain</span>
+                      <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>{existingApp.secondaryDomain}</div>
+                    </div>
+                  )}
+                  <div>
+                    <span style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Applicant ID</span>
+                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'rgba(255,255,255,0.85)', marginTop: 4 }}>{actorInfo.rollNumber || 'Student'} ({actorInfo.year})</div>
+                  </div>
+                </div>
               </div>
-            )}
-            {successMsg && (
-              <div className="join-alert join-alert--success">
-                <CheckCircle2 size={18} />
-                <span>{successMsg}</span>
-              </div>
-            )}
-
-            {/* Application Form */}
-            <form onSubmit={handleSubmit} className="join-form">
+            ) : (
+              <form onSubmit={handleSubmit} className="join-form">
 
               {/* Domain Selection */}
               <div className="join-form-section">
@@ -438,8 +468,10 @@ export default function JoinPage() {
               </div>
 
             </form>
-          </div>
-        )}
+          )}
+        </div>
+      )}
+        </div>
       </main>
 
       <Footer />

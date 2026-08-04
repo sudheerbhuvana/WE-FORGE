@@ -90,3 +90,31 @@ export async function PATCH(req) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(req) {
+  const { actor, response } = await requirePermission(() => true);
+  if (response) return response;
+
+  if (!canAccessAdmin(actor)) {
+    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+  }
+
+  try {
+    await connectDB();
+    const { searchParams } = new URL(req.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Application ID is required' }, { status: 400 });
+    }
+
+    const deleted = await RecruitmentApplication.findByIdAndDelete(id);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Application not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: 'Application deleted successfully' });
+  } catch (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
