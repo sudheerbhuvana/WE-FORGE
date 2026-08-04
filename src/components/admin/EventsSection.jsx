@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Eye, Users, Edit3, Trash2, Calendar, CheckCircle, X } from 'lucide-react';
+import { Plus, Eye, Users, Edit3, Trash2, Calendar, CheckCircle, X, ListChecks, ChevronUp, ChevronDown, FileText, Image as ImageIcon, FileVideo, Link2, Hash, Plus as PlusIcon } from 'lucide-react';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import eventService from '../../../src/services/eventService';
@@ -32,8 +32,23 @@ const canManageEventClient = (actor, event) => {
 
 const EMPTY_EVENT_FORM = {
   title: '', description: '', type: '', points: 0, slots: 50, registrationDeadline: '', startTime: '', endTime: '', venue: '',
-  accessType: 'public', allowedDomains: [], allowedMembers: [], roles: ['Participant', 'Volunteer', 'Organizer'], isRegistrationOpen: true
+  accessType: 'public', allowedDomains: [], allowedMembers: [], roles: ['Participant', 'Volunteer', 'Organizer'], isRegistrationOpen: true,
+  customFields: [],
 };
+
+const FIELD_TYPES = [
+  { value: 'text', label: 'Short Text' },
+  { value: 'textarea', label: 'Long Text' },
+  { value: 'number', label: 'Number' },
+  { value: 'email', label: 'Email' },
+  { value: 'link', label: 'Work Links' },
+  { value: 'image', label: 'Image Upload' },
+  { value: 'video', label: 'Video Upload' },
+  { value: 'file', label: 'File Upload' },
+  { value: 'select', label: 'Dropdown' },
+];
+
+const newFieldId = () => `f_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
 export default function EventsSection({ events, adminInfo, refreshData }) {
   const router = useRouter();
@@ -55,10 +70,11 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
   const [selectedEventForRegs, setSelectedEventForRegs] = useState(null);
   const [eventRegs, setEventRegs] = useState([]);
   const [regsLoading, setRegsLoading] = useState(false);
+  const [expandedRegId, setExpandedRegId] = useState(null);
 
   const openAddEvent = () => {
     setEventEditing(null);
-    setEventForm(EMPTY_EVENT_FORM);
+    setEventForm({ ...EMPTY_EVENT_FORM, customFields: [] });
     setEventPosterPreview(null);
     setPosterBlob(null);
     setShowEventForm(true);
@@ -81,6 +97,7 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
       allowedMembers: ev.allowedMembers || [],
       roles: ev.roles || ['Participant', 'Volunteer', 'Organizer'],
       isRegistrationOpen: ev.isRegistrationOpen !== false,
+      customFields: Array.isArray(ev.customFields) ? ev.customFields.map((f) => ({ ...f })) : [],
     });
     setEventPosterPreview(ev.posterUrl || null);
     setPosterBlob(null);
@@ -105,7 +122,9 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
     try {
       const formData = new FormData();
       Object.keys(eventForm).forEach(key => {
-        if (Array.isArray(eventForm[key])) {
+        if (key === 'customFields') {
+          formData.append('customFields', JSON.stringify(eventForm.customFields || []));
+        } else if (Array.isArray(eventForm[key])) {
           formData.append(key, JSON.stringify(eventForm[key]));
         } else {
           formData.append(key, eventForm[key]);
@@ -129,6 +148,39 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
     } finally {
       setEventSaving(false);
     }
+  };
+
+  // ---- Custom form field helpers ----
+  const addCustomField = () => {
+    setEventForm((prev) => ({
+      ...prev,
+      customFields: [
+        ...(prev.customFields || []),
+        { id: newFieldId(), label: 'New Field', type: 'text', required: false, placeholder: '', maxSizeMB: 10, maxCount: 1, options: [] },
+      ],
+    }));
+  };
+
+  const updateCustomField = (idx, patch) => {
+    setEventForm((prev) => {
+      const next = [...(prev.customFields || [])];
+      next[idx] = { ...next[idx], ...patch };
+      return { ...prev, customFields: next };
+    });
+  };
+
+  const removeCustomField = (idx) => {
+    setEventForm((prev) => ({ ...prev, customFields: (prev.customFields || []).filter((_, i) => i !== idx) }));
+  };
+
+  const moveCustomField = (idx, dir) => {
+    setEventForm((prev) => {
+      const next = [...(prev.customFields || [])];
+      const j = idx + dir;
+      if (j < 0 || j >= next.length) return prev;
+      [next[idx], next[j]] = [next[j], next[idx]];
+      return { ...prev, customFields: next };
+    });
   };
 
   const viewRegistrations = async (ev) => {
@@ -268,6 +320,117 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
                 <label>Venue</label>
                 <input value={eventForm.venue} onChange={e => setEventForm({ ...eventForm, venue: e.target.value })} placeholder="e.g. A Block Seminar Hall" />
               </div>
+
+              {/* ===== Custom Registration Form ===== */}
+              <div className="admin-dash__field admin-dash__field--full">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <label style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                    <ListChecks size={14} /> Custom Registration Form
+                  </label>
+                  <button type="button" onClick={addCustomField} className="admin-dash__save-btn" style={{ padding: '6px 12px' }}>
+                    <PlusIcon size={14} /> Add Field
+                  </button>
+                </div>
+                <p style={{ margin: '0 0 10px', color: 'rgba(255,255,255,0.5)', fontSize: '0.78rem' }}>
+                  Optional fields collected from participants during registration — project links, resumes, team details, etc. Leave empty for a basic registration.
+                </p>
+                {(eventForm.customFields || []).length === 0 ? (
+                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: 14, borderRadius: 8, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
+                    No custom fields yet. Click &ldquo;Add Field&rdquo; to collect more info during registration.
+                  </div>
+                ) : (
+                  eventForm.customFields.map((field, idx) => (
+                    <div key={field.id} style={{ background: 'rgba(255,255,255,0.04)', padding: 12, borderRadius: 8, marginBottom: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr auto auto', gap: 8, alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          className="admin-dash__input"
+                          placeholder="Field label (e.g. GitHub Link)"
+                          value={field.label}
+                          onChange={(e) => updateCustomField(idx, { label: e.target.value })}
+                        />
+                        <select
+                          className="admin-dash__input"
+                          value={field.type}
+                          onChange={(e) => updateCustomField(idx, { type: e.target.value })}
+                        >
+                          {FIELD_TYPES.map((t) => (
+                            <option key={t.value} value={t.value}>{t.label}</option>
+                          ))}
+                        </select>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', margin: 0, whiteSpace: 'nowrap' }}>
+                          <input
+                            type="checkbox"
+                            checked={!!field.required}
+                            onChange={(e) => updateCustomField(idx, { required: e.target.checked })}
+                          />
+                          Required
+                        </label>
+                        <div style={{ display: 'flex', gap: 2 }}>
+                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveCustomField(idx, -1)} disabled={idx === 0} title="Move up"><ChevronUp size={13} /></button>
+                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveCustomField(idx, 1)} disabled={idx === eventForm.customFields.length - 1} title="Move down"><ChevronDown size={13} /></button>
+                          <button type="button" className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => removeCustomField(idx)} title="Remove"><Trash2 size={13} /></button>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: '0.78rem', flexWrap: 'wrap' }}>
+                        <input
+                          type="text"
+                          className="admin-dash__input"
+                          placeholder="Placeholder (optional)"
+                          value={field.placeholder || ''}
+                          onChange={(e) => updateCustomField(idx, { placeholder: e.target.value })}
+                          style={{ flex: 1, minWidth: 160 }}
+                        />
+                        {(field.type === 'image' || field.type === 'video' || field.type === 'file') && (
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            Max MB:
+                            <input
+                              type="number"
+                              min={1}
+                              max={1000}
+                              style={{ width: 60 }}
+                              className="admin-dash__input"
+                              value={field.maxSizeMB || 10}
+                              onChange={(e) => updateCustomField(idx, { maxSizeMB: parseInt(e.target.value, 10) || 10 })}
+                            />
+                          </label>
+                        )}
+                        {(field.type === 'image' || field.type === 'link') && (
+                          <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            Max count:
+                            <input
+                              type="number"
+                              min={1}
+                              max={20}
+                              style={{ width: 60 }}
+                              className="admin-dash__input"
+                              value={field.maxCount || 1}
+                              onChange={(e) => updateCustomField(idx, { maxCount: parseInt(e.target.value, 10) || 1 })}
+                            />
+                          </label>
+                        )}
+                      </div>
+                      {field.type === 'select' && (
+                        <SelectOptionsEditor
+                          options={field.options || []}
+                          onChange={(options) => updateCustomField(idx, { options })}
+                        />
+                      )}
+                      <div style={{ marginTop: 8, fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>
+                        {field.type === 'text' && 'One-line text answer'}
+                        {field.type === 'textarea' && 'Multi-line text answer'}
+                        {field.type === 'number' && 'Numeric answer'}
+                        {field.type === 'email' && 'Email address (validated)'}
+                        {field.type === 'link' && 'Multiple work links (title + URL)'}
+                        {field.type === 'image' && 'Image upload — shown in registration details'}
+                        {field.type === 'video' && 'Video upload'}
+                        {field.type === 'file' && 'Generic file upload (PDF, ZIP, etc.)'}
+                        {field.type === 'select' && 'Dropdown from predefined options'}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
             <div className="admin-dash__modal-actions">
               <button type="button" className="admin-dash__cancel-btn" onClick={() => setShowEventForm(false)}>Cancel</button>
@@ -296,6 +459,7 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
                 <table className="admin-dash__table">
                   <thead style={{ position: 'sticky', top: 0, background: '#111', zIndex: 10 }}>
                     <tr>
+                      <th></th>
                       <th>Name</th>
                       <th>Roll Number</th>
                       <th>Email</th>
@@ -305,16 +469,91 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
                   </thead>
                   <tbody>
                     {eventRegs.length === 0 ? (
-                      <tr><td colSpan="5" style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: 20 }}>No one has registered yet.</td></tr>
-                    ) : eventRegs.map(reg => (
-                      <tr key={reg.id}>
-                        <td>{reg.name}</td>
-                        <td className="admin-dash__mono">{reg.rollNumber}</td>
-                        <td style={{ color: 'rgba(255,255,255,0.6)' }}>{reg.email.replace('@kluniversity.in', '')}</td>
-                        <td>{reg.role || 'Participant'}</td>
-                        <td style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>{new Date(reg.registeredAt).toLocaleDateString()}</td>
-                      </tr>
-                    ))}
+                      <tr><td colSpan="6" style={{ textAlign: 'center', color: 'rgba(255,255,255,0.4)', padding: 20 }}>No one has registered yet.</td></tr>
+                    ) : eventRegs.map(reg => {
+                      const hasExtras = Array.isArray(reg.customAnswers) && reg.customAnswers.length > 0;
+                      const isExpanded = expandedRegId === reg.id;
+                      return (
+                        <React.Fragment key={reg.id}>
+                          <tr>
+                            <td style={{ width: 30 }}>
+                              {hasExtras && (
+                                <button
+                                  type="button"
+                                  className="admin-dash__icon-btn"
+                                  onClick={() => setExpandedRegId(isExpanded ? null : reg.id)}
+                                  title={isExpanded ? 'Hide details' : 'Show details'}
+                                >
+                                  {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                                </button>
+                              )}
+                            </td>
+                            <td>{reg.name}</td>
+                            <td className="admin-dash__mono">{reg.rollNumber}</td>
+                            <td style={{ color: 'rgba(255,255,255,0.6)' }}>{reg.email.replace('@kluniversity.in', '')}</td>
+                            <td>{reg.role || 'Participant'}</td>
+                            <td style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.8rem' }}>{new Date(reg.registeredAt).toLocaleDateString()}</td>
+                          </tr>
+                          {isExpanded && hasExtras && (
+                            <tr>
+                              <td colSpan="6" style={{ background: 'rgba(255,255,255,0.03)', padding: 14 }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
+                                  {reg.customAnswers.map((a, i) => (
+                                    <div key={i} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: 10 }}>
+                                      <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>{a.label}</div>
+                                      {a.type === 'image' && Array.isArray(a.files) && a.files.length > 0 && (
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))', gap: 6 }}>
+                                          {a.files.map((f, k) => (
+                                            <a key={k} href={f.url} target="_blank" rel="noreferrer" style={{ display: 'block' }}>
+                                              <img src={f.url} alt={f.originalName} style={{ width: '100%', height: 60, objectFit: 'cover', borderRadius: 4 }} />
+                                            </a>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {a.type === 'video' && Array.isArray(a.files) && a.files.length > 0 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                          {a.files.map((f, k) => (
+                                            <a key={k} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: '#71C4FF' }}>
+                                              <FileVideo size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                              {f.originalName || 'video'}
+                                            </a>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {a.type === 'file' && Array.isArray(a.files) && a.files.length > 0 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                          {a.files.map((f, k) => (
+                                            <a key={k} href={f.url} target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: '#71C4FF' }}>
+                                              <FileText size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                              {f.originalName || 'file'}
+                                            </a>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {a.type === 'link' && Array.isArray(a.workLinks) && a.workLinks.length > 0 && (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                          {a.workLinks.map((l, k) => (
+                                            <a key={k} href={l.url} target="_blank" rel="noreferrer" style={{ fontSize: '0.78rem', color: '#71C4FF' }}>
+                                              <Link2 size={11} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                                              {l.title || l.url}
+                                            </a>
+                                          ))}
+                                        </div>
+                                      )}
+                                      {!['image', 'video', 'file', 'link'].includes(a.type) && (
+                                        <div style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.85)', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                          {a.value || <span style={{ color: 'rgba(255,255,255,0.4)' }}>—</span>}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -327,5 +566,84 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
         </div>
       )}
     </>
+  );
+}
+
+function SelectOptionsEditor({ options, onChange }) {
+  const [draft, setDraft] = React.useState('');
+
+  const add = () => {
+    const value = draft.trim();
+    if (!value) return;
+    if (options.includes(value)) {
+      setDraft('');
+      return;
+    }
+    onChange([...options, value]);
+    setDraft('');
+  };
+
+  const remove = (idx) => onChange(options.filter((_, i) => i !== idx));
+
+  const update = (idx, value) => {
+    const next = [...options];
+    next[idx] = value;
+    onChange(next);
+  };
+
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
+        Dropdown Options
+      </div>
+      {options.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+          {options.map((opt, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 6 }}>
+              <input
+                type="text"
+                className="admin-dash__input"
+                value={opt}
+                onChange={(e) => update(i, e.target.value)}
+                placeholder={`Option ${i + 1}`}
+              />
+              <button
+                type="button"
+                className="admin-dash__icon-btn admin-dash__icon-btn--danger"
+                onClick={() => remove(i)}
+                title="Remove option"
+              >
+                <Trash2 size={13} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={{ display: 'flex', gap: 6 }}>
+        <input
+          type="text"
+          className="admin-dash__input"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              add();
+            }
+          }}
+          placeholder="Add an option (press Enter)"
+          style={{ flex: 1 }}
+        />
+        <button
+          type="button"
+          onClick={add}
+          disabled={!draft.trim()}
+          className="admin-dash__save-btn"
+          style={{ padding: '6px 12px', opacity: draft.trim() ? 1 : 0.5 }}
+        >
+          <PlusIcon size={13} /> Add
+        </button>
+      </div>
+    </div>
   );
 }

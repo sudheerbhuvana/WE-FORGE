@@ -68,6 +68,18 @@ export async function POST(request) {
         const isRegistrationOpen = formData.get('isRegistrationOpen') !== 'false';
         const eventDate = formData.get('eventDate');
 
+        // Custom form fields (optional). Stored as JSON array.
+        const customFieldsRaw = formData.get('customFields');
+        let customFields = [];
+        if (customFieldsRaw) {
+            try {
+                customFields = JSON.parse(customFieldsRaw);
+                if (!Array.isArray(customFields)) customFields = [];
+            } catch {
+                customFields = [];
+            }
+        }
+
         if (!title || !startTime) return NextResponse.json({ error: 'Title and start time are required' }, { status: 400 });
 
         const dateStr = (eventDate || startTime).split('T')[0];
@@ -103,7 +115,8 @@ export async function POST(request) {
             domain: actor.domain || '',
             allowedMembers,
             roles,
-            isRegistrationOpen
+            isRegistrationOpen,
+            customFields,
         });
 
         await newEvent.save();

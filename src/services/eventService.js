@@ -56,11 +56,51 @@ const eventService = {
     },
 
     async register(id, data) {
+        // Supports both JSON (basic) and multipart/form-data (with files/form fields).
+        // `data` may be { name, rollNumber, email, customFields, _files: { fieldId: File[] } }.
+        const hasFiles = data && data._files && Object.values(data._files).some((arr) => Array.isArray(arr) && arr.length > 0);
+        const hasCustomFields = data && data.customFields && Object.keys(data.customFields).length > 0;
+
+        if (!hasFiles && !hasCustomFields) {
+            const res = await fetch(`${API_BASE}/events/${encodeURIComponent(id)}/register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify(data),
+            });
+            const json = await safeJson(res);
+            if (!res.ok) throw new Error(json.error || 'Registration failed');
+            return json;
+        }
+
+        // Multipart path
+        const fd = new FormData();
+        fd.append('name', data.name || '');
+        fd.append('rollNumber', data.rollNumber || '');
+        fd.append('email', data.email || '');
+        if (data.customFields) {
+            Object.entries(data.customFields).forEach(([fieldId, value]) => {
+                if (value === undefined || value === null) return;
+                if (Array.isArray(value) && value.length && typeof value[0] === 'object' && value[0] && !value[0].arrayBuffer) {
+                    // Work links array
+                    fd.append(`field_${fieldId}_links`, JSON.stringify(value));
+                } else if (typeof value === 'string' || typeof value === 'number') {
+                    fd.append(`field_${fieldId}`, String(value));
+                }
+            });
+        }
+        if (data._files) {
+            Object.entries(data._files).forEach(([fieldId, files]) => {
+                (files || []).forEach((f) => {
+                    if (f) fd.append(`field_${fieldId}_file`, f);
+                });
+            });
+        }
+
         const res = await fetch(`${API_BASE}/events/${encodeURIComponent(id)}/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify(data),
+            body: fd,
         });
         const json = await safeJson(res);
         if (!res.ok) throw new Error(json.error || 'Registration failed');

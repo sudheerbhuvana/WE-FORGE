@@ -52,6 +52,16 @@ export async function PUT(request, { params }) {
         if (formData.has('roles')) event.roles = parseArray(formData.get('roles'));
         if (formData.has('isRegistrationOpen')) event.isRegistrationOpen = formData.get('isRegistrationOpen') !== 'false';
 
+        // Custom form fields (full replacement on edit).
+        if (formData.has('customFields')) {
+            try {
+                const parsed = JSON.parse(formData.get('customFields'));
+                event.customFields = Array.isArray(parsed) ? parsed : [];
+            } catch {
+                event.customFields = [];
+            }
+        }
+
         if (!formData.has('eventDate') && formData.has('startTime')) event.eventDate = formData.get('startTime');
 
         // Recalculate status based on new dates
