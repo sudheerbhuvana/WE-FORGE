@@ -402,12 +402,12 @@ export default function ContestManagePage({ params }) {
             <button className="cm-back" onClick={() => router.push('/admin/dashboard?tab=contests')}>
               <ArrowLeft size={16} /> Back to Contests
             </button>
-            <div className="cm-topbar__primary">
+            <div className="cm-topbar__actions">
               <button className="cm-btn" onClick={() => window.open(`/contests/${slug}`, '_blank')}>
                 <Eye size={14} /> View Public
               </button>
               <button className="cm-btn cm-btn--primary" onClick={openEdit}>
-                <Edit3 size={14} /> Edit
+                <Edit3 size={14} /> Edit Contest
               </button>
               <button className="cm-btn" disabled={actionBusy} onClick={() => triggerAction(template?.isPublished ? 'unpublish' : 'publish')}>
                 {template?.isPublished ? <><Eye size={14} /> Unpublish</> : <><Sparkles size={14} /> Publish</>}
@@ -420,11 +420,14 @@ export default function ContestManagePage({ params }) {
                   <Trophy size={14} /> Declare Winners
                 </button>
               )}
+              <button className="cm-btn" onClick={exportSubmissions}>
+                <Download size={14} /> Export
+              </button>
               <button className="cm-btn" disabled={actionBusy} onClick={duplicateContest}>
                 <Copy size={14} /> Duplicate
               </button>
-              <button className="cm-btn cm-btn--icon" disabled={actionBusy} onClick={deleteContest} title="Delete contest">
-                <Trash2 size={14} />
+              <button className="cm-btn cm-btn--danger" disabled={actionBusy} onClick={deleteContest} title="Delete this contest">
+                <Trash2 size={14} /> Delete
               </button>
             </div>
           </div>
@@ -475,66 +478,40 @@ export default function ContestManagePage({ params }) {
             </div>
           </section>
 
-          <div className="cm-header">
-            <div className="cm-header__main">
-              <div className="cm-grid cm-grid--stat">
-                <div className="cm-stat cm-stat--mini">
-                  <div className="cm-stat__icon"><Clock size={18} /></div>
-                  <div className="cm-stat__body">
-                    <div className="cm-stat__value" key={tick}>
-                      {activeCycle?.status === 'active' ? relTime(activeCycle.endTime)
-                        : activeCycle?.status === 'upcoming' ? relTime(activeCycle.startTime)
-                        : '—'}
-                    </div>
-                    <div className="cm-stat__label">
-                      {activeCycle?.status === 'active' ? 'Ends In' : activeCycle?.status === 'upcoming' ? 'Starts In' : 'No active cycle'}
-                    </div>
-                  </div>
+          <div className="cm-grid cm-grid--stat cm-mb-0">
+            <div className="cm-stat cm-stat--mini">
+              <div className="cm-stat__icon"><Clock size={18} /></div>
+              <div className="cm-stat__body">
+                <div className="cm-stat__value" key={tick}>
+                  {activeCycle?.status === 'active' ? relTime(activeCycle.endTime)
+                    : activeCycle?.status === 'upcoming' ? relTime(activeCycle.startTime)
+                    : '—'}
                 </div>
-                <div className="cm-stat cm-stat--mini">
-                  <div className="cm-stat__icon cm-stat__icon--purple"><Users size={18} /></div>
-                  <div className="cm-stat__body">
-                    <div className="cm-stat__value">{totalParticipants}</div>
-                    <div className="cm-stat__label">Participants</div>
-                  </div>
-                </div>
-                <div className="cm-stat cm-stat--mini">
-                  <div className="cm-stat__icon cm-stat__icon--green"><Upload size={18} /></div>
-                  <div className="cm-stat__body">
-                    <div className="cm-stat__value">{totalSubmissions}</div>
-                    <div className="cm-stat__label">Submissions</div>
-                  </div>
-                </div>
-                <div className="cm-stat cm-stat--mini">
-                  <div className="cm-stat__icon cm-stat__icon--orange"><CalendarClock size={18} /></div>
-                  <div className="cm-stat__body">
-                    <div className="cm-stat__value">{activeCycle?.cycleLabel || '—'}</div>
-                    <div className="cm-stat__label">Current Cycle</div>
-                  </div>
+                <div className="cm-stat__label">
+                  {activeCycle?.status === 'active' ? 'Ends In' : activeCycle?.status === 'upcoming' ? 'Starts In' : 'No active cycle'}
                 </div>
               </div>
             </div>
-            <div className="cm-header__side">
-              <button className="cm-btn cm-btn--primary" style={{ width: '100%' }} onClick={openEdit}>
-                <Edit3 size={14} /> Edit Contest
-              </button>
-              <div className="cm-row">
-                <button className="cm-btn cm-btn--sm" style={{ flex: 1 }} disabled={actionBusy}
-                  onClick={() => triggerAction(template?.isPublished ? 'unpublish' : 'publish')}>
-                  {template?.isPublished ? 'Unpublish' : 'Publish'}
-                </button>
-                <button className="cm-btn cm-btn--sm" style={{ flex: 1 }} disabled={actionBusy}
-                  onClick={() => triggerAction(template?.isPaused ? 'resume' : 'pause')}>
-                  {template?.isPaused ? 'Resume' : 'Pause'}
-                </button>
+            <div className="cm-stat cm-stat--mini">
+              <div className="cm-stat__icon cm-stat__icon--purple"><Users size={18} /></div>
+              <div className="cm-stat__body">
+                <div className="cm-stat__value">{totalParticipants}</div>
+                <div className="cm-stat__label">Participants</div>
               </div>
-              <button className="cm-btn cm-btn--accent" style={{ width: '100%' }}
-                disabled={!activeCycle} onClick={() => activeCycle && openWinners(activeCycle)}>
-                <Trophy size={14} /> Declare Winners
-              </button>
-              <button className="cm-btn" style={{ width: '100%' }} onClick={exportSubmissions}>
-                <Download size={14} /> Export Submissions
-              </button>
+            </div>
+            <div className="cm-stat cm-stat--mini">
+              <div className="cm-stat__icon cm-stat__icon--green"><Upload size={18} /></div>
+              <div className="cm-stat__body">
+                <div className="cm-stat__value">{totalSubmissions}</div>
+                <div className="cm-stat__label">Submissions</div>
+              </div>
+            </div>
+            <div className="cm-stat cm-stat--mini">
+              <div className="cm-stat__icon cm-stat__icon--orange"><CalendarClock size={18} /></div>
+              <div className="cm-stat__body">
+                <div className="cm-stat__value">{activeCycle?.cycleLabel || '—'}</div>
+                <div className="cm-stat__label">Current Cycle</div>
+              </div>
             </div>
           </div>
 
@@ -699,3 +676,265 @@ export default function ContestManagePage({ params }) {
           </div>
         </div>
       )}
+
+      {judgingSub && (
+        <div className="cm-drawer-overlay" onClick={() => !judgeSaving && setJudgingSub(null)}>
+          <div className="cm-drawer" onClick={(e) => e.stopPropagation()}>
+            <div className="cm-drawer__header">
+              <h3 className="cm-drawer__title">Judge — {judgingSub.name}</h3>
+              <button className="admin-dash__close-btn" onClick={() => setJudgingSub(null)} disabled={judgeSaving}>
+                <X size={18} />
+              </button>
+            </div>
+            <div className="cm-drawer__body">
+              <div className="cm-drawer__participant">
+                <div className="cm-drawer__avatar">{(judgingSub.name || '?').charAt(0).toUpperCase()}</div>
+                <div>
+                  <p className="cm-drawer__name">{judgingSub.name}</p>
+                  <p className="cm-drawer__sub">{judgingSub.email} {judgingSub.rollNumber ? ` · ${judgingSub.rollNumber}` : ''}</p>
+                </div>
+              </div>
+              {judgingSub.title && (
+                <div className="cm-drawer__section">
+                  <div className="cm-drawer__section-title">Entry</div>
+                  <div className="cm-drawer__answer-value">{judgingSub.title}</div>
+                </div>
+              )}
+              {judgingSub.description && (
+                <div className="cm-drawer__section">
+                  <div className="cm-drawer__section-title">Description</div>
+                  <div className="cm-drawer__answer-value">{judgingSub.description}</div>
+                </div>
+              )}
+              {judgingSub.files?.length > 0 && (
+                <div className="cm-drawer__section">
+                  <div className="cm-drawer__section-title">Files ({judgingSub.files.length})</div>
+                  <div className="cm-drawer__files">
+                    {judgingSub.files.map((f, i) => (
+                      <a key={i} href={f.url} target="_blank" rel="noreferrer" className="cm-drawer__file">
+                        {f.fieldType === 'image' ? (
+                          <img src={f.url} alt={f.originalName} />
+                        ) : (
+                          <div className="cm-drawer__file-video">
+                            {f.fieldType === 'video' ? <FileVideo size={28} /> : <FileText size={28} />}
+                          </div>
+                        )}
+                        <div className="cm-drawer__file-meta">{f.originalName || f.fieldLabel}</div>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="cm-drawer__section">
+                <div className="cm-drawer__section-title">Score (0-100)</div>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  className="admin-dash__input"
+                  value={judgeForm.score}
+                  onChange={(e) => setJudgeForm({ ...judgeForm, score: parseInt(e.target.value, 10) || 0 })}
+                  style={{ width: '100%' }}
+                />
+              </div>
+              <div className="cm-drawer__section">
+                <div className="cm-drawer__section-title">Feedback</div>
+                <textarea
+                  rows={4}
+                  className="admin-dash__input"
+                  style={{ width: '100%', resize: 'vertical' }}
+                  value={judgeForm.feedback}
+                  onChange={(e) => setJudgeForm({ ...judgeForm, feedback: e.target.value })}
+                  placeholder="Internal judge notes..."
+                />
+              </div>
+            </div>
+            <div className="cm-drawer__footer">
+              <button className="cm-btn" onClick={() => setJudgingSub(null)} disabled={judgeSaving}>Cancel</button>
+              <button className="cm-btn cm-btn--primary" disabled={judgeSaving} onClick={saveJudging}>
+                <Save size={14} /> {judgeSaving ? 'Saving...' : 'Save Score'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {editing && editForm && (
+        <div className="admin-dash__overlay" onClick={() => !editSaving && setEditing(false)}>
+          <div className="admin-dash__modal" style={{ maxWidth: '780px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="admin-dash__modal-header">
+              <h2>Edit Contest Template</h2>
+              <button className="admin-dash__close-btn" onClick={() => setEditing(false)} disabled={editSaving}><X size={20} /></button>
+            </div>
+            <form onSubmit={saveEdit} className="admin-dash__modal-body">
+              <div className="admin-dash__form-grid">
+                <div className="admin-dash__field admin-dash__field--full">
+                  <label>Title *</label>
+                  <input type="text" required value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
+                </div>
+                <div className="admin-dash__field admin-dash__field--full">
+                  <label>Description</label>
+                  <textarea rows={3} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
+                </div>
+                <div className="admin-dash__field">
+                  <label>Banner URL</label>
+                  <input type="text" value={editForm.bannerUrl} onChange={(e) => setEditForm({ ...editForm, bannerUrl: e.target.value })} placeholder="https://..." />
+                </div>
+                <div className="admin-dash__field">
+                  <label>Tags (comma-separated)</label>
+                  <input type="text" value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} />
+                </div>
+                <div className="admin-dash__field admin-dash__field--full">
+                  <label>Rules</label>
+                  <textarea rows={2} value={editForm.rules} onChange={(e) => setEditForm({ ...editForm, rules: e.target.value })} />
+                </div>
+                <div className="admin-dash__field admin-dash__field--full">
+                  <label>Eligibility</label>
+                  <textarea rows={2} value={editForm.eligibility} onChange={(e) => setEditForm({ ...editForm, eligibility: e.target.value })} />
+                </div>
+                <div className="admin-dash__field admin-dash__field--full">
+                  <label>Prize Info</label>
+                  <textarea rows={2} value={editForm.prizeInfo} onChange={(e) => setEditForm({ ...editForm, prizeInfo: e.target.value })} />
+                </div>
+                <div className="admin-dash__field admin-dash__field--full">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                    <label style={{ margin: 0 }}>Custom Form Fields</label>
+                    <button type="button" className="admin-dash__save-btn" onClick={addField} style={{ padding: '6px 12px' }}>
+                      <Plus size={14} /> Add Field
+                    </button>
+                  </div>
+                  {editForm.customFields.map((field, idx) => (
+                    <div key={idx} style={{ background: 'rgba(255,255,255,0.04)', padding: 10, borderRadius: 8, marginBottom: 8 }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr auto auto', gap: 8, alignItems: 'center' }}>
+                        <input type="text" className="admin-dash__input" placeholder="Field label" value={field.label} onChange={(e) => updateField(idx, { label: e.target.value })} />
+                        <select className="admin-dash__input" value={field.type} onChange={(e) => updateField(idx, { type: e.target.value })}>
+                          <option value="text">Text</option>
+                          <option value="textarea">Writeup</option>
+                          <option value="number">Number</option>
+                          <option value="image">Image</option>
+                          <option value="video">Video</option>
+                          <option value="file">File</option>
+                          <option value="link">Work Link</option>
+                          <option value="select">Dropdown</option>
+                        </select>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', margin: 0 }}>
+                          <input type="checkbox" checked={!!field.required} onChange={(e) => updateField(idx, { required: e.target.checked })} /> Req
+                        </label>
+                        <div style={{ display: 'flex', gap: 2 }}>
+                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveField(idx, -1)} disabled={idx === 0}><ChevronUp size={13} /></button>
+                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveField(idx, 1)} disabled={idx === editForm.customFields.length - 1}><ChevronDown size={13} /></button>
+                          <button type="button" className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => removeField(idx)}><Trash2 size={13} /></button>
+                        </div>
+                      </div>
+                      {(field.type === 'image' || field.type === 'video' || field.type === 'file' || field.type === 'link') && (
+                        <div style={{ display: 'flex', gap: 10, marginTop: 6, fontSize: '0.78rem' }}>
+                          {(field.type === 'image' || field.type === 'video' || field.type === 'file') && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              Max MB:
+                              <input type="number" min={1} max={1000} style={{ width: 60 }} className="admin-dash__input" value={field.maxSizeMB || 10} onChange={(e) => updateField(idx, { maxSizeMB: parseInt(e.target.value, 10) || 10 })} />
+                            </label>
+                          )}
+                          {(field.type === 'image' || field.type === 'link') && (
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              Max count:
+                              <input type="number" min={1} max={20} style={{ width: 60 }} className="admin-dash__input" value={field.maxCount || 1} onChange={(e) => updateField(idx, { maxCount: parseInt(e.target.value, 10) || 1 })} />
+                            </label>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="admin-dash__field">
+                  <label>Featured</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+                    <input type="checkbox" checked={editForm.featured} onChange={(e) => setEditForm({ ...editForm, featured: e.target.checked })} />
+                    Spotlight on landing
+                  </label>
+                </div>
+                <div className="admin-dash__field">
+                  <label>Published</label>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
+                    <input type="checkbox" checked={editForm.isPublished} onChange={(e) => setEditForm({ ...editForm, isPublished: e.target.checked })} />
+                    Visible publicly
+                  </label>
+                </div>
+              </div>
+              <div className="admin-dash__modal-actions">
+                <button type="button" className="admin-dash__cancel-btn" onClick={() => setEditing(false)} disabled={editSaving}>Cancel</button>
+                <button type="submit" className="admin-dash__save-btn" disabled={editSaving}>
+                  <Save size={14} /> {editSaving ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {winnersCycle && (
+        <div className="admin-dash__overlay" onClick={() => !winnersSaving && setWinnersCycle(null)}>
+          <div className="admin-dash__modal" style={{ maxWidth: '620px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="admin-dash__modal-header">
+              <h2>Declare Winners — {winnersCycle.cycleLabel}</h2>
+              <button className="admin-dash__close-btn" onClick={() => setWinnersCycle(null)} disabled={winnersSaving}><X size={20} /></button>
+            </div>
+            <div className="admin-dash__modal-body">
+              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.86rem' }}>
+                Pick winners from {submissions.length} submission(s). Leave fields blank to skip a rank.
+              </p>
+              {[
+                { key: 'first', label: '🥇 1st Place' },
+                { key: 'second', label: '🥈 2nd Place' },
+                { key: 'third', label: '🥉 3rd Place' },
+              ].map((r) => (
+                <div key={r.key} className="admin-dash__field">
+                  <label>{r.label}</label>
+                  <select
+                    className="admin-dash__input"
+                    value={winnersDraft[r.key]}
+                    onChange={(e) => setWinnersDraft({ ...winnersDraft, [r.key]: e.target.value })}
+                  >
+                    <option value="">— None —</option>
+                    {submissions.map((s) => (
+                      <option key={s._id} value={s.memberId}>
+                        {s.name} {s.rollNumber ? `(${s.rollNumber})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+              <div className="admin-dash__field admin-dash__field--full">
+                <label>Special Mentions (comma-separated member IDs)</label>
+                <input
+                  type="text"
+                  className="admin-dash__input"
+                  value={winnersDraft.mentions.join(', ')}
+                  onChange={(e) => setWinnersDraft({
+                    ...winnersDraft,
+                    mentions: e.target.value.split(',').map((x) => x.trim()).filter(Boolean),
+                  })}
+                  placeholder="memberId1, memberId2"
+                />
+              </div>
+              <div className="admin-dash__field admin-dash__field--full">
+                <label>Judges' Announcement Notes</label>
+                <textarea
+                  rows={3}
+                  value={winnersDraft.notes}
+                  onChange={(e) => setWinnersDraft({ ...winnersDraft, notes: e.target.value })}
+                  placeholder="A short note that will appear on the Winners tab..."
+                />
+              </div>
+              <div className="admin-dash__modal-actions">
+                <button type="button" className="admin-dash__cancel-btn" onClick={() => setWinnersCycle(null)} disabled={winnersSaving}>Cancel</button>
+                <button type="button" className="admin-dash__save-btn" disabled={winnersSaving} onClick={saveWinners}>
+                  <Trophy size={14} /> {winnersSaving ? 'Publishing...' : 'Publish Winners'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

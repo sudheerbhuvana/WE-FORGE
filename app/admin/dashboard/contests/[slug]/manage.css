@@ -94,11 +94,16 @@
 
 /* ===== Top action bar ===== */
 .cm-topbar {
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: nowrap;
 }
 .cm-topbar__primary {
   display: flex; gap: 8px; flex-wrap: wrap;
+}
+.cm-topbar__actions {
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  margin-left: auto;
 }
 .cm-topbar__secondary {
   display: flex; gap: 6px; align-items: center;
@@ -617,12 +622,16 @@
 }
 
 /* ===== Responsive topbar ===== */
+@media (max-width: 1100px) {
+  .cm-topbar { flex-wrap: wrap; }
+  .cm-topbar__actions { margin-left: 0; width: 100%; justify-content: flex-end; }
+}
 @media (max-width: 768px) {
   .admin-main__content { padding: 18px 16px 40px !important; }
   .cm-hero__title { font-size: 1.4rem; }
   .cm-hero__desc { max-width: 100%; }
-  .cm-topbar { flex-direction: column; align-items: stretch; }
-  .cm-topbar__primary { justify-content: center; }
+  .cm-topbar__actions { justify-content: flex-start; }
+  .cm-topbar__actions .cm-btn { flex: 1 1 auto; justify-content: center; }
 }
 
 /* ===== Drawer (right side panel) ===== */
