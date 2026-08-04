@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Notice from '@/lib/models/Notice';
+import { requirePermission, canManageNotices } from '@/lib/permissions';
 
 export async function PUT(request, { params }) {
+    const { response } = await requirePermission(canManageNotices);
+    if (response) return response;
+
     try {
         await connectDB();
         const { id } = await params;
@@ -26,6 +30,9 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
+    const { response } = await requirePermission(canManageNotices);
+    if (response) return response;
+
     try {
         await connectDB();
         const { id } = await params;

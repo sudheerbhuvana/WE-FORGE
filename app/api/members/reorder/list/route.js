@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Member from '@/lib/models/Member';
+import { requirePermission, canBulkReorderMembers } from '@/lib/permissions';
 
 export async function PUT(request) {
+    const { response } = await requirePermission(canBulkReorderMembers);
+    if (response) return response;
+
     try {
         await connectDB();
         const { order } = await request.json();

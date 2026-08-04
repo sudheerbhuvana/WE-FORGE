@@ -38,12 +38,12 @@
 
 .domains-hero__title-our {
   font-family: 'Dancing Script', cursive;
-  font-size: clamp(4rem, 12vw, 9rem);
+  font-size: clamp(3rem, 10vw, 7.5rem);
   font-weight: 700;
   color: #d9f92e; /* Neon lime */
   position: absolute;
   top: -30%;
-  left: 0;
+  left: -8%;
   z-index: 2;
   transform: rotate(-8deg);
   line-height: 1;

@@ -5,7 +5,8 @@ async function safeJson(res) {
 }
 
 const authService = {
-  // Check if the current Microsoft session has admin access
+  // Password-based login has been removed. Sign-in happens through NextAuth (Azure AD).
+  // Use next-auth/react's signIn() / signOut() in the UI directly.
   async checkAuth() {
     try {
       const res = await fetch(`${API_BASE}/auth/check`, { credentials: 'include' });

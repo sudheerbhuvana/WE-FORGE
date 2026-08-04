@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
 import connectDB from "@/lib/db";
 import Member from "@/lib/models/Member";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { requirePermission, canBulkReorderMembers } from "@/lib/permissions";
 
 export async function POST(req) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { response } = await requirePermission(canBulkReorderMembers);
+  if (response) return response;
 
+  try {
     const { updates } = await req.json();
     await connectDB();
 

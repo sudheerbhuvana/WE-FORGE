@@ -1,0 +1,12 @@
+# Query: coolify
+# ContextLines: 1
+
+3 results - 1 file
+
+.env:
+  22  # ─── NextAuth & Azure AD ───
+  23: # IMPORTANT: Set NEXTAUTH_URL to your real Coolify domain via the Coolify
+  24  # Environment Variables panel — do NOT hardcode the production URL here.
+  25  # Example: https://klforge.yourdomain.com
+  26: NEXTAUTH_URL=https://your-
+  27  NEXTAUTH_SECRET=4DFgeQ2fl4vS25ncdch86Gq8d1CJUDXi1B30WTWK3Y0

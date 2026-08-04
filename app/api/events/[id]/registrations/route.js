@@ -3,13 +3,18 @@ import connectDB from '@/lib/db';
 export const dynamic = 'force-dynamic';
 import Registration from '@/lib/models/Registration';
 import Event from '@/lib/models/Event';
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { requirePermission, canManageEvent } from '@/lib/permissions';
 
 export async function GET(request, { params }) {
+    const { id } = await params;
+    await connectDB();
+    const event = await Event.findOne({ id });
+    if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+
+    const { response } = await requirePermission(canManageEvent, event);
+    if (response) return response;
+
     try {
-        await connectDB();
-        const { id } = await params;
         const registrations = await Registration.find({ eventId: id }).sort({ registeredAt: -1 });
         return NextResponse.json(registrations);
     } catch (err) {
@@ -18,15 +23,15 @@ export async function GET(request, { params }) {
 }
 
 export async function PATCH(request, { params }) {
-    try {
-        const session = await getServerSession(authOptions);
-        if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { id } = await params;
+    await connectDB();
+    const event = await Event.findOne({ id });
+    if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
 
-        await connectDB();
-        const { id } = await params; // This is eventId in this context, but wait...
-        // Actually, we usually update a specific registration by ITS id.
-        // Let's make this route for updating a registration within an event scope.
-        
+    const { response } = await requirePermission(canManageEvent, event);
+    if (response) return response;
+
+    try {
         const { registrationId, role } = await request.json();
         if (!registrationId || !role) return NextResponse.json({ error: 'Missing data' }, { status: 400 });
 

@@ -2,30 +2,43 @@ import { NextResponse } from 'next/server';
 import connectDB from "@/lib/db";
 import Media from "@/lib/models/Media";
 import { uploadToR2 } from "@/lib/r2";
-import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/lib/auth";
+import { requirePermission, canManageMedia } from "@/lib/permissions";
 
 export async function POST(req) {
-  try {
-    const session = await getServerSession(authOptions);
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { actor, response } = await requirePermission(canManageMedia);
+  if (response) return response;
 
+  try {
     const formData = await req.formData();
     const file = formData.get('file');
-    const eventName = formData.get('eventName') || 'General';
+    const eventName = (formData.get('eventName') || 'General').toString().trim() || 'General';
+    const rawTitle = (formData.get('title') || '').toString().trim().slice(0, 200);
+    const description = (formData.get('description') || '').toString().trim().slice(0, 1000);
+    const rawTags = (formData.get('tags') || '').toString().trim();
+    const tags = rawTags
+      ? rawTags.split(',').map((t) => t.trim().toLowerCase()).filter(Boolean).slice(0, 20)
+      : [];
+    const favoriteRaw = formData.get('favorite');
+    const favorite = favoriteRaw === 'true' || favoriteRaw === 'on' || favoriteRaw === '1';
 
     if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+    if (tags.length === 0) {
+      return NextResponse.json({ error: 'At least one tag is required' }, { status: 400 });
+    }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const mimeType = file.type;
     const type = mimeType.startsWith('video/') ? 'video' : 'image';
-    
-    // Generate unique key
+
+    // Derive a clean human-readable title from the original filename if the
+    // client didn't supply one (strips extension + replaces separators).
+    const fileTitle = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+    const title = rawTitle || fileTitle;
+
     const timestamp = Date.now();
     const safeName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
     const key = `media/${eventName.replace(/\s+/g, '_')}/${timestamp}_${safeName}`;
 
-    // Upload to R2
     const url = await uploadToR2(buffer, key, mimeType);
 
     await connectDB();
@@ -33,10 +46,15 @@ export async function POST(req) {
       url,
       type,
       eventName,
+      folder: eventName, // mirror folder for new uploads
+      title,
+      description,
+      tags,
+      favorite,
       s3Key: key,
       fileSize: file.size,
       mimeType,
-      uploadedBy: session.user.email,
+      uploadedBy: actor.email,
     });
 
     return NextResponse.json(newMedia);

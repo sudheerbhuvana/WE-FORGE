@@ -4,6 +4,7 @@ import connectDB from '../../../lib/db';
 import Member from '../../../lib/models/Member';
 import { saveFile } from '@/lib/uploadHelper';
 import path from 'path';
+import { requirePermission, canManageDomain } from '@/lib/permissions';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/members');
 
@@ -20,10 +21,13 @@ export async function GET() {
 }
 
 export async function POST(request) {
+    const { actor, response } = await requirePermission(canManageDomain, undefined);
+    if (response) return response;
+
     try {
         await connectDB();
         const formData = await request.formData();
-        
+
         const name = formData.get('name');
         const role = formData.get('role');
         const domain = formData.get('domain');
@@ -38,10 +42,15 @@ export async function POST(request) {
         const linkedin = formData.get('linkedin');
         const status = formData.get('status');
         const photoFile = formData.get('photo');
+        const rolesRaw = formData.get('roles');
 
         if (!name || !role || !rollNumber) {
             return NextResponse.json({ error: 'Name, role, and roll number are required' }, { status: 400 });
         }
+
+        const targetDomain = domain || 'General';
+        const gate = await requirePermission(canManageDomain, targetDomain);
+        if (gate.response) return gate.response;
 
         const slug = nameToSlug(name);
         const exists = await Member.findOne({ name: new RegExp(`^${name}$`, 'i') });
@@ -58,9 +67,20 @@ export async function POST(request) {
             photoUrl = await saveFile(buffer, photoFile.type, 'members', UPLOAD_DIR, filename);
         }
 
+        let parsedRoles = [];
+        if (rolesRaw) {
+            try {
+                const r = JSON.parse(rolesRaw);
+                if (Array.isArray(r)) {
+                    parsedRoles = r.filter(x => x && x.domain && x.role).map(x => ({ domain: String(x.domain), role: String(x.role) }));
+                }
+            } catch {}
+        }
+
         const newMember = new Member({
             id, name, role,
-            domain: domain || '',
+            domain: targetDomain,
+            roles: parsedRoles,
             rollNumber,
             department: department || '',
             email: email || '',

@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import Event from '@/lib/models/Event';
 import { saveFile } from '@/lib/uploadHelper';
 import path from 'path';
+import { requirePermission, canCreateEvent } from '@/lib/permissions';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/events');
 const toSlug = (str) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -39,6 +40,9 @@ export async function GET() {
 }
 
 export async function POST(request) {
+    const { actor, response } = await requirePermission(canCreateEvent);
+    if (response) return response;
+
     try {
         await connectDB();
         const formData = await request.formData();
@@ -95,6 +99,8 @@ export async function POST(request) {
             posterUrl,
             accessType,
             allowedDomains,
+            // Tag the event with the creator's domain so domain heads see only theirs.
+            domain: actor.domain || '',
             allowedMembers,
             roles,
             isRegistrationOpen
