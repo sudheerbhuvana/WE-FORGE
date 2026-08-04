@@ -11,8 +11,15 @@ export async function GET() {
         await connectDB();
         
         // 1. Get virtual folders from existing media
+        // Use $ifNull so legacy docs with only eventName (no folder field) are counted correctly
         const mediaFolders = await Media.aggregate([
-            { $group: { _id: '$folder', count: { $sum: 1 }, favorites: { $sum: { $cond: ['$favorite', 1, 0] } } } },
+            {
+                $group: {
+                    _id: { $ifNull: ['$folder', '$eventName'] },
+                    count: { $sum: 1 },
+                    favorites: { $sum: { $cond: ['$favorite', 1, 0] } }
+                }
+            },
             { $project: { _id: 0, name: '$_id', count: 1, favorites: 1 } }
         ]);
 

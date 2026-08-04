@@ -13,6 +13,8 @@ import ModernDateTimePicker from '../../../src/components/ModernDateTimePicker';
 import MemberEditModal from '../../../src/components/admin/MemberEditModal';
 import '../../../src/components/admin/MemberEditModal.css';
 import './AdminDashboard.css';
+import ReactCrop from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 // ─── Helpers ──────────────────────────────────────────────
 
@@ -158,7 +160,8 @@ const AdminDashboard = () => {
   const [mediaUploadTags, setMediaUploadTags] = useState('');
   const [mediaUploadDesc, setMediaUploadDesc] = useState('');
   const [mediaUploadFavorite, setMediaUploadFavorite] = useState(false);
-  const [mediaUploadPreview, setMediaUploadPreview] = useState(null); // local preview of selected file
+  const [mediaUploadPreview, setMediaUploadPreview] = useState(null); // kept for single-file compat
+  const [uploadQueue, setUploadQueue] = useState([]); // [{ id, file, preview, status: 'idle'|'uploading'|'done'|'error', error }]
   const [mediaDeleteConfirm, setMediaDeleteConfirm] = useState(null);  const [editingMediaMeta, setEditingMediaMeta] = useState(null); // { id, title, description } | null
   const [mediaFilterTag, setMediaFilterTag] = useState('all');
   // New media-library state
@@ -204,15 +207,31 @@ const AdminDashboard = () => {
             fetch('/api/media'),
             fetch('/api/media/folders'),
         ]);
-        setMedia(await res.json());
+        const data = await res.json();
+        // Guard: only set if response is actually an array
+        if (Array.isArray(data)) setMedia(data);
+        else console.error('fetchMedia: unexpected response', data);
         if (foldersRes.ok) setMediaFolders(await foldersRes.json());
     } catch {
         setError('Failed to load media');
     } finally {
         setMediaLoading(false);
     }
-};
+  };
   const fetchMediaFolders = async () => { try { const res = await fetch('/api/media/folders'); if (res.ok) setMediaFolders(await res.json()); } catch { /* ignore */ } };
+
+  // Silent version — refreshes data without triggering the loading spinner
+  const silentFetchMedia = async () => {
+    try {
+      const [res, foldersRes] = await Promise.all([
+        fetch('/api/media'),
+        fetch('/api/media/folders'),
+      ]);
+      const data = await res.json();
+      if (Array.isArray(data)) setMedia(data);
+      if (foldersRes.ok) setMediaFolders(await foldersRes.json());
+    } catch { /* ignore — silent */ }
+  };
 
   // ── Fix mobile scroll: stop Lenis and unlock html/body/root ─
   // Lenis in root mode adds overflow:hidden to html+body and intercepts
@@ -294,6 +313,18 @@ const AdminDashboard = () => {
       .catch(() => setLoading(false));
   }, []);
 
+  // ── Background sync: refresh media when user comes back to the tab ──
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        // Re-fetch media silently when user returns to tab
+        fetchMedia();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => document.removeEventListener('visibilitychange', handleVisibility);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Members ──────────────────────────────────────────────
 
@@ -489,58 +520,61 @@ const AdminDashboard = () => {
   };
 
   // ── Media ────────────────────────────────────────────────
-  const handleMediaUpload = async (e) => {
+  const handleMediaFilePick = (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
+    const newItems = files.map((file) => ({
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+      file,
+      preview: file.type.startsWith('image/') ? URL.createObjectURL(file) : null,
+      status: 'idle',
+      error: null,
+    }));
+    setUploadQueue((prev) => [...prev, ...newItems]);
+    // Reset input so same files can be re-added
+    e.target.value = '';
+  };
 
-    // Multi-file: upload all sequentially using the same form fields, no preview
-    if (files.length > 1) {
-      await performMultiUpload(files);
-      return;
-    }
-
-    // Single file: build a local preview URL so the user can see what they picked
-    const file = files[0];
-    if (mediaUploadPreview) URL.revokeObjectURL(mediaUploadPreview);
-    setMediaUploadPreview(URL.createObjectURL(file));
-    // Derive title from the file name (e.g. "DSC_5678.jpg" → "DSC 5678")
-    const derived = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
-    setMediaUploadTitle(derived);
+  const removeFromQueue = (id) => {
+    setUploadQueue((prev) => {
+      const item = prev.find((i) => i.id === id);
+      if (item?.preview) URL.revokeObjectURL(item.preview);
+      return prev.filter((i) => i.id !== id);
+    });
   };
 
   const performUpload = async () => {
-    const fileInput = document.getElementById('media-upload');
-    const file = fileInput?.files?.[0];
-    if (!file) return;
+    if (uploadQueue.length === 0) return;
     if (!mediaUploadTags.trim()) {
       setError('Please add at least one tag before uploading.');
       return;
     }
-    setMediaUploading(true); setError('');
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('eventName', mediaEventTag || 'General');
-      fd.append('title', mediaUploadTitle);
-      fd.append('description', mediaUploadDesc);
-      fd.append('tags', mediaUploadTags);
-      fd.append('favorite', mediaUploadFavorite ? 'true' : 'false');
-      const res = await fetch('/api/media/upload', { method: 'POST', body: fd });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Upload failed');
+    setMediaUploading(true);
+    setError('');
+    for (const item of uploadQueue) {
+      if (item.status === 'done') continue;
+      setUploadQueue((prev) => prev.map((i) => i.id === item.id ? { ...i, status: 'uploading' } : i));
+      try {
+        const fd = new FormData();
+        fd.append('file', item.file);
+        fd.append('eventName', mediaEventTag || 'General');
+        const derived = item.file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+        fd.append('title', mediaUploadTitle || derived);
+        fd.append('description', mediaUploadDesc);
+        fd.append('tags', mediaUploadTags);
+        fd.append('favorite', mediaUploadFavorite ? 'true' : 'false');
+        const res = await fetch('/api/media/upload', { method: 'POST', body: fd });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || 'Upload failed');
+        }
+        setUploadQueue((prev) => prev.map((i) => i.id === item.id ? { ...i, status: 'done' } : i));
+      } catch (err) {
+        setUploadQueue((prev) => prev.map((i) => i.id === item.id ? { ...i, status: 'error', error: err.message } : i));
       }
-      await fetchMedia();
-      // Reset form
-      setShowMediaUpload(false);
-      setMediaUploadTitle('');
-      setMediaUploadTags('');
-      setMediaUploadDesc('');
-      setMediaUploadFavorite(false);
-      if (mediaUploadPreview) URL.revokeObjectURL(mediaUploadPreview);
-      setMediaUploadPreview(null);
-      if (fileInput) fileInput.value = '';
-    } catch (err) { setError(err.message); } finally { setMediaUploading(false); }
+    }
+    setMediaUploading(false);
+    await silentFetchMedia();
   };
 
   const cancelUpload = () => {
@@ -549,10 +583,9 @@ const AdminDashboard = () => {
     setMediaUploadTags('');
     setMediaUploadDesc('');
     setMediaUploadFavorite(false);
-    if (mediaUploadPreview) URL.revokeObjectURL(mediaUploadPreview);
     setMediaUploadPreview(null);
-    const fileInput = document.getElementById('media-upload');
-    if (fileInput) fileInput.value = '';
+    uploadQueue.forEach((i) => { if (i.preview) URL.revokeObjectURL(i.preview); });
+    setUploadQueue([]);
     setError('');
   };
 
@@ -566,7 +599,7 @@ const AdminDashboard = () => {
       setMediaDeleteConfirm(null);
       selectedMedia.delete(id);
       setSelectedMedia(new Set(selectedMedia));
-      await fetchMedia();
+      await silentFetchMedia();
     } catch (err) {
       console.error('Media delete error:', err);
       setError(err.message);
@@ -586,7 +619,7 @@ const AdminDashboard = () => {
         throw new Error(data.error || `Save failed (${res.status})`);
       }
       setEditingMediaMeta(null);
-      await fetchMedia();
+      await silentFetchMedia();
     } catch (err) {
       setError(err.message);
     }
@@ -594,19 +627,30 @@ const AdminDashboard = () => {
 
 // Toggle single item favorite
   const toggleFavorite = async (item) => {
+    const id = item._id || item.id;
+    const newFav = !item.favorite;
+    // Optimistic update — flip star immediately, no reload needed
+    setMedia((prev) => prev.map((m) =>
+      (m._id || m.id) === id ? { ...m, favorite: newFav } : m
+    ));
     try {
-      const res = await fetch(`/api/media/${item._id || item.id}`, {
+      const res = await fetch(`/api/media/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ favorite: !item.favorite }),
+        body: JSON.stringify({ favorite: newFav }),
       });
       if (!res.ok) {
-        const data = await res.json();
+        const data = await res.json().catch(() => ({}));
+        // Rollback on failure
+        setMedia((prev) => prev.map((m) =>
+          (m._id || m.id) === id ? { ...m, favorite: !newFav } : m
+        ));
         throw new Error(data.error || 'Favorite failed');
       }
-      await fetchMedia();
+      // No fetchMedia() here — optimistic state is already correct
     } catch (err) {
-      setError(err.message);
+      setShareToast(`⚠ ${err.message}`);
+      setTimeout(() => setShareToast(''), 3000);
     }
   };
 
@@ -622,7 +666,7 @@ const AdminDashboard = () => {
       });
       if (!res.ok) throw new Error('Bulk favorite failed');
       setSelectedMedia(new Set());
-      await fetchMedia();
+      await silentFetchMedia();
     } catch (err) { setError(err.message); }
   };
 
@@ -635,7 +679,7 @@ const AdminDashboard = () => {
         await fetch(`/api/media/${id}`, { method: 'DELETE' });
       }
       setSelectedMedia(new Set());
-      await fetchMedia();
+      await silentFetchMedia();
     } catch (err) { setError(err.message); }
   };
 
@@ -651,7 +695,7 @@ const AdminDashboard = () => {
       if (!res.ok) throw new Error('Move failed');
       setSelectedMedia(new Set());
       setMoveTarget(null);
-      await fetchMedia();
+      await silentFetchMedia();
     } catch (err) { setError(err.message); }
   };
 
@@ -664,7 +708,7 @@ const AdminDashboard = () => {
       });
       if (!res.ok) throw new Error('Move failed');
       setMoveTarget(null);
-      await fetchMedia();
+      await silentFetchMedia();
     } catch (err) { setError(err.message); }
   };
 
@@ -745,40 +789,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // Multi-file upload — send a list of files through the same endpoint sequentially
-  const performMultiUpload = async (files) => {
-    if (!files || files.length === 0) return;
-    if (!mediaUploadTags.trim()) {
-      setError('Please add at least one tag before uploading.');
-      return;
-    }
-    setMediaUploading(true);
-    setError('');
-    let ok = 0;
-    let failed = 0;
-    for (const file of files) {
-      try {
-        const fd = new FormData();
-        fd.append('file', file);
-        fd.append('eventName', mediaEventTag || 'General');
-        const derivedTitle = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
-        fd.append('title', mediaUploadTitle || derivedTitle);
-        fd.append('description', mediaUploadDesc);
-        fd.append('tags', mediaUploadTags);
-        fd.append('favorite', mediaUploadFavorite ? 'true' : 'false');
-        const res = await fetch('/api/media/upload', { method: 'POST', body: fd });
-        if (!res.ok) failed++;
-        else ok++;
-      } catch {
-        failed++;
-      }
-    }
-    setMediaUploading(false);
-    setShareToast(`Uploaded ${ok}${failed ? `, ${failed} failed` : ''}`);
-    setTimeout(() => setShareToast(''), 2400);
-    await fetchMedia();
-    cancelUpload();
-  };
+  // (performMultiUpload merged into performUpload queue above)
 
   // share toast local state — declared at the top of the component with the rest
 
@@ -1281,7 +1292,7 @@ const AdminDashboard = () => {
     const tagOptions = ['all', 'General', ...Array.from(new Set(events.map((e) => e.title).filter(Boolean)))];
     const folders = Array.from(new Set([
         'General',
-        ...events.map((e) => e.title).filter(Boolean),
+        ...mediaFolders.map((f) => f.name || f).filter(Boolean),
         ...media.map((m) => m.folder || m.eventName || 'General'),
     ]));
 
@@ -1660,155 +1671,211 @@ const AdminDashboard = () => {
                   <X size={20} />
                 </button>
               </div>
-              <div className="admin-dash__modal-body">
-                <div className="admin-dash__field">
-                  <label>Folder Name</label>
-                  <input
-                    type="text"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    placeholder="e.g. Bootcamp 2025"
-                    className="admin-dash__input"
-                    autoFocus
-                  />
+              <form onSubmit={async (e) => {
+                e.preventDefault();
+                const name = newFolderName.trim();
+                if (!name) return;
+                try {
+                  const res = await fetch('/api/media/folders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name }),
+                  });
+                  if (res.ok) {
+                    await fetchMediaFolders();
+                    setShowFolderCreateModal(false);
+                    setMediaFilterTag(name);
+                  } else {
+                    const data = await res.json();
+                    alert(data.error || 'Failed to create folder');
+                  }
+                } catch (e) {
+                  console.error('Failed to create folder:', e);
+                  alert('Network error while creating folder');
+                }
+              }}>
+                <div className="admin-dash__modal-body">
+                  <div className="admin-dash__field">
+                    <label>Folder Name</label>
+                    <input
+                      type="text"
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      placeholder="e.g. Bootcamp 2025"
+                      className="admin-dash__input"
+                      autoFocus
+                    />
+                  </div>
+                  <div className="admin-dash__modal-actions">
+                    <button type="button" className="admin-dash__cancel-btn" onClick={() => setShowFolderCreateModal(false)}>
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="admin-dash__save-btn"
+                      disabled={!newFolderName.trim()}
+                    >
+                      Create
+                    </button>
+                  </div>
                 </div>
-                <div className="admin-dash__modal-actions">
-                  <button className="admin-dash__cancel-btn" onClick={() => setShowFolderCreateModal(false)}>
-                    Cancel
-                  </button>
-                  <button
-                    className="admin-dash__save-btn"
-                    disabled={!newFolderName.trim()}
-                    onClick={async () => {
-                      const name = newFolderName.trim();
-                      if (!name) return;
-                      try {
-                        const res = await fetch('/api/media/folders', {
-                          method: 'POST',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ name }),
-                        });
-                        if (res.ok) {
-                          await fetchMediaFolders();
-                          setShowFolderCreateModal(false);
-                          setMediaFilterTag(name);
-                        }
-                      } catch (e) {
-                        console.error('Failed to create folder:', e);
-                      }
-                    }}
-                  >
-                    Create
-                  </button>
-                </div>
-              </div>
+              </form>
             </div>
           </div>
         )}
 
-        {/* Upload modal (kept) */}
+        {/* Upload modal — queue-based with per-file status */}
         {showMediaUpload && (
           <div className="admin-dash__overlay">
-            <div className="admin-dash__modal" style={{ maxWidth: '480px' }}>
-              <div className="admin-dash__modal-header">
-                <h2>Upload</h2>
+            <div className="admin-upload-modal">
+              {/* Header */}
+              <div className="admin-upload-modal__header">
+                <div>
+                  <h2>Upload Media</h2>
+                  <p className="admin-upload-modal__subtitle">
+                    {uploadQueue.length === 0 ? 'Select files to get started' : `${uploadQueue.length} file${uploadQueue.length !== 1 ? 's' : ''} queued`}
+                  </p>
+                </div>
                 <button className="admin-dash__close-btn" onClick={cancelUpload}><X size={20} /></button>
               </div>
-              <div className="admin-dash__modal-body">
-                {/* File picker — preview after selection */}
-                <div className="admin-dash__field">
-                  <label>File</label>
-                  <input
-                    type="file"
-                    id="media-upload"
-                    className="admin-dash__file-input"
-                    accept="image/*,video/*"
-                    multiple
-                    onChange={handleMediaUpload}
-                  />
-                  {mediaUploadPreview && (
-                    <div className="admin-media__upload-preview">
-                      <img src={mediaUploadPreview} alt="preview" />
+
+              <div className="admin-upload-modal__body">
+
+                {/* LEFT — File queue */}
+                <div className="admin-upload-modal__left">
+                  <div className="admin-upload-modal__pick-zone">
+                    <input
+                      type="file"
+                      id="media-upload"
+                      className="admin-dash__file-input"
+                      accept="image/*,video/*"
+                      multiple
+                      onChange={handleMediaFilePick}
+                    />
+                    {uploadQueue.length === 0 && (
+                      <div className="admin-upload-modal__drop-hint">
+                        <Upload size={28} />
+                        <span>Click "Choose Files" above to pick images or videos</span>
+                        <span className="admin-upload-modal__drop-sub">Supports JPG, PNG, GIF, MP4, MOV and more</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {uploadQueue.length > 0 && (
+                    <div className="admin-upload-queue admin-upload-queue--tall">
+                      {uploadQueue.map((item) => (
+                        <div key={item.id} className={`admin-upload-queue__item admin-upload-queue__item--${item.status}`}>
+                          {item.preview
+                            ? <img src={item.preview} alt={item.file.name} className="admin-upload-queue__thumb" />
+                            : <div className="admin-upload-queue__thumb admin-upload-queue__thumb--video"><Video size={18} /></div>
+                          }
+                          <div className="admin-upload-queue__info">
+                            <span className="admin-upload-queue__name">{item.file.name}</span>
+                            <span className="admin-upload-queue__size">{(item.file.size / 1024 / 1024).toFixed(1)} MB</span>
+                            {item.status === 'uploading' && <span className="admin-upload-queue__status admin-upload-queue__status--uploading">Uploading…</span>}
+                            {item.status === 'done' && <span className="admin-upload-queue__status admin-upload-queue__status--done">✓ Done</span>}
+                            {item.status === 'error' && <span className="admin-upload-queue__status admin-upload-queue__status--error">{item.error || 'Failed'}</span>}
+                          </div>
+                          {item.status !== 'uploading' && item.status !== 'done' && (
+                            <button
+                              type="button"
+                              className="admin-upload-queue__remove"
+                              onClick={() => removeFromQueue(item.id)}
+                              title="Remove"
+                            >
+                              <X size={14} />
+                            </button>
+                          )}
+                          {item.status === 'done' && (
+                            <CheckCircle size={16} style={{ color: '#4caf81', flexShrink: 0 }} />
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
-                  {!mediaUploadPreview && (
-                    <div className="admin-media__upload-hint">
-                      <Upload size={20} aria-hidden="true" />
-                      <span>Pick one or more images / videos to begin</span>
-                    </div>
-                  )}
                 </div>
 
-                <div className="admin-dash__field">
-                  <label>Title</label>
-                  <input
-                    type="text"
-                    value={mediaUploadTitle}
-                    onChange={(e) => setMediaUploadTitle(e.target.value)}
-                    placeholder={mediaUploadTitle ? 'Auto from filename — edit if you like' : 'Auto from filename'}
-                    maxLength={200}
-                  />
+                {/* RIGHT — Metadata */}
+                <div className="admin-upload-modal__right">
+                  <p className="admin-upload-modal__meta-note">These fields apply to all queued files</p>
+
+                  <div className="admin-dash__field">
+                    <label>Tags <span className="admin-dash__req">required</span></label>
+                    <input
+                      type="text"
+                      value={mediaUploadTags}
+                      onChange={(e) => setMediaUploadTags(e.target.value)}
+                      placeholder="opening, keynote, 2026"
+                      autoFocus
+                    />
+                  </div>
+
+                  <div className="admin-dash__field">
+                    <label>Title <span className="admin-dash__opt">optional — auto from filename</span></label>
+                    <input
+                      type="text"
+                      value={mediaUploadTitle}
+                      onChange={(e) => setMediaUploadTitle(e.target.value)}
+                      placeholder="Leave blank to use filename"
+                      maxLength={200}
+                    />
+                  </div>
+
+                  <div className="admin-dash__field">
+                    <label>Description <span className="admin-dash__opt">optional</span></label>
+                    <textarea
+                      value={mediaUploadDesc}
+                      onChange={(e) => setMediaUploadDesc(e.target.value)}
+                      placeholder="Optional — what does this image show?"
+                      rows={3}
+                      maxLength={1000}
+                    />
+                  </div>
+
+                  <div className="admin-dash__field">
+                    <label>Folder</label>
+                    <select
+                      value={mediaEventTag}
+                      onChange={(e) => setMediaEventTag(e.target.value)}
+                      className="admin-dash__input"
+                    >
+                      {folders.map(f => (
+                        <option key={f} value={f}>{f}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <label className="admin-media__upload-fav">
+                    <input
+                      type="checkbox"
+                      checked={mediaUploadFavorite}
+                      onChange={(e) => setMediaUploadFavorite(e.target.checked)}
+                    />
+                    <Star size={14} aria-hidden="true" />
+                    Mark all as favorite (will appear on landing page)
+                  </label>
+
+                  {error && <p className="profile-projects-error" role="alert">{error}</p>}
+
+                  <div className="admin-dash__modal-actions" style={{ marginTop: 'auto', paddingTop: '16px' }}>
+                    <button type="button" className="admin-dash__cancel-btn" onClick={cancelUpload}>Cancel</button>
+                    {uploadQueue.length > 0 && uploadQueue.every((i) => i.status === 'done') ? (
+                      <button type="button" className="admin-dash__save-btn" onClick={cancelUpload}>
+                        <CheckCircle size={14} /> All done — Close
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="admin-dash__save-btn"
+                        onClick={performUpload}
+                        disabled={mediaUploading || uploadQueue.length === 0 || !mediaUploadTags.trim()}
+                      >
+                        {mediaUploading ? 'Uploading…' : (<><Upload size={14} /> Upload {uploadQueue.filter(i => i.status !== 'done').length} file{uploadQueue.filter(i => i.status !== 'done').length !== 1 ? 's' : ''}</>)}
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                <div className="admin-dash__field">
-                  <label>Tags <span className="admin-dash__req">required</span></label>
-                  <input
-                    type="text"
-                    value={mediaUploadTags}
-                    onChange={(e) => setMediaUploadTags(e.target.value)}
-                    placeholder="opening, keynote, 2026"
-                    required
-                  />
-                </div>
-
-                <div className="admin-dash__field">
-                  <label>Description <span className="admin-dash__opt">optional</span></label>
-                  <textarea
-                    value={mediaUploadDesc}
-                    onChange={(e) => setMediaUploadDesc(e.target.value)}
-                    placeholder="Optional — what does this image show?"
-                    rows={3}
-                    maxLength={1000}
-                  />
-                </div>
-
-                <div className="admin-dash__field">
-                  <label>Folder</label>
-                  <input
-                    type="text"
-                    value={mediaEventTag}
-                    onChange={(e) => setMediaEventTag(e.target.value)}
-                    placeholder="e.g. SIH 2026, Workshops, General"
-                    list="media-folder-suggestions"
-                  />
-                  <datalist id="media-folder-suggestions">
-                    {folders.map((f) => <option key={f} value={f} />)}
-                  </datalist>
-                </div>
-
-                <label className="admin-media__upload-fav">
-                  <input
-                    type="checkbox"
-                    checked={mediaUploadFavorite}
-                    onChange={(e) => setMediaUploadFavorite(e.target.checked)}
-                  />
-                  <Star size={14} aria-hidden="true" />
-                  Mark as favorite (will appear on landing page)
-                </label>
-
-                {error && <p className="profile-projects-error" role="alert">{error}</p>}
-
-                <div className="admin-dash__modal-actions">
-                  <button type="button" className="admin-dash__cancel-btn" onClick={cancelUpload}>Cancel</button>
-                  <button
-                    type="button"
-                    className="admin-dash__save-btn"
-                    onClick={performUpload}
-                    disabled={mediaUploading || !mediaUploadPreview}
-                  >
-                    {mediaUploading ? 'Uploading…' : (<><Upload size={14} /> Upload</>)}
-                  </button>
-                </div>
               </div>
             </div>
           </div>

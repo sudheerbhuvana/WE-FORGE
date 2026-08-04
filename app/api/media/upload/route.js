@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import connectDB from "@/lib/db";
 import Media from "@/lib/models/Media";
 import { uploadToR2 } from "@/lib/r2";
@@ -57,6 +58,8 @@ export async function POST(req) {
       uploadedBy: actor.email,
     });
 
+    // Invalidate landing page cache so new favorites appear
+    if (favorite) revalidatePath('/');
     return NextResponse.json(newMedia);
   } catch (error) {
     console.error('Upload error:', error);

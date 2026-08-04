@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import connectDB from '@/lib/db';
 import Media from '@/lib/models/Media';
 import { deleteFromR2 } from '@/lib/r2';
@@ -14,13 +15,18 @@ export const dynamic = 'force-dynamic';
  * When `folder` is changed, `eventName` is kept in sync for back-compat.
  */
 export async function PATCH(req, { params }) {
-    const { response } = await requirePermission(canManageMedia);
-    if (response) return response;
+    const { actor, response } = await requirePermission(canManageMedia);
+    if (response) {
+        console.log('[PATCH /api/media/:id] Auth failed:', response.status);
+        return response;
+    }
+    console.log('[PATCH /api/media/:id] Actor:', actor?.email, 'elite:', actor?.domain);
 
     try {
         await connectDB();
         const { id } = await params;
         const body = await req.json();
+        console.log('[PATCH /api/media/:id] id:', id, 'body:', JSON.stringify(body));
 
         const patch = {};
         if (typeof body.title === 'string') patch.title = body.title.slice(0, 200);
@@ -39,6 +45,8 @@ export async function PATCH(req, { params }) {
         }
         if (typeof body.favorite === 'boolean') patch.favorite = body.favorite;
 
+        console.log('[PATCH /api/media/:id] patch:', JSON.stringify(patch));
+
         if (Object.keys(patch).length === 0) {
             return NextResponse.json({ error: 'No fields to update' }, { status: 400 });
         }
@@ -46,8 +54,12 @@ export async function PATCH(req, { params }) {
         const updated = await Media.findByIdAndUpdate(id, { $set: patch }, { new: true });
         if (!updated) return NextResponse.json({ error: 'Media not found' }, { status: 404 });
 
+        console.log('[PATCH /api/media/:id] updated favorite:', updated.favorite);
+        // Invalidate the landing page so it shows updated favorites on next visit
+        revalidatePath('/');
         return NextResponse.json(updated);
     } catch (error) {
+        console.error('[PATCH /api/media/:id] error:', error.message);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

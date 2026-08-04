@@ -33,14 +33,22 @@ export async function GET(req) {
         if (limit > 0) q = q.limit(limit);
         const items = await q;
         // Normalize legacy docs so the admin UI never sees undefined
-        const out = items.map((m) => ({
-            ...m.toObject(),
-            folder: m.folder || m.eventName || 'General',
-            favorite: !!m.favorite,
-            title: m.title || '',
-            description: m.description || '',
-            tags: Array.isArray(m.tags) ? m.tags : [],
-        }));
+        const out = items.map((m) => {
+            // Derive a human-readable title from the S3 key if DB has none
+            const derivedTitle = m.title || (() => {
+                const rawKey = m.s3Key || m.url || '';
+                const filename = rawKey.split('/').pop() || '';
+                return filename.replace(/^\d+_/, '').replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+            })();
+            return {
+                ...m.toObject(),
+                folder: m.folder || m.eventName || 'General',
+                favorite: !!m.favorite,
+                title: derivedTitle,
+                description: m.description || '',
+                tags: Array.isArray(m.tags) ? m.tags : [],
+            };
+        });
         return NextResponse.json(out);
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
