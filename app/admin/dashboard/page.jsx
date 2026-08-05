@@ -213,11 +213,11 @@ export default function AdminDashboard() {
       case 'contests':
         return <ContestsSection contestsList={contestsList} refreshData={fetchContestsData} />;
       case 'projects':
-        return <ProjectsSection projects={projects} refreshData={fetchEliteData} />;
+        return <ProjectsSection projects={projects} refreshData={fetchProjectsData} />;
       case 'notices':
-        return <NoticesSection notices={notices} refreshData={fetchEliteData} />;
+        return <NoticesSection notices={notices} refreshData={fetchNoticesData} />;
       case 'media':
-        return <MediaSection media={media} events={events} mediaFolders={mediaFolders} refreshData={fetchEliteData} />;
+        return <MediaSection media={media} events={events} mediaFolders={mediaFolders} refreshData={fetchMediaData} />;
       case 'wallofkl':
         return <WallOfKLSection />;
       case 'roles':
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
       case 'settings':
         return <SystemSettingsSection />;
       case 'recruitments':
-        return <RecruitmentsSection recruitmentSettings={recruitmentSettings} recruitmentApps={recruitmentApps} refreshData={fetchEliteData} />;
+        return <RecruitmentsSection recruitmentSettings={recruitmentSettings} recruitmentApps={recruitmentApps} refreshData={fetchRecruitmentsData} />;
       case 'forms':
         return <FormsSection />;
       default:

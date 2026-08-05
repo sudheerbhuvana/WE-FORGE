@@ -473,9 +473,12 @@ export default function MemberEditModal({
                                     onChange={(e) => setField('domain', e.target.value)}
                                     style={{ colorScheme: 'dark' }}
                                 >
-                                    {availableDomains.map(d => (
-                                        <option key={d.name} value={d.name} style={{ background: '#0a0a14', color: '#fff' }}>{d.name}</option>
-                                    ))}
+                                    {availableDomains.map((d, index) => {
+                                        const name = typeof d === 'string' ? d : (d?.name || `domain-${index}`);
+                                        return (
+                                            <option key={`${name}-${index}`} value={name} style={{ background: '#0a0a14', color: '#fff' }}>{name}</option>
+                                        );
+                                    })}
                                 </select>
                             </Field>
 
@@ -543,9 +546,12 @@ export default function MemberEditModal({
                                                 style={{ colorScheme: 'dark' }}
                                             >
                                                 <option value="" style={{ background: '#0a0a14', color: '#fff' }}>Choose a domain…</option>
-                                                {availableDomains.map(d => (
-                                                    <option key={d.name} value={d.name} style={{ background: '#0a0a14', color: '#fff' }}>{d.name}</option>
-                                                ))}
+                                                {availableDomains.map((d, index) => {
+                                                    const name = typeof d === 'string' ? d : (d?.name || `domain-${index}`);
+                                                    return (
+                                                        <option key={`${name}-${index}`} value={name} style={{ background: '#0a0a14', color: '#fff' }}>{name}</option>
+                                                    );
+                                                })}
                                             </select>
                                             <select
                                                 value={r.role || ''}
