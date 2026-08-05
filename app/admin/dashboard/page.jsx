@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { 
-  Users, Calendar, Trophy, FolderKanban, Bell, ImageIcon, UserPlus, Globe, LogOut, FileText
+  Users, Calendar, Trophy, FolderKanban, Bell, ImageIcon, UserPlus, Globe, LogOut, FileText, Sparkles
 } from 'lucide-react';
 
 import memberService from '../../../src/services/memberService';
@@ -18,6 +18,7 @@ import ContestsSection from '../../../src/components/admin/ContestsSection';
 import ProjectsSection from '../../../src/components/admin/ProjectsSection';
 import NoticesSection from '../../../src/components/admin/NoticesSection';
 import MediaSection from '../../../src/components/admin/MediaSection';
+import WallOfKLSection from '../../../src/components/admin/WallOfKLSection';
 import RecruitmentsSection from '../../../src/components/admin/RecruitmentsSection';
 import FormsSection from '../../../src/components/admin/FormsSection';
 
@@ -136,6 +137,7 @@ export default function AdminDashboard() {
     { id: 'projects',     label: 'Projects',     icon: <FolderKanban size={18} />,  count: projects.length,         eliteOnly: true },
     { id: 'notices',      label: 'Notices',      icon: <Bell size={18} />,          count: notices.length,          eliteOnly: true },
     { id: 'media',        label: 'Media',        icon: <ImageIcon size={18} />,     count: media.length,            eliteOnly: true },
+    { id: 'wallofkl',     label: 'Wall of KL',   icon: <Sparkles size={18} />,      count: null,                    eliteOnly: false },
     { id: 'recruitments', label: 'Recruitments', icon: <UserPlus size={18} />,      count: recruitmentApps.length,  eliteOnly: true },
     { id: 'forms',        label: 'Forms',        icon: <FileText size={18} />,      count: null,                    eliteOnly: true },
   ].filter(i => adminInfo.isElite || !i.eliteOnly);
@@ -154,6 +156,8 @@ export default function AdminDashboard() {
         return <NoticesSection notices={notices} refreshData={fetchEliteData} />;
       case 'media':
         return <MediaSection media={media} events={events} mediaFolders={mediaFolders} refreshData={fetchEliteData} />;
+      case 'wallofkl':
+        return <WallOfKLSection />;
       case 'recruitments':
         return <RecruitmentsSection recruitmentSettings={recruitmentSettings} recruitmentApps={recruitmentApps} refreshData={fetchEliteData} />;
       case 'forms':

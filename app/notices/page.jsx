@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { BellRing, AlertCircle, Info } from 'lucide-react';
-import BackButton from '../../src/components/BackButton';
 import ComingSoon from '../../src/components/ComingSoon';
 import noticeService from '../../src/services/noticeService';
 import './page.css';
@@ -47,10 +46,6 @@ const NoticesPage = () => {
 
     return (
         <div className="notices-page">
-            <div className="notices-page__back">
-                <BackButton />
-            </div>
-            
             <header className="notices-page__hero">
                 <h1 className="notices-page__title">Club Notices</h1>
                 <p className="notices-page__subtitle">

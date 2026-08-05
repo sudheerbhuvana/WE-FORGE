@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { FolderKanban, Github, ExternalLink } from 'lucide-react';
-import BackButton from '../../src/components/BackButton';
 import ComingSoon from '../../src/components/ComingSoon';
 import projectService from '../../src/services/projectService';
 import './page.css';

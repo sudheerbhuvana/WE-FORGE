@@ -155,17 +155,11 @@ export default function JoinPage() {
 
   return (
     <div className="join-page">
-      <BackButton href="/" label="Back to Home" />
-
       <main className="join-main">
         {/* Hero Section */}
         <section className="join-hero">
           <div className="join-hero__glow" />
           <div className="join-hero__content">
-            <div className="join-hero__badge">
-              <Sparkles size={14} className="join-hero__badge-icon" />
-              <span>KLFORGE RECRUITMENTS</span>
-            </div>
             <h1 className="join-hero__title">{settings.title || 'Join KLFORGE'}</h1>
             <p className="join-hero__subtitle">{settings.subtitle || 'Shape the future of technology, design, media, and leadership.'}</p>
             {settings.description && (

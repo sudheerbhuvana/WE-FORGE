@@ -82,11 +82,6 @@ export default function ContestsPage() {
   return (
     <div className="events-page contests-page">
       <main className="contests-container">
-        {/* Topbar & Back Button */}
-        <div className="contests-topbar">
-          <BackButton to="/" />
-        </div>
-
         {/* Header Title & Description */}
         <header className="contests-header">
           <h1 className="contests-title">Contests &amp; Challenges</h1>

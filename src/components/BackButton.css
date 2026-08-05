@@ -49,14 +49,12 @@
 
 @media (max-width: 768px) {
   .shared-back-btn {
-    top: 80px;
-    left: 20px;
     padding: 8px 16px;
     font-size: 0.85rem;
   }
   
   .shared-back-btn.shared-back-btn--full-mobile {
-    width: calc(100% - 40px);
+    width: 100%;
     justify-content: center;
     padding: 12px 16px;
     font-size: 0.95rem;

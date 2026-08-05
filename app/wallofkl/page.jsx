@@ -14,16 +14,28 @@ import {
   ChevronRight, 
   X, 
   Share2, 
-  Image as ImageIcon,
-  Check
+  ImageIcon,
+  Check,
+  Trophy,
+  Award,
+  Camera,
+  Star
 } from 'lucide-react';
 import './page.css';
+
+const WINNER_BADGES = [
+  { label: '🏆 WEEKLY CHAMPION', tag: 'Gold Champion', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)' },
+  { label: '📸 SHOT OF THE WEEK', tag: 'Best Photography', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)' },
+  { label: '🎨 CREATIVE SPOTLIGHT', tag: 'Creative Choice', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.15)', border: 'rgba(192, 132, 252, 0.4)' },
+  { label: '🌟 HONORABLE MENTION', tag: 'Top Contender', color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.4)' },
+  { label: '✨ WEEKLY SELECTION', tag: 'Contest Entry', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.15)', border: 'rgba(251, 113, 133, 0.4)' },
+];
 
 export default function WallOfKLPage() {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [layoutMode, setLayoutMode] = useState('masonry'); // 'masonry' | 'uniform'
+  const [layoutMode, setLayoutMode] = useState('bento'); // 'bento' | 'masonry' | 'grid'
   const [activeImageIndex, setActiveImageIndex] = useState(null);
   const [copied, setCopied] = useState(false);
 
@@ -87,6 +99,13 @@ export default function WallOfKLPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const getBentoVariant = (index) => {
+    if (index === 0) return 'hero';
+    if (index % 6 === 1) return 'wide';
+    if (index % 6 === 3) return 'tall';
+    return 'standard';
+  };
+
   return (
     <div className="wallkl-page">
       <Navbar />
@@ -99,11 +118,11 @@ export default function WallOfKLPage() {
         {/* Header Section */}
         <header className="wallkl-header">
           <div className="wallkl-badge">
-            <Sparkles size={14} /> Official Showcase
+            <Trophy size={15} /> Weekly Contest Winners
           </div>
           <h1 className="wallkl-title">Wall of KL</h1>
           <p className="wallkl-subtitle">
-            Exploring the finest moments, winning contest entries, and highlight showcases selected directly from the KL FORGE community.
+            Celebrating the winning captures and extraordinary creative entries submitted by weekly KL FORGE contest champions.
           </p>
         </header>
 
@@ -114,7 +133,7 @@ export default function WallOfKLPage() {
             <input
               type="text"
               className="wallkl-search-input"
-              placeholder="Search showcase images..."
+              placeholder="Search winning captures or titles..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -129,21 +148,28 @@ export default function WallOfKLPage() {
 
           <div className="wallkl-toolbar-right">
             <span className="wallkl-count-badge">
-              {filteredImages.length} {filteredImages.length === 1 ? 'Media Item' : 'Media Items'}
+              {filteredImages.length} {filteredImages.length === 1 ? 'Winning Capture' : 'Winning Captures'}
             </span>
 
             <div className="wallkl-layout-toggles">
               <button
-                className={`wallkl-layout-btn ${layoutMode === 'masonry' ? 'wallkl-layout-btn--active' : ''}`}
-                onClick={() => setLayoutMode('masonry')}
-                title="Dynamic Grid View"
+                className={`wallkl-layout-btn ${layoutMode === 'bento' ? 'wallkl-layout-btn--active' : ''}`}
+                onClick={() => setLayoutMode('bento')}
+                title="Bento Exhibition View"
               >
                 <LayoutGrid size={16} />
               </button>
               <button
-                className={`wallkl-layout-btn ${layoutMode === 'uniform' ? 'wallkl-layout-btn--active' : ''}`}
-                onClick={() => setLayoutMode('uniform')}
-                title="Uniform Grid View"
+                className={`wallkl-layout-btn ${layoutMode === 'masonry' ? 'wallkl-layout-btn--active' : ''}`}
+                onClick={() => setLayoutMode('masonry')}
+                title="Masonry Flow"
+              >
+                <Sparkles size={16} />
+              </button>
+              <button
+                className={`wallkl-layout-btn ${layoutMode === 'grid' ? 'wallkl-layout-btn--active' : ''}`}
+                onClick={() => setLayoutMode('grid')}
+                title="Uniform Grid"
               >
                 <Grid size={16} />
               </button>
@@ -159,59 +185,85 @@ export default function WallOfKLPage() {
         ) : filteredImages.length === 0 ? (
           <div className="wallkl-empty">
             <ImageIcon size={48} className="wallkl-empty-icon" />
-            <h3 className="wallkl-empty-title">No Media Found</h3>
+            <h3 className="wallkl-empty-title">No Contest Captures Found</h3>
             <p className="wallkl-empty-desc">
               {search
-                ? `No contest images found matching "${search}". Try another search keyword.`
-                : 'No contest images currently available in the contest-selected showcase folder.'}
+                ? `No winning entries matching "${search}". Try searching another keyword.`
+                : 'No winning contest entries currently selected for the Wall of KL showcase.'}
             </p>
           </div>
         ) : (
-          <div className={`wallkl-grid wallkl-grid--${layoutMode}`}>
-            {filteredImages.map((img, idx) => (
-              <div
-                key={img.id}
-                className="wallkl-card"
-                onClick={() => setActiveImageIndex(idx)}
-              >
-                <div className="wallkl-card-img-wrap">
-                  <img
-                    src={img.url}
-                    alt={img.title}
-                    className="wallkl-card-img"
-                    loading="lazy"
-                  />
-                  <div className="wallkl-card-overlay">
-                    <h3 className="wallkl-card-title">{img.title}</h3>
-                    <div className="wallkl-card-meta">
-                      <span>KL FORGE Contest</span>
-                      <div className="wallkl-card-actions">
-                        <button
-                          type="button"
-                          className="wallkl-card-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setActiveImageIndex(idx);
-                          }}
-                          title="Expand View"
-                        >
-                          <Maximize2 size={15} />
-                        </button>
-                        <a
-                          href={img.url}
-                          download={img.filename}
-                          className="wallkl-card-btn"
-                          onClick={(e) => e.stopPropagation()}
-                          title="Download Image"
-                        >
-                          <Download size={15} />
-                        </a>
+          <div className={`wallkl-gallery wallkl-gallery--${layoutMode}`}>
+            {filteredImages.map((img, idx) => {
+              const badgeInfo = WINNER_BADGES[idx % WINNER_BADGES.length];
+              const variant = layoutMode === 'bento' ? getBentoVariant(idx) : 'standard';
+              const displayBadge = img.badge || badgeInfo.label;
+              const displayTag = img.tag || (img.author ? `Captured by ${img.author}` : badgeInfo.tag);
+
+              return (
+                <div
+                  key={img.id}
+                  className={`wallkl-card wallkl-card--${variant}`}
+                  onClick={() => setActiveImageIndex(idx)}
+                >
+                  <div className="wallkl-card-img-wrap">
+                    <img
+                      src={img.url}
+                      alt={img.title}
+                      className="wallkl-card-img"
+                      loading="lazy"
+                    />
+
+                    {/* Top Winner Badge Pin */}
+                    <div 
+                      className="wallkl-winner-badge"
+                      style={{ 
+                        background: badgeInfo.bg, 
+                        borderColor: badgeInfo.border, 
+                        color: badgeInfo.color 
+                      }}
+                    >
+                      {displayBadge}
+                    </div>
+
+                    <div className="wallkl-card-overlay">
+                      <div className="wallkl-card-info">
+                        <span className="wallkl-card-tag" style={{ color: badgeInfo.color }}>
+                          {displayTag}
+                        </span>
+                        <h3 className="wallkl-card-title">{img.title}</h3>
+                      </div>
+
+                      <div className="wallkl-card-meta">
+                        <span>KL FORGE Contest Winner</span>
+                        <div className="wallkl-card-actions">
+                          <button
+                            type="button"
+                            className="wallkl-card-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveImageIndex(idx);
+                            }}
+                            title="Expand High-Res View"
+                          >
+                            <Maximize2 size={15} />
+                          </button>
+                          <a
+                            href={img.url}
+                            download={img.filename}
+                            className="wallkl-card-btn"
+                            onClick={(e) => e.stopPropagation()}
+                            title="Download Image"
+                          >
+                            <Download size={15} />
+                          </a>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </main>
@@ -234,7 +286,7 @@ export default function WallOfKLPage() {
                 type="button"
                 className="wallkl-lightbox-nav wallkl-lightbox-nav--prev"
                 onClick={handlePrev}
-                title="Previous Image (←)"
+                title="Previous Capture (←)"
               >
                 <ChevronLeft size={24} />
               </button>
@@ -242,7 +294,7 @@ export default function WallOfKLPage() {
                 type="button"
                 className="wallkl-lightbox-nav wallkl-lightbox-nav--next"
                 onClick={handleNext}
-                title="Next Image (→)"
+                title="Next Capture (→)"
               >
                 <ChevronRight size={24} />
               </button>
@@ -260,9 +312,19 @@ export default function WallOfKLPage() {
 
             <div className="wallkl-lightbox-footer">
               <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                  <span style={{ background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#fbbf24', fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
+                    {activeImage.badge || '🏆 CONTEST WINNING CAPTURE'}
+                  </span>
+                  {activeImage.author && (
+                    <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', fontWeight: 600 }}>
+                      By {activeImage.author}
+                    </span>
+                  )}
+                </div>
                 <h3 className="wallkl-lightbox-title">{activeImage.title}</h3>
                 <div className="wallkl-lightbox-meta">
-                  Contest Selected Showcase • {activeImage.filename}
+                  {activeImage.tag || 'Official KL FORGE Contest Showcase'} • {activeImage.filename}
                 </div>
               </div>
 

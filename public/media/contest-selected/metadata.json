@@ -1,0 +1,26 @@
+{
+  "team-highlight.jpg": {
+    "title": "Team Highlight",
+    "badge": "🏆 CONTEST WINNING CAPTURE",
+    "author": "KL FORGE Team",
+    "tag": "Official Winner"
+  },
+  "contest-winner-1.jpg": {
+    "title": "Sunset Photography Winner",
+    "badge": "📸 SHOT OF THE WEEK",
+    "author": "Rahul V",
+    "tag": "Weekly Champion"
+  },
+  "cyber-forge-artwork.png": {
+    "title": "Cyber Forge Graphic Design",
+    "badge": "🎨 CREATIVE SPOTLIGHT",
+    "author": "Sneha P",
+    "tag": "Design Winner"
+  },
+  "event-showcase-1.jpg": {
+    "title": "Event Highlight Showcase",
+    "badge": "🌟 HONORABLE MENTION",
+    "author": "KL FORGE Media",
+    "tag": "Feature Showcase"
+  }
+}

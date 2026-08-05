@@ -5,13 +5,15 @@ import { Clock } from 'lucide-react';
 import BackButton from './BackButton';
 import './ComingSoon.css';
 
-const ComingSoon = ({ title, message, theme = 'default' }) => {
+const ComingSoon = ({ title, message, theme = 'default', showBackButton = false }) => {
 
   return (
     <div className={`coming-soon-page ${theme === 'cyan' ? 'coming-soon-page--cyan' : ''}`}>
-      <div className="coming-soon-page__topbar">
-        <BackButton />
-      </div>
+      {showBackButton && (
+        <div className="coming-soon-page__topbar">
+          <BackButton />
+        </div>
+      )}
       <div className="coming-soon-page__content">
         <div className="coming-soon-page__icon">
           <Clock size={48} strokeWidth={1.5} />
