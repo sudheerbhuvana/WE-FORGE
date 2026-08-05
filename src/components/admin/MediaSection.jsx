@@ -797,11 +797,11 @@ export default function MediaSection({
                 <div className="admin-media__preview" onClick={() => setInspectorMedia(m)}>
                   {isVideo ? (
                     <div className="admin-media__video-wrap">
-                      <video src={m.url} className="admin-media__asset" muted preload="metadata" />
+                      <video src={m.url} className="admin-media__asset" muted preload="none" />
                       <div className="admin-media__video-badge"><Video size={12} /> Video</div>
                     </div>
                   ) : (
-                    <img src={m.url} alt={m.title || m.folder || 'media'} className="admin-media__asset" loading="lazy" />
+                    <img src={m.url} alt={m.title || m.folder || 'media'} className="admin-media__asset" loading="lazy" decoding="async" />
                   )}
 
                   {/* Hover Overlay Action Bar */}

@@ -138,23 +138,25 @@ export default function RecruitmentsSection({
           </button>
         </div>
 
-        <div className="admin-dash__form-grid" style={{ marginTop: 16 }}>
-          <div className="admin-dash__field admin-dash__field--full">
+        <div className="admin-dash__form-grid admin-dash__form-grid--2col" style={{ marginTop: 16 }}>
+          <div className="admin-dash__field">
             <label>Drive Title</label>
             <input
               type="text"
               value={recruitmentSettings.title || ''}
               onChange={e => setRecruitmentSettings({ ...recruitmentSettings, title: e.target.value })}
               placeholder="e.g. KLFORGE Recruitment Drive 2026"
+              className="admin-dash__input"
             />
           </div>
-          <div className="admin-dash__field admin-dash__field--full">
+          <div className="admin-dash__field">
             <label>Hero Subtitle</label>
             <input
               type="text"
               value={recruitmentSettings.subtitle || ''}
               onChange={e => setRecruitmentSettings({ ...recruitmentSettings, subtitle: e.target.value })}
               placeholder="Tagline displayed under hero title"
+              className="admin-dash__input"
             />
           </div>
           <div className="admin-dash__field admin-dash__field--full">
@@ -164,6 +166,7 @@ export default function RecruitmentsSection({
               value={recruitmentSettings.heroImageUrl || ''}
               onChange={e => setRecruitmentSettings({ ...recruitmentSettings, heroImageUrl: e.target.value })}
               placeholder="https://... (Image URL for /join hero banner)"
+              className="admin-dash__input"
             />
           </div>
         </div>
@@ -351,7 +354,7 @@ export default function RecruitmentsSection({
       {/* Application Detail Modal */}
       {viewingRecApp && (
         <div className="admin-dash__overlay" onClick={() => setViewingRecApp(null)}>
-          <div className="admin-dash__modal" style={{ maxWidth: '680px' }} onClick={e => e.stopPropagation()}>
+          <div className="admin-dash__modal" style={{ maxWidth: '1100px', width: '95vw' }} onClick={e => e.stopPropagation()}>
             <div className="admin-dash__modal-header">
               <h2>Application Details</h2>
               <button className="admin-dash__close-btn" onClick={() => setViewingRecApp(null)}>

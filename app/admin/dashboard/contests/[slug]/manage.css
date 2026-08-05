@@ -29,8 +29,9 @@
 }
 
 .admin-main__content {
-  max-width: 1600px;
-  margin: 0 auto;
+  width: 100% !important;
+  max-width: 100% !important;
+  margin: 0 !important;
   padding: 24px 32px 60px !important;
 }
 
@@ -65,12 +66,13 @@
 /* ===== Page Header (single horizontal row) ===== */
 .cm-page-header {
   display: flex; align-items: center; gap: 14px;
-  padding: 14px 18px;
-  background: var(--cm-surface);
+  padding: 16px 20px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
   border: 1px solid var(--cm-border);
   border-radius: var(--cm-radius);
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   flex-wrap: nowrap;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 .cm-page-header__thumb {
   width: 56px; height: 56px; border-radius: var(--cm-radius-sm);
@@ -86,20 +88,20 @@
 }
 .cm-page-header__main { flex: 1; min-width: 0; }
 .cm-page-header__chips {
-  display: flex; flex-wrap: nowrap; gap: 4px; margin-bottom: 6px;
+  display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 6px;
   overflow: hidden;
   white-space: nowrap;
 }
 .cm-page-header__title {
-  margin: 0; font-size: 1.25rem; font-weight: 700; color: var(--cm-text);
+  margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--cm-text);
   letter-spacing: -0.01em; line-height: 1.2;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .cm-page-header__desc {
-  display: none; /* keep header compact — desc shown in Overview tab */
+  display: none;
 }
 .cm-page-header__actions {
-  display: flex; gap: 4px; flex-wrap: wrap; align-items: center;
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
   flex-shrink: 0;
 }
 
@@ -111,6 +113,110 @@
   .cm-page-header { flex-direction: column; align-items: flex-start; }
   .cm-page-header__actions { width: 100%; justify-content: flex-start; border-top: none; padding-top: 0; }
   .cm-page-header__actions .cm-btn { flex: 1 1 auto; justify-content: center; }
+}
+
+/* ===== Contest Lifecycle Stepper Bar ===== */
+.cm-lifecycle-stepper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.008) 100%);
+  border: 1px solid var(--cm-border);
+  border-radius: var(--cm-radius);
+  padding: 16px 20px;
+  margin-bottom: 14px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.cm-lifecycle-stepper::-webkit-scrollbar { display: none; }
+
+.cm-step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  opacity: 0.4;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  white-space: nowrap;
+}
+
+.cm-step--active,
+.cm-step--completed {
+  opacity: 1;
+}
+
+.cm-step__number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--cm-border-strong);
+  color: var(--cm-text-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.cm-step--active .cm-step__number {
+  background: var(--cm-accent);
+  color: #00131f;
+  border-color: var(--cm-accent);
+  box-shadow: 0 0 16px rgba(113, 196, 255, 0.4);
+}
+
+.cm-step--completed .cm-step__number {
+  background: var(--cm-success-soft);
+  color: var(--cm-success);
+  border-color: rgba(92, 219, 149, 0.4);
+}
+
+.cm-step__title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--cm-text);
+}
+
+.cm-step__desc {
+  font-size: 0.72rem;
+  color: var(--cm-text-3);
+  margin-top: 1px;
+}
+
+.cm-step__line {
+  flex: 1;
+  height: 2px;
+  background: var(--cm-border);
+  min-width: 20px;
+}
+
+.cm-step--completed + .cm-step__line {
+  background: rgba(92, 219, 149, 0.4);
+}
+
+/* Modal Form Sections */
+.admin-modal-section {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+.admin-modal-section__title {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #71C4FF;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 10px;
 }
 
 /* ===== Stats strip (horizontal row, no stacking) ===== */

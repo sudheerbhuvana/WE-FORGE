@@ -418,7 +418,7 @@ export default function ContestManagePage({ params }) {
             </div>
           )}
 
-          {/* ===== Page header — single horizontal row ===== */}
+          {/* ===== Page header ===== */}
           <header className="cm-page-header">
             <div className="cm-page-header__thumb">
               {template?.bannerUrl ? (
@@ -448,41 +448,74 @@ export default function ContestManagePage({ params }) {
                 </span>
               </div>
               <h1 className="cm-page-header__title">{template?.title}</h1>
-              {template?.description && (
-                <p className="cm-page-header__desc">{template.description}</p>
-              )}
             </div>
+
             <div className="cm-page-header__actions">
+              {activeCycle ? (
+                <button className="cm-btn cm-btn--accent" onClick={() => openWinners(activeCycle)} style={{ fontWeight: 600 }}>
+                  <Trophy size={14} /> Declare Winners
+                </button>
+              ) : null}
               <button className="cm-btn cm-btn--primary" onClick={openEdit}>
-                <Edit3 size={14} /> Edit Contest
+                <Edit3 size={14} /> Edit Contest Setup
+              </button>
+              <button className="cm-btn" onClick={() => window.open(`/contests/${slug}`, '_blank')}>
+                <Eye size={14} /> View Public Page
+              </button>
+              <button className="cm-btn" onClick={exportSubmissions}>
+                <Download size={14} /> Export CSV
               </button>
               <button className="cm-btn" disabled={actionBusy}
                 onClick={() => triggerAction(template?.isPublished ? 'unpublish' : 'publish')}>
-                {template?.isPublished ? <><Eye size={14} /> Unpublish</> : <><Sparkles size={14} /> Publish</>}
+                {template?.isPublished ? 'Unpublish' : 'Publish'}
               </button>
               <button className="cm-btn" disabled={actionBusy}
                 onClick={() => triggerAction(template?.isPaused ? 'resume' : 'pause')}>
-                {template?.isPaused ? <><Play size={14} /> Resume</> : <><Pause size={14} /> Pause</>}
-              </button>
-              {activeCycle && (
-                <button className="cm-btn cm-btn--accent" onClick={() => openWinners(activeCycle)}>
-                  <Trophy size={14} /> Winners
-                </button>
-              )}
-              <button className="cm-btn" onClick={() => window.open(`/contests/${slug}`, '_blank')}>
-                <Eye size={14} /> View
-              </button>
-              <button className="cm-btn" onClick={exportSubmissions}>
-                <Download size={14} /> Export
+                {template?.isPaused ? 'Resume' : 'Pause'}
               </button>
               <button className="cm-btn" disabled={actionBusy} onClick={duplicateContest}>
                 <Copy size={14} /> Duplicate
               </button>
               <button className="cm-btn cm-btn--danger" disabled={actionBusy} onClick={deleteContest} title="Delete contest">
-                <Trash2 size={14} /> Delete
+                <Trash2 size={14} />
               </button>
             </div>
           </header>
+
+          {/* ===== Visual Lifecycle Progress Stepper ===== */}
+          <div className="cm-lifecycle-stepper">
+            <div className={`cm-step ${!template?.isPublished ? 'cm-step--active' : 'cm-step--completed'}`}>
+              <div className="cm-step__number">1</div>
+              <div className="cm-step__content">
+                <div className="cm-step__title">Contest Setup & Form</div>
+                <div className="cm-step__desc">{template?.customFields?.length || 0} fields configured</div>
+              </div>
+            </div>
+            <div className="cm-step__line" />
+            <div className={`cm-step ${activeCycle?.status === 'active' ? 'cm-step--active' : (activeCycle?.status === 'judging' || activeCycle?.status === 'results_published') ? 'cm-step--completed' : ''}`}>
+              <div className="cm-step__number">2</div>
+              <div className="cm-step__content">
+                <div className="cm-step__title">Submissions Open</div>
+                <div className="cm-step__desc">{activeCycle?.status === 'active' ? `${relTime(activeCycle.endTime)} remaining` : 'Submissions window'}</div>
+              </div>
+            </div>
+            <div className="cm-step__line" />
+            <div className={`cm-step ${activeCycle?.status === 'judging' ? 'cm-step--active' : activeCycle?.status === 'results_published' ? 'cm-step--completed' : ''}`}>
+              <div className="cm-step__number">3</div>
+              <div className="cm-step__content">
+                <div className="cm-step__title">Evaluation & Scoring</div>
+                <div className="cm-step__desc">{totalSubmissions} entries submitted</div>
+              </div>
+            </div>
+            <div className="cm-step__line" />
+            <div className={`cm-step ${activeCycle?.status === 'results_published' ? 'cm-step--active cm-step--completed' : ''}`}>
+              <div className="cm-step__number">4</div>
+              <div className="cm-step__content">
+                <div className="cm-step__title">Winners & Announcement</div>
+                <div className="cm-step__desc">{winnersPublished > 0 ? `${winnersPublished} results live` : 'Pending publication'}</div>
+              </div>
+            </div>
+          </div>
 
           {/* ===== Stats strip — horizontal row ===== */}
           <div className="cm-stats-strip">
@@ -776,94 +809,116 @@ export default function ContestManagePage({ params }) {
 
       {editing && editForm && (
         <div className="admin-dash__overlay" onClick={() => !editSaving && setEditing(false)}>
-          <div className="admin-dash__modal" style={{ maxWidth: '1100px' }} onClick={(e) => e.stopPropagation()}>
+          <div className="admin-dash__modal" style={{ maxWidth: '1000px' }} onClick={(e) => e.stopPropagation()}>
             <div className="admin-dash__modal-header">
               <h2>Edit Contest Template</h2>
               <button className="admin-dash__close-btn" onClick={() => setEditing(false)} disabled={editSaving}><X size={20} /></button>
             </div>
-            <form onSubmit={saveEdit} className="admin-dash__modal-body">
-              <div className="admin-dash__form-grid admin-dash__form-grid--3col">
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Title *</label>
-                  <input type="text" required value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} />
-                </div>
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Description</label>
-                  <textarea rows={2} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} />
-                </div>
-                <div className="admin-dash__field">
-                  <label>Banner URL</label>
-                  <input type="text" value={editForm.bannerUrl} onChange={(e) => setEditForm({ ...editForm, bannerUrl: e.target.value })} placeholder="https://..." />
-                </div>
-                <div className="admin-dash__field">
-                  <label>Tags (comma-separated)</label>
-                  <input type="text" value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} />
-                </div>
-                <div className="admin-dash__field">
-                  <label>Visibility flags</label>
-                  <div style={{ display: 'flex', gap: 14, paddingTop: 8, fontSize: '0.82rem' }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
-                      <input type="checkbox" checked={editForm.featured} onChange={(e) => setEditForm({ ...editForm, featured: e.target.checked })} />
-                      Featured
-                    </label>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, margin: 0 }}>
-                      <input type="checkbox" checked={editForm.isPublished} onChange={(e) => setEditForm({ ...editForm, isPublished: e.target.checked })} />
-                      Published
-                    </label>
+            <form onSubmit={saveEdit} className="admin-dash__modal-form">
+              <div className="admin-dash__modal-body">
+                {/* Section 1: Basic Info */}
+                <div className="admin-modal-section">
+                  <div className="admin-modal-section__title"><FileText size={15} /> 1. Contest Basic Details</div>
+                  <div className="admin-dash__form-grid admin-dash__form-grid--2col">
+                    <div className="admin-dash__field admin-dash__field--full">
+                      <label>Title *</label>
+                      <input type="text" required value={editForm.title} onChange={(e) => setEditForm({ ...editForm, title: e.target.value })} className="admin-dash__input" />
+                    </div>
+                    <div className="admin-dash__field admin-dash__field--full">
+                      <label>Short Description</label>
+                      <textarea rows={2} value={editForm.description} onChange={(e) => setEditForm({ ...editForm, description: e.target.value })} className="admin-dash__input" />
+                    </div>
+                    <div className="admin-dash__field">
+                      <label>Banner Image URL</label>
+                      <input type="text" value={editForm.bannerUrl} onChange={(e) => setEditForm({ ...editForm, bannerUrl: e.target.value })} placeholder="https://..." className="admin-dash__input" />
+                    </div>
+                    <div className="admin-dash__field">
+                      <label>Tags (Comma-separated)</label>
+                      <input type="text" value={editForm.tags} onChange={(e) => setEditForm({ ...editForm, tags: e.target.value })} placeholder="design, hackathon, 2026" className="admin-dash__input" />
+                    </div>
+                    <div className="admin-dash__field admin-dash__field--full">
+                      <label>Status & Visibility</label>
+                      <div style={{ display: 'flex', gap: 20, paddingTop: 6, fontSize: '0.86rem' }}>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0, cursor: 'pointer' }}>
+                          <input type="checkbox" checked={editForm.featured} onChange={(e) => setEditForm({ ...editForm, featured: e.target.checked })} />
+                          Featured Spotlight
+                        </label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0, cursor: 'pointer' }}>
+                          <input type="checkbox" checked={editForm.isPublished} onChange={(e) => setEditForm({ ...editForm, isPublished: e.target.checked })} />
+                          Published & Active
+                        </label>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Rules</label>
-                  <textarea rows={2} value={editForm.rules} onChange={(e) => setEditForm({ ...editForm, rules: e.target.value })} />
-                </div>
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Eligibility</label>
-                  <textarea rows={2} value={editForm.eligibility} onChange={(e) => setEditForm({ ...editForm, eligibility: e.target.value })} />
-                </div>
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Prize Info</label>
-                  <textarea rows={2} value={editForm.prizeInfo} onChange={(e) => setEditForm({ ...editForm, prizeInfo: e.target.value })} />
-                </div>
-                <div className="admin-dash__field admin-dash__field--full">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                    <label style={{ margin: 0 }}>Custom Form Fields</label>
-                    <button type="button" className="admin-dash__save-btn" onClick={addField} style={{ padding: '6px 12px' }}>
-                      <Plus size={14} /> Add Field
+
+                {/* Section 2: Form Builder */}
+                <div className="admin-modal-section">
+                  <div className="admin-modal-section__title" style={{ justifyContent: 'space-between' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ListChecks size={15} /> 2. Custom Submission Form Builder</span>
+                    <button type="button" className="admin-dash__save-btn" onClick={addField} style={{ padding: '4px 12px', fontSize: '0.78rem' }}>
+                      <Plus size={13} /> Add Field
                     </button>
                   </div>
                   <div className="admin-dash__fields-grid">
-                    {editForm.customFields.map((field, idx) => (
-                      <div key={idx} className="admin-dash__field-row">
-                        <input type="text" className="admin-dash__input" placeholder="Field label" value={field.label} onChange={(e) => updateField(idx, { label: e.target.value })} />
-                        <select className="admin-dash__input" value={field.type} onChange={(e) => updateField(idx, { type: e.target.value })}>
-                          <option value="text">Text</option>
-                          <option value="textarea">Writeup</option>
-                          <option value="number">Number</option>
-                          <option value="image">Image</option>
-                          <option value="video">Video</option>
-                          <option value="file">File</option>
-                          <option value="link">Work Link</option>
-                          <option value="select">Dropdown</option>
-                        </select>
-                        <label className="admin-dash__req-check">
-                          <input type="checkbox" checked={!!field.required} onChange={(e) => updateField(idx, { required: e.target.checked })} /> Req
-                        </label>
-                        {(field.type === 'image' || field.type === 'video' || field.type === 'file') && (
-                          <label className="admin-dash__num-inline">MB <input type="number" min={1} max={1000} className="admin-dash__input" value={field.maxSizeMB || 10} onChange={(e) => updateField(idx, { maxSizeMB: parseInt(e.target.value, 10) || 10 })} /></label>
-                        )}
-                        {(field.type === 'image' || field.type === 'link') && (
-                          <label className="admin-dash__num-inline">Count <input type="number" min={1} max={20} className="admin-dash__input" value={field.maxCount || 1} onChange={(e) => updateField(idx, { maxCount: parseInt(e.target.value, 10) || 1 })} /></label>
-                        )}
-                        <div className="admin-dash__field-actions">
-                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveField(idx, -1)} disabled={idx === 0}><ChevronUp size={13} /></button>
-                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveField(idx, 1)} disabled={idx === editForm.customFields.length - 1}><ChevronDown size={13} /></button>
-                          <button type="button" className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => removeField(idx)}><Trash2 size={13} /></button>
-                        </div>
+                    {editForm.customFields.length === 0 ? (
+                      <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem', background: 'rgba(0,0,0,0.2)', borderRadius: 10 }}>
+                        No custom fields configured yet. Click "Add Field" to collect submissions.
                       </div>
-                    ))}
+                    ) : (
+                      editForm.customFields.map((field, idx) => (
+                        <div key={idx} className="admin-dash__field-row" style={{ background: 'rgba(0,0,0,0.3)', padding: 10, borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
+                          <input type="text" className="admin-dash__input" placeholder="Field Title (e.g. Figma Link)" value={field.label} onChange={(e) => updateField(idx, { label: e.target.value })} />
+                          <select className="admin-dash__input" value={field.type} onChange={(e) => updateField(idx, { type: e.target.value })}>
+                            <option value="text">Text Input</option>
+                            <option value="textarea">Writeup / Textarea</option>
+                            <option value="number">Number Input</option>
+                            <option value="image">Image Upload</option>
+                            <option value="video">Video Upload</option>
+                            <option value="file">File Upload</option>
+                            <option value="link">URL / Work Link</option>
+                            <option value="select">Dropdown Choice</option>
+                          </select>
+                          <label className="admin-dash__req-check" style={{ fontSize: '0.8rem' }}>
+                            <input type="checkbox" checked={!!field.required} onChange={(e) => updateField(idx, { required: e.target.checked })} /> Required
+                          </label>
+                          {(field.type === 'image' || field.type === 'video' || field.type === 'file') && (
+                            <label className="admin-dash__num-inline">MB <input type="number" min={1} max={1000} className="admin-dash__input" value={field.maxSizeMB || 10} onChange={(e) => updateField(idx, { maxSizeMB: parseInt(e.target.value, 10) || 10 })} /></label>
+                          )}
+                          {(field.type === 'image' || field.type === 'link') && (
+                            <label className="admin-dash__num-inline">Count <input type="number" min={1} max={20} className="admin-dash__input" value={field.maxCount || 1} onChange={(e) => updateField(idx, { maxCount: parseInt(e.target.value, 10) || 1 })} /></label>
+                          )}
+                          <div className="admin-dash__field-actions">
+                            <button type="button" className="admin-dash__icon-btn" onClick={() => moveField(idx, -1)} disabled={idx === 0}><ChevronUp size={13} /></button>
+                            <button type="button" className="admin-dash__icon-btn" onClick={() => moveField(idx, 1)} disabled={idx === editForm.customFields.length - 1}><ChevronDown size={13} /></button>
+                            <button type="button" className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => removeField(idx)}><Trash2 size={13} /></button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                {/* Section 3: Guidelines & Prizes */}
+                <div className="admin-modal-section">
+                  <div className="admin-modal-section__title"><Award size={15} /> 3. Rules, Eligibility & Prizes</div>
+                  <div className="admin-dash__form-grid admin-dash__form-grid--2col">
+                    <div className="admin-dash__field admin-dash__field--full">
+                      <label>Contest Rules</label>
+                      <textarea rows={2} value={editForm.rules} onChange={(e) => setEditForm({ ...editForm, rules: e.target.value })} className="admin-dash__input" placeholder="Rule guidelines..." />
+                    </div>
+                    <div className="admin-dash__field admin-dash__field--full">
+                      <label>Eligibility Requirements</label>
+                      <textarea rows={2} value={editForm.eligibility} onChange={(e) => setEditForm({ ...editForm, eligibility: e.target.value })} className="admin-dash__input" placeholder="Who can participate..." />
+                    </div>
+                    <div className="admin-dash__field admin-dash__field--full">
+                      <label>Prize Information</label>
+                      <textarea rows={2} value={editForm.prizeInfo} onChange={(e) => setEditForm({ ...editForm, prizeInfo: e.target.value })} className="admin-dash__input" placeholder="1st place $500, certificates..." />
+                    </div>
                   </div>
                 </div>
               </div>
+
               <div className="admin-dash__modal-actions">
                 <button type="button" className="admin-dash__cancel-btn" onClick={() => setEditing(false)} disabled={editSaving}>Cancel</button>
                 <button type="submit" className="admin-dash__save-btn" disabled={editSaving}>

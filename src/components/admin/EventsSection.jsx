@@ -295,44 +295,51 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
       {/* Add / Edit Event Modal */}
       {showEventForm && (
         <div className="admin-dash__overlay" data-lenis-prevent="true" onClick={() => setShowEventForm(false)}>
-          <form className="admin-dash__modal" onClick={e => e.stopPropagation()} onSubmit={handleEventSubmit}>
+          <form className="admin-dash__modal" style={{ maxWidth: '1200px', width: '95vw' }} onClick={e => e.stopPropagation()} onSubmit={handleEventSubmit}>
             <div className="admin-dash__modal-header">
               <h2>{eventEditing ? 'Edit Event' : 'Add New Event'}</h2>
               <button type="button" className="admin-dash__close-btn" onClick={() => setShowEventForm(false)}><X size={20} /></button>
             </div>
             {error && <div className="admin-dash__error">{error}</div>}
-            <div className="admin-dash__form-grid">
-              <div className="admin-dash__field admin-dash__field--full"><label>Title *</label><input required value={eventForm.title} onChange={e => setEventForm({ ...eventForm, title: e.target.value })} placeholder="Event title" /></div>
-              <div className="admin-dash__field admin-dash__field--full"><label>Description</label><textarea rows="3" value={eventForm.description} onChange={e => setEventForm({ ...eventForm, description: e.target.value })} placeholder="What's this event about?" /></div>
-              <div className="admin-dash__field"><label>Event Type</label><input value={eventForm.type} onChange={e => setEventForm({ ...eventForm, type: e.target.value })} placeholder="e.g. Workshop, Seminar" /></div>
-              <div className="admin-dash__field"><label>Points</label><input type="number" value={eventForm.points} onChange={e => setEventForm({ ...eventForm, points: Number(e.target.value) })} /></div>
-              <div className="admin-dash__field"><label>Slots</label><input type="number" value={eventForm.slots} onChange={e => setEventForm({ ...eventForm, slots: Number(e.target.value) })} /></div>
-
-              <div className="admin-dash__field">
-                <label>Start Time *</label>
-                <ModernDateTimePicker value={eventForm.startTime} onChange={val => setEventForm({ ...eventForm, startTime: val })} placeholder="Select Start Time" />
-              </div>
-              <div className="admin-dash__field">
-                <label>End Time *</label>
-                <ModernDateTimePicker value={eventForm.endTime} onChange={val => setEventForm({ ...eventForm, endTime: val })} placeholder="Select End Time" />
-              </div>
-
-              <div className="admin-dash__field admin-dash__field--full">
-                <label>Venue</label>
-                <input value={eventForm.venue} onChange={e => setEventForm({ ...eventForm, venue: e.target.value })} placeholder="e.g. A Block Seminar Hall" />
+            
+            <div className="admin-dash__modal-body">
+              {/* Section 1: Event Basic Information */}
+              <div className="admin-modal-section">
+                <div className="admin-modal-section__title"><FileText size={15} /> 1. Event Details</div>
+                <div className="admin-dash__form-grid admin-dash__form-grid--2col">
+                  <div className="admin-dash__field admin-dash__field--full"><label>Title *</label><input required value={eventForm.title} onChange={e => setEventForm({ ...eventForm, title: e.target.value })} placeholder="Event title" className="admin-dash__input" /></div>
+                  <div className="admin-dash__field admin-dash__field--full"><label>Description</label><textarea rows="3" value={eventForm.description} onChange={e => setEventForm({ ...eventForm, description: e.target.value })} placeholder="What's this event about?" className="admin-dash__input" /></div>
+                  <div className="admin-dash__field"><label>Event Type</label><input value={eventForm.type} onChange={e => setEventForm({ ...eventForm, type: e.target.value })} placeholder="e.g. Workshop, Seminar" className="admin-dash__input" /></div>
+                  <div className="admin-dash__field"><label>Venue</label><input value={eventForm.venue} onChange={e => setEventForm({ ...eventForm, venue: e.target.value })} placeholder="e.g. A Block Seminar Hall" className="admin-dash__input" /></div>
+                  <div className="admin-dash__field"><label>Points</label><input type="number" value={eventForm.points} onChange={e => setEventForm({ ...eventForm, points: Number(e.target.value) })} className="admin-dash__input" /></div>
+                  <div className="admin-dash__field"><label>Slots</label><input type="number" value={eventForm.slots} onChange={e => setEventForm({ ...eventForm, slots: Number(e.target.value) })} className="admin-dash__input" /></div>
+                </div>
               </div>
 
-              {/* ===== Custom Registration Form ===== */}
-              <div className="admin-dash__field admin-dash__field--full">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <label style={{ margin: 0, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                    <ListChecks size={14} /> Custom Registration Form
-                  </label>
-                  <button type="button" onClick={addCustomField} className="admin-dash__save-btn" style={{ padding: '6px 12px' }}>
-                    <PlusIcon size={14} /> Add Field
+              {/* Section 2: Timings & Schedule */}
+              <div className="admin-modal-section">
+                <div className="admin-modal-section__title"><Calendar size={15} /> 2. Schedule & Timings</div>
+                <div className="admin-dash__form-grid admin-dash__form-grid--2col">
+                  <div className="admin-dash__field">
+                    <label>Start Time *</label>
+                    <ModernDateTimePicker value={eventForm.startTime} onChange={val => setEventForm({ ...eventForm, startTime: val })} placeholder="Select Start Time" />
+                  </div>
+                  <div className="admin-dash__field">
+                    <label>End Time *</label>
+                    <ModernDateTimePicker value={eventForm.endTime} onChange={val => setEventForm({ ...eventForm, endTime: val })} placeholder="Select End Time" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Section 3: Custom Registration Form */}
+              <div className="admin-modal-section">
+                <div className="admin-modal-section__title" style={{ justifyContent: 'space-between' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ListChecks size={15} /> 3. Custom Registration Form Fields</span>
+                  <button type="button" onClick={addCustomField} className="admin-dash__save-btn" style={{ padding: '4px 12px', fontSize: '0.78rem' }}>
+                    <PlusIcon size={13} /> Add Field
                   </button>
                 </div>
-                <p style={{ margin: '0 0 10px', color: 'rgba(255,255,255,0.5)', fontSize: '0.78rem' }}>
+                <p style={{ margin: '0 0 12px', color: 'rgba(255,255,255,0.45)', fontSize: '0.78rem' }}>
                   Optional fields collected from participants during registration — project links, resumes, team details, etc. Leave empty for a basic registration.
                 </p>
                 {(eventForm.customFields || []).length === 0 ? (

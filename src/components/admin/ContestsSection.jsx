@@ -417,7 +417,7 @@ export default function ContestsSection({ contestsList = [], refreshData }) {
       {/* Contest Create / Edit Modal */}
       {showContestForm && (
         <div className="admin-dash__overlay" onClick={() => setShowContestForm(false)}>
-          <div className="admin-dash__modal" style={{ maxWidth: '720px' }} onClick={e => e.stopPropagation()}>
+          <div className="admin-dash__modal" style={{ maxWidth: '1200px', width: '95vw' }} onClick={e => e.stopPropagation()}>
             <div className="admin-dash__modal-header">
               <h2>{contestEditingSlug ? 'Edit Contest Template' : 'Create New Contest'}</h2>
               <button className="admin-dash__close-btn" onClick={() => setShowContestForm(false)}><X size={20} /></button>
@@ -425,7 +425,7 @@ export default function ContestsSection({ contestsList = [], refreshData }) {
 
             <form onSubmit={saveContestForm} className="admin-dash__modal-form">
               <div className="admin-dash__modal-body">
-                <div className="admin-dash__form-grid">
+                <div className="admin-dash__form-grid admin-dash__form-grid--2col">
                   <div className="admin-dash__field admin-dash__field--full">
                     <label>Title *</label>
                     <input type="text" required value={contestForm.title} onChange={e => setContestForm({ ...contestForm, title: e.target.value })} placeholder="Photography Challenge 2026" />
