@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
+import { requirePermission, canManageWallOfKL } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -83,6 +84,9 @@ export async function GET(req) {
 
 // POST endpoint for updating metadata or uploading a new image to contest-selected
 export async function POST(req) {
+  const { response } = await requirePermission(canManageWallOfKL);
+  if (response) return response;
+
   try {
     const dirPath = getDirPath();
     await fs.mkdir(dirPath, { recursive: true });
@@ -172,6 +176,9 @@ export async function POST(req) {
 
 // DELETE endpoint for removing an image from contest-selected
 export async function DELETE(req) {
+  const { response } = await requirePermission(canManageWallOfKL);
+  if (response) return response;
+
   try {
     const { searchParams } = new URL(req.url);
     const filename = searchParams.get('filename');

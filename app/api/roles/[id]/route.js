@@ -2,11 +2,15 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Role from '@/lib/models/Role';
 import Member from '@/lib/models/Member';
+import { requirePermission, isElite } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
 export async function PUT(req, { params }) {
   try {
+    const { response } = await requirePermission(isElite);
+    if (response) return response;
+
     const { id } = await params;
     await connectDB();
     const body = await req.json();
@@ -39,6 +43,9 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
+    const { response } = await requirePermission(isElite);
+    if (response) return response;
+
     const { id } = await params;
     await connectDB();
 

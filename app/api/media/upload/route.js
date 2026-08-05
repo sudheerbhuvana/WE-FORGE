@@ -4,8 +4,12 @@ import connectDB from "@/lib/db";
 import Media from "@/lib/models/Media";
 import { uploadToR2 } from "@/lib/r2";
 import { requirePermission, canManageMedia } from "@/lib/permissions";
+import { checkRateLimit } from "@/lib/rateLimiter";
 
 export async function POST(req) {
+  const rateLimit = await checkRateLimit(req, 'upload');
+  if (!rateLimit.allowed) return rateLimit.response;
+
   const { actor, response } = await requirePermission(canManageMedia);
   if (response) return response;
 

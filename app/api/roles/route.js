@@ -4,6 +4,8 @@ import Role from '@/lib/models/Role';
 import Member from '@/lib/models/Member';
 import { PERMISSION_GROUPS } from '@/lib/permissionsCatalog';
 
+import { requirePermission, isElite } from '@/lib/permissions';
+
 export const dynamic = 'force-dynamic';
 
 // Seed default system roles if database is empty
@@ -74,6 +76,9 @@ export async function GET() {
 
 export async function POST(req) {
   try {
+    const { response } = await requirePermission(isElite);
+    if (response) return response;
+
     await connectDB();
     const body = await req.json();
 
