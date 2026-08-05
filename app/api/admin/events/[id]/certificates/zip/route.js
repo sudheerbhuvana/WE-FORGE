@@ -3,6 +3,7 @@ import connectDB from '@/lib/db';
 import Certificate from '@/lib/models/Certificate';
 import Event from '@/lib/models/Event';
 import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { generateCertificate } from '@/lib/certificateGenerator';
 export const dynamic = 'force-dynamic';
 
 const BASE = process.env.CERT_BASE_URL || 'http://localhost:3000';
@@ -37,10 +38,10 @@ export async function GET(req, { params }) {
 
                 const fs = await import('fs');
                 const roleToTpl = {
-                    winner: event.certificateTemplateWinner,
-                    runner_up: event.certificateTemplateWinner,
-                    third_place: event.certificateTemplateWinner,
-                    participant: event.certificateTemplateParticipant,
+                    winner: event.certificateTemplateWinner || '/templates/certificates/winner.pdf',
+                    runner_up: event.certificateTemplateWinner || '/templates/certificates/winner.pdf',
+                    third_place: event.certificateTemplateWinner || '/templates/certificates/winner.pdf',
+                    participant: event.certificateTemplateParticipant || '/templates/certificates/participant.pdf',
                 };
                 const tplCache = {};
 
@@ -63,8 +64,9 @@ export async function GET(req, { params }) {
                             certId: cert.certificateId,
                             verifyUrl: `${BASE}/certification/verify/${cert.certificateId}`,
                         });
-                        const safeName = cert.name.replace(/[^a-z0-9]+/gi, '_');
-                        const filename = `${cert.eventRole}/${safeName}_${cert.certificateId}.pdf`;
+                        const safeTitle = cert.eventTitle.replace(/[^a-z0-9]+/gi, '_');
+                        const dateStr = event.eventDate || event.startTime ? new Date(event.eventDate || event.startTime).toISOString().split('T')[0] : 'unknown-date';
+                        const filename = `${cert.eventRole}/${cert.memberRoll}_${safeTitle}_${dateStr}.pdf`;
                         archive.append(pdf, { name: filename });
                     } catch (e) {
                         archive.append(`Error: ${e.message}\n`, { name: `ERROR_${cert.certificateId}.txt` });

@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Media from '@/lib/models/Media';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { uploadToR2 } from '@/lib/r2';
+import { requirePermission, canManageMedia } from '@/lib/permissions';
+import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,7 +35,6 @@ export async function GET(req) {
         const items = await q;
         // Normalize legacy docs so the admin UI never sees undefined
         const out = items.map((m) => {
-            // Derive a human-readable title from the S3 key if DB has none
             const derivedTitle = m.title || (() => {
                 const rawKey = m.s3Key || m.url || '';
                 const filename = rawKey.split('/').pop() || '';
@@ -53,4 +53,78 @@ export async function GET(req) {
     } catch (error) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
+}
+
+/**
+ * POST /api/media
+ * Upload media file
+ */
+export async function POST(req) {
+  const { actor, response } = await requirePermission(canManageMedia);
+  if (response) return response;
+
+  try {
+    const formData = await req.formData();
+    const file = formData.get('file');
+    const folderName = (formData.get('folder') || formData.get('eventName') || 'General').toString().trim() || 'General';
+    const rawTitle = (formData.get('title') || '').toString().trim().slice(0, 200);
+    const description = (formData.get('description') || '').toString().trim().slice(0, 1000);
+    
+    // Support both JSON stringified tags array or comma separated string
+    const rawTags = formData.get('tags');
+    let tags = [];
+    if (rawTags) {
+      try {
+        const parsed = JSON.parse(rawTags);
+        if (Array.isArray(parsed)) tags = parsed;
+      } catch (e) {
+        tags = rawTags.toString().split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean);
+      }
+    }
+
+    const favoriteRaw = formData.get('favorite');
+    const favorite = favoriteRaw === 'true' || favoriteRaw === 'on' || favoriteRaw === '1';
+
+    if (!file) return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const mimeType = file.type || 'application/octet-stream';
+    const type = mimeType.startsWith('video/') ? 'video' : 'image';
+
+    const fileTitle = file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').trim();
+    const title = rawTitle || fileTitle;
+
+    const timestamp = Date.now();
+    const safeName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
+    const key = `media/${folderName.replace(/\s+/g, '_')}/${timestamp}_${safeName}`;
+
+    let url = `/uploads/${key}`;
+    try {
+      url = await uploadToR2(buffer, key, mimeType);
+    } catch (err) {
+      console.warn('R2 upload failed, using fallback key path:', err.message);
+    }
+
+    await connectDB();
+    const newMedia = await Media.create({
+      url,
+      type,
+      eventName: folderName,
+      folder: folderName,
+      title,
+      description,
+      tags,
+      favorite,
+      s3Key: key,
+      fileSize: file.size,
+      mimeType,
+      uploadedBy: actor ? actor.email : 'admin',
+    });
+
+    if (favorite) revalidatePath('/');
+    return NextResponse.json(newMedia);
+  } catch (error) {
+    console.error('Media upload error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

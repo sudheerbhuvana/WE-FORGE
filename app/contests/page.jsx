@@ -81,20 +81,21 @@ export default function ContestsPage() {
 
   return (
     <div className="events-page contests-page">
-      <div className="events-page__topbar">
-        <BackButton to="/" />
-      </div>
-
-      {/* Header matching site layout */}
-      <div className="events-page__header">
-        <h1 className="events-page__title">Contests &amp; Challenges</h1>
-        <p className="events-page__subtitle">
-          Participate in weekly, monthly, and hackathon challenges. Build projects, compete, and climb the leaderboard.
-        </p>
-      </div>
-
-      {/* Catalog Main */}
       <main className="contests-container">
+        {/* Topbar & Back Button */}
+        <div className="contests-topbar">
+          <BackButton to="/" />
+        </div>
+
+        {/* Header Title & Description */}
+        <header className="contests-header">
+          <h1 className="contests-title">Contests &amp; Challenges</h1>
+          <p className="contests-subtitle">
+            Participate in weekly, monthly, and hackathon challenges. Build projects, compete, and climb the leaderboard.
+          </p>
+        </header>
+
+        {/* Controls Row */}
         {/* Controls Row */}
         <div className="contests-controls">
           <div className="contests-search">

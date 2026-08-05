@@ -71,6 +71,11 @@
   color: #7dbeFF;
 }
 
+.event-detail__topbar {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
 .event-detail__hero {
   max-width: 760px;
   margin: 0 auto;

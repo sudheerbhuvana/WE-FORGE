@@ -50,6 +50,24 @@ const FIELD_TYPES = [
 
 const newFieldId = () => `f_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
+async function croppedBlobFromImage(image, crop) {
+  if (!image || !crop || !crop.width || !crop.height) return null;
+  const canvas = document.createElement('canvas');
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+  canvas.width = Math.round(crop.width * scaleX);
+  canvas.height = Math.round(crop.height * scaleY);
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(
+    image,
+    crop.x * scaleX, crop.y * scaleY,
+    crop.width * scaleX, crop.height * scaleY,
+    0, 0, canvas.width, canvas.height
+  );
+  return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+}
+
 export default function EventsSection({ events, adminInfo, refreshData }) {
   const router = useRouter();
 
@@ -61,9 +79,12 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
   const [error, setError] = useState('');
 
   // Poster & Crop
-  const [eventPosterPreview, setEventPosterPreview] = useState(null);
-  const [posterBlob, setPosterBlob] = useState(null);
-  const [crop, setCrop] = useState({ unit: '%', width: 90, aspect: 16 / 9 });
+  const [posterFile, setPosterFile] = useState(null);
+  const [posterPreview, setPosterPreview] = useState(null);
+  const [crop, setCrop] = useState(undefined);
+  const [completedCrop, setCompletedCrop] = useState(null);
+  const [removePoster, setRemovePoster] = useState(false);
+  const imgRef = React.useRef(null);
 
   // Regs Modal
   const [showRegsModal, setShowRegsModal] = useState(false);
@@ -75,8 +96,11 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
   const openAddEvent = () => {
     setEventEditing(null);
     setEventForm({ ...EMPTY_EVENT_FORM, customFields: [] });
-    setEventPosterPreview(null);
-    setPosterBlob(null);
+    setPosterFile(null);
+    setPosterPreview(null);
+    setCrop(undefined);
+    setCompletedCrop(null);
+    setRemovePoster(false);
     setShowEventForm(true);
   };
 
@@ -99,9 +123,35 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
       isRegistrationOpen: ev.isRegistrationOpen !== false,
       customFields: Array.isArray(ev.customFields) ? ev.customFields.map((f) => ({ ...f })) : [],
     });
-    setEventPosterPreview(ev.posterUrl || null);
-    setPosterBlob(null);
+    setPosterFile(null);
+    setPosterPreview(ev.posterUrl || null);
+    setCrop(undefined);
+    setCompletedCrop(null);
+    setRemovePoster(false);
     setShowEventForm(true);
+  };
+
+  const onImageLoad = (e) => {
+    imgRef.current = e.currentTarget;
+    const { width, height } = e.currentTarget;
+    setCrop({
+      unit: '%',
+      x: 5,
+      y: 5,
+      width: 90,
+      height: 90,
+      aspect: 16 / 9,
+    });
+  };
+
+  const handlePosterChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPosterFile(file);
+    setPosterPreview(URL.createObjectURL(file));
+    setRemovePoster(false);
+    setCrop(undefined);
+    setCompletedCrop(null);
   };
 
   const handleEventDelete = async (id) => {
@@ -131,8 +181,13 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
         }
       });
 
-      if (posterBlob) {
-        formData.append('poster', posterBlob, 'poster.png');
+      if (posterPreview && completedCrop && imgRef.current) {
+        const croppedBlob = await croppedBlobFromImage(imgRef.current, completedCrop);
+        if (croppedBlob) {
+          formData.append('poster', croppedBlob, 'poster.png');
+        }
+      } else if (posterFile) {
+        formData.append('poster', posterFile);
       }
 
       if (eventEditing) {
@@ -331,10 +386,75 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
                 </div>
               </div>
 
-              {/* Section 3: Custom Registration Form */}
+              {/* Section 3: Event Banner / Poster */}
+              <div className="admin-modal-section">
+                <div className="admin-modal-section__title"><ImageIcon size={15} /> 3. Event Banner / Poster (Crop & Upload)</div>
+                <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                  <div style={{ width: 220, height: 124, borderRadius: 12, overflow: 'hidden', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {removePoster ? (
+                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>No Poster</span>
+                    ) : posterPreview ? (
+                      <img src={posterPreview} alt="Poster preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)' }}>No Poster</span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, minWidth: 200 }}>
+                    <label className="admin-dash__add-btn" style={{ width: 'fit-content', cursor: 'pointer', padding: '8px 16px', fontSize: '0.85rem' }}>
+                      <ImageIcon size={15} />
+                      {posterPreview ? 'Replace Poster Image' : 'Upload Poster Image'}
+                      <input type="file" accept="image/*" onChange={handlePosterChange} hidden />
+                    </label>
+                    {posterPreview && !removePoster && (
+                      <button
+                        type="button"
+                        className="admin-dash__icon-btn admin-dash__icon-btn--danger"
+                        style={{ width: 'fit-content', padding: '6px 12px', fontSize: '0.8rem', borderRadius: 8 }}
+                        onClick={() => {
+                          setRemovePoster(true);
+                          setPosterPreview(null);
+                          setPosterFile(null);
+                          setCompletedCrop(null);
+                        }}
+                      >
+                        <Trash2 size={13} style={{ marginRight: 4 }} /> Remove Poster
+                      </button>
+                    )}
+                    <p style={{ margin: 0, fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)' }}>
+                      Recommended aspect ratio: 16:9. Select an image to crop and set as event banner.
+                    </p>
+                  </div>
+                </div>
+
+                {posterPreview && !removePoster && (
+                  <div style={{ marginTop: 16, background: 'rgba(0,0,0,0.5)', padding: 16, borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'rgba(255,255,255,0.8)', marginBottom: 8 }}>
+                      Crop Poster (16:9 Aspect Ratio)
+                    </div>
+                    <ReactCrop
+                      crop={crop}
+                      onChange={(c) => setCrop(c)}
+                      onComplete={(c) => setCompletedCrop(c)}
+                      aspect={16 / 9}
+                      keepSelection
+                    >
+                      <img
+                        ref={imgRef}
+                        src={posterPreview}
+                        alt="Poster crop preview"
+                        onLoad={onImageLoad}
+                        style={{ maxWidth: '100%', maxHeight: '400px', objectFit: 'contain' }}
+                      />
+                    </ReactCrop>
+                  </div>
+                )}
+              </div>
+
+              {/* Section 4: Custom Registration Form */}
               <div className="admin-modal-section">
                 <div className="admin-modal-section__title" style={{ justifyContent: 'space-between' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ListChecks size={15} /> 3. Custom Registration Form Fields</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ListChecks size={15} /> 4. Custom Registration Form Fields</span>
                   <button type="button" onClick={addCustomField} className="admin-dash__save-btn" style={{ padding: '4px 12px', fontSize: '0.78rem' }}>
                     <PlusIcon size={13} /> Add Field
                   </button>
@@ -343,22 +463,23 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
                   Optional fields collected from participants during registration — project links, resumes, team details, etc. Leave empty for a basic registration.
                 </p>
                 {(eventForm.customFields || []).length === 0 ? (
-                  <div style={{ background: 'rgba(255,255,255,0.03)', padding: 14, borderRadius: 8, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
-                    No custom fields yet. Click &ldquo;Add Field&rdquo; to collect more info during registration.
+                  <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', padding: 24, borderRadius: 12, textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
+                    No custom fields added yet. Click &ldquo;Add Field&rdquo; to prompt participants for extra details (e.g. GitHub profile, resumes, project links).
                   </div>
                 ) : (
                   eventForm.customFields.map((field, idx) => (
-                    <div key={field.id} style={{ background: 'rgba(255,255,255,0.04)', padding: 12, borderRadius: 8, marginBottom: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr auto auto', gap: 8, alignItems: 'center' }}>
+                    <div key={field.id} className="admin-field-card">
+                      <div className="admin-field-card__top">
+                        <span className="admin-field-card__index">{(idx + 1).toString().padStart(2, '0')}</span>
                         <input
                           type="text"
-                          className="admin-dash__input"
-                          placeholder="Field label (e.g. GitHub Link)"
+                          className="admin-dash__input admin-field-card__label-input"
+                          placeholder="Field Label (e.g. Portfolio URL)"
                           value={field.label}
                           onChange={(e) => updateCustomField(idx, { label: e.target.value })}
                         />
                         <select
-                          className="admin-dash__input"
+                          className="admin-dash__input admin-field-card__type-select"
                           value={field.type}
                           onChange={(e) => updateCustomField(idx, { type: e.target.value })}
                         >
@@ -366,74 +487,77 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
                             <option key={t.value} value={t.value}>{t.label}</option>
                           ))}
                         </select>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.78rem', margin: 0, whiteSpace: 'nowrap' }}>
+                        <label className={`admin-field-card__required-toggle ${field.required ? 'admin-field-card__required-toggle--active' : 'admin-field-card__required-toggle--inactive'}`}>
                           <input
                             type="checkbox"
                             checked={!!field.required}
                             onChange={(e) => updateCustomField(idx, { required: e.target.checked })}
                           />
-                          Required
+                          <CheckCircle size={13} style={{ opacity: field.required ? 1 : 0.4 }} />
+                          {field.required ? 'Required' : 'Optional'}
                         </label>
-                        <div style={{ display: 'flex', gap: 2 }}>
-                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveCustomField(idx, -1)} disabled={idx === 0} title="Move up"><ChevronUp size={13} /></button>
-                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveCustomField(idx, 1)} disabled={idx === eventForm.customFields.length - 1} title="Move down"><ChevronDown size={13} /></button>
-                          <button type="button" className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => removeCustomField(idx)} title="Remove"><Trash2 size={13} /></button>
+                        <div className="admin-field-card__actions">
+                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveCustomField(idx, -1)} disabled={idx === 0} title="Move up"><ChevronUp size={14} /></button>
+                          <button type="button" className="admin-dash__icon-btn" onClick={() => moveCustomField(idx, 1)} disabled={idx === eventForm.customFields.length - 1} title="Move down"><ChevronDown size={14} /></button>
+                          <button type="button" className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => removeCustomField(idx)} title="Remove field"><Trash2 size={14} /></button>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', gap: 12, marginTop: 8, fontSize: '0.78rem', flexWrap: 'wrap' }}>
+
+                      <div className="admin-field-card__bottom">
                         <input
                           type="text"
                           className="admin-dash__input"
-                          placeholder="Placeholder (optional)"
+                          placeholder="Placeholder text (e.g. https://github.com/...)"
                           value={field.placeholder || ''}
                           onChange={(e) => updateCustomField(idx, { placeholder: e.target.value })}
-                          style={{ flex: 1, minWidth: 160 }}
+                          style={{ flex: 1, minWidth: 200 }}
                         />
                         {(field.type === 'image' || field.type === 'video' || field.type === 'file') && (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            Max MB:
+                          <div className="admin-field-card__pill">
+                            <span>Max Size:</span>
                             <input
                               type="number"
                               min={1}
                               max={1000}
-                              style={{ width: 60 }}
                               className="admin-dash__input"
                               value={field.maxSizeMB || 10}
                               onChange={(e) => updateCustomField(idx, { maxSizeMB: parseInt(e.target.value, 10) || 10 })}
                             />
-                          </label>
+                            <span>MB</span>
+                          </div>
                         )}
                         {(field.type === 'image' || field.type === 'link') && (
-                          <label style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            Max count:
+                          <div className="admin-field-card__pill">
+                            <span>Max Files/Links:</span>
                             <input
                               type="number"
                               min={1}
                               max={20}
-                              style={{ width: 60 }}
                               className="admin-dash__input"
                               value={field.maxCount || 1}
                               onChange={(e) => updateCustomField(idx, { maxCount: parseInt(e.target.value, 10) || 1 })}
                             />
-                          </label>
+                          </div>
                         )}
                       </div>
+
                       {field.type === 'select' && (
                         <SelectOptionsEditor
                           options={field.options || []}
                           onChange={(options) => updateCustomField(idx, { options })}
                         />
                       )}
-                      <div style={{ marginTop: 8, fontSize: '0.72rem', color: 'rgba(255,255,255,0.4)' }}>
-                        {field.type === 'text' && 'One-line text answer'}
-                        {field.type === 'textarea' && 'Multi-line text answer'}
-                        {field.type === 'number' && 'Numeric answer'}
-                        {field.type === 'email' && 'Email address (validated)'}
-                        {field.type === 'link' && 'Multiple work links (title + URL)'}
-                        {field.type === 'image' && 'Image upload — shown in registration details'}
-                        {field.type === 'video' && 'Video upload'}
-                        {field.type === 'file' && 'Generic file upload (PDF, ZIP, etc.)'}
-                        {field.type === 'select' && 'Dropdown from predefined options'}
+
+                      <div className="admin-field-card__type-hint">
+                        💡 {field.type === 'text' && 'Standard single-line text input'}
+                        {field.type === 'textarea' && 'Multi-line text area for longer responses'}
+                        {field.type === 'number' && 'Numeric input field'}
+                        {field.type === 'email' && 'Email format validated input'}
+                        {field.type === 'link' && 'Allows participants to submit custom URLs & titles'}
+                        {field.type === 'image' && 'Image file upload with preview capability'}
+                        {field.type === 'video' && 'Video file upload'}
+                        {field.type === 'file' && 'File attachment upload (PDF, ZIP, DOC)'}
+                        {field.type === 'select' && 'Selectable option from dropdown menu'}
                       </div>
                     </div>
                   ))
@@ -600,17 +724,19 @@ function SelectOptionsEditor({ options, onChange }) {
   };
 
   return (
-    <div style={{ marginTop: 8 }}>
-      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>
-        Dropdown Options
+    <div style={{ marginTop: 12, padding: 12, borderRadius: 10, background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.06)' }}>
+      <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.5)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>
+        Dropdown Menu Options
       </div>
       {options.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 10 }}>
           {options.map((opt, i) => (
-            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 6 }}>
+            <div key={i} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', minWidth: 20, textAlign: 'right' }}>{i + 1}.</span>
               <input
                 type="text"
                 className="admin-dash__input"
+                style={{ height: 34, fontSize: '0.8rem' }}
                 value={opt}
                 onChange={(e) => update(i, e.target.value)}
                 placeholder={`Option ${i + 1}`}
@@ -618,6 +744,7 @@ function SelectOptionsEditor({ options, onChange }) {
               <button
                 type="button"
                 className="admin-dash__icon-btn admin-dash__icon-btn--danger"
+                style={{ padding: 7 }}
                 onClick={() => remove(i)}
                 title="Remove option"
               >
@@ -627,10 +754,11 @@ function SelectOptionsEditor({ options, onChange }) {
           ))}
         </div>
       )}
-      <div style={{ display: 'flex', gap: 6 }}>
+      <div style={{ display: 'flex', gap: 8 }}>
         <input
           type="text"
           className="admin-dash__input"
+          style={{ height: 34, fontSize: '0.8rem' }}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
@@ -639,17 +767,16 @@ function SelectOptionsEditor({ options, onChange }) {
               add();
             }
           }}
-          placeholder="Add an option (press Enter)"
-          style={{ flex: 1 }}
+          placeholder="Type an option and press Enter..."
         />
         <button
           type="button"
           onClick={add}
           disabled={!draft.trim()}
           className="admin-dash__save-btn"
-          style={{ padding: '6px 12px', opacity: draft.trim() ? 1 : 0.5 }}
+          style={{ padding: '0 14px', height: 34, fontSize: '0.78rem', whiteSpace: 'nowrap', opacity: draft.trim() ? 1 : 0.5 }}
         >
-          <PlusIcon size={13} /> Add
+          <PlusIcon size={13} style={{ marginRight: 4 }} /> Add Option
         </button>
       </div>
     </div>

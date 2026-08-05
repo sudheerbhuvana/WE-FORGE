@@ -30,9 +30,9 @@ export async function GET(req, { params }) {
 
         // Pick template
         let templatePath = '';
-        if (cert.eventRole === 'winner') templatePath = event.certificateTemplateWinner;
-        else if (cert.eventRole === 'runner_up' || cert.eventRole === 'third_place') templatePath = event.certificateTemplateWinner;
-        else templatePath = event.certificateTemplateParticipant;
+        if (cert.eventRole === 'winner') templatePath = event.certificateTemplateWinner || '/templates/certificates/winner.pdf';
+        else if (cert.eventRole === 'runner_up' || cert.eventRole === 'third_place') templatePath = event.certificateTemplateWinner || '/templates/certificates/winner.pdf';
+        else templatePath = event.certificateTemplateParticipant || '/templates/certificates/participant.pdf';
 
         const absTemplate = path.join(process.cwd(), 'public', (templatePath || '').replace(/^\//, ''));
         if (!templatePath || !fs.existsSync(absTemplate)) {
@@ -48,7 +48,9 @@ export async function GET(req, { params }) {
             verifyUrl: `${BASE}/certification/verify/${cert.certificateId}`,
         });
 
-        const filename = `${cert.eventTitle.replace(/[^a-z0-9]+/gi, '_')}_${cert.name.replace(/\s+/g, '_')}_${cert.certificateId}.pdf`;
+        const dateStr = event.eventDate || event.startTime ? new Date(event.eventDate || event.startTime).toISOString().split('T')[0] : 'unknown-date';
+        const safeTitle = cert.eventTitle.replace(/[^a-z0-9]+/gi, '_');
+        const filename = `${cert.memberRoll}_${safeTitle}_${dateStr}.pdf`;
 
         return new NextResponse(pdfBuf, {
             status: 200,

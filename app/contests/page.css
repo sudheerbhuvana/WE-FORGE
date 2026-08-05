@@ -7,14 +7,42 @@
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   position: relative;
   overflow-x: hidden;
+  padding-top: 110px;
 }
 
 .contests-container {
-  max-width: 1600px;
+  max-width: 1500px;
   width: 100%;
   margin: 0 auto;
   padding: 0 40px 80px;
   box-sizing: border-box;
+}
+
+/* ── Topbar & Header ────────────────────────────────────── */
+.contests-topbar {
+  margin-bottom: 24px;
+}
+
+.contests-header {
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.contests-title {
+  font-size: clamp(2.2rem, 4.5vw, 3.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+  line-height: 1.15;
+}
+
+.contests-subtitle {
+  font-size: 1.02rem;
+  color: rgba(255, 255, 255, 0.55);
+  margin: 0;
+  max-width: 720px;
+  line-height: 1.6;
 }
 
 /* ── Controls Row ─────────────────────────────────────── */

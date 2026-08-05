@@ -26,9 +26,9 @@ const buildIdCondition = (val) => {
 
 function pickTemplatePath(event, eventRole) {
     let rel = '';
-    if (eventRole === 'winner') rel = event.certificateTemplateWinner;
-    else if (eventRole === 'runner_up' || eventRole === 'third_place') rel = event.certificateTemplateWinner;
-    else rel = event.certificateTemplateParticipant;
+    if (eventRole === 'winner') rel = event.certificateTemplateWinner || '/templates/certificates/winner.pdf';
+    else if (eventRole === 'runner_up' || eventRole === 'third_place') rel = event.certificateTemplateWinner || '/templates/certificates/winner.pdf';
+    else rel = event.certificateTemplateParticipant || '/templates/certificates/participant.pdf';
     if (!rel) return null;
     if (rel.startsWith('/')) rel = rel.slice(1);
     return path.join(process.cwd(), 'public', rel);

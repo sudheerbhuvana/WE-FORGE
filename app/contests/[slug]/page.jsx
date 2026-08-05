@@ -455,12 +455,12 @@ export default function SingleContestPage({ params }) {
 
   return (
     <div className="events-page single-contest-page">
-      <div className="events-page__topbar">
-        <BackButton to="/contests" />
-      </div>
-
       {/* Header / Hero */}
       <section className="sc-hero">
+        <div className="sc-topbar">
+          <BackButton to="/contests" />
+        </div>
+
         <div className="sc-hero__banner-wrap">
           {template.bannerUrl ? (
             <img src={template.bannerUrl} alt="" className="sc-hero__banner-img" onError={(e) => { e.currentTarget.style.display = 'none'; }} />

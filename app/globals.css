@@ -42,7 +42,10 @@ body {
 .profile-page,
 .contests-page,
 .contest-detail-page,
-.join-page {
+.single-contest-page,
+.join-page,
+.pf-page,
+.cv-page {
   padding-top: var(--navbar-offset) !important;
   min-height: 100vh;
   display: flex;
@@ -58,8 +61,12 @@ body {
 .profile-page > main,
 .contests-page > main,
 .contest-detail-page > main,
+.single-contest-page > main,
 .join-page > main,
-.join-container {
+.join-container,
+.pf-card,
+.pf-state,
+.cv-main {
   flex: 1 0 auto;
 }
 

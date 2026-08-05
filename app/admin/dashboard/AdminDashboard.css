@@ -853,40 +853,46 @@ tr[draggable]:active {
 
 .admin-dash__field input,
 .admin-dash__field textarea,
-.admin-dash__field select {
-  padding: 8px 11px;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.04);
+.admin-dash__field select,
+.admin-dash__input {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
   color: #fff;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   font-family: inherit;
   outline: none;
-  transition: border-color 0.2s;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   box-sizing: border-box;
   width: 100%;
 }
 
 .admin-dash__field input:focus,
 .admin-dash__field textarea:focus,
-.admin-dash__field select:focus {
-  border-color: rgba(125, 190, 255, 0.5);
+.admin-dash__field select:focus,
+.admin-dash__input:focus {
+  border-color: rgba(113, 196, 255, 0.4);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 16px rgba(113, 196, 255, 0.12);
 }
 
-.admin-dash__field select {
+.admin-dash__field select,
+.admin-dash__select {
   appearance: none;
   cursor: pointer;
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.7)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
-  background-position: right 12px center;
+  background-position: right 14px center;
   background-size: 14px;
-  padding-right: 36px;
+  padding-right: 38px;
 }
 
-/* Global Fix for Select Options (many browsers) */
+/* Global Fix for Select Options */
 select option {
-  background-color: #111 !important;
-  color: #fff !important;
+  background-color: #0d0d14 !important;
+  color: #ffffff !important;
+  padding: 8px 12px;
 }
 
 .admin-dash__field input[type="file"] {
@@ -897,6 +903,137 @@ select option {
 .admin-dash__field textarea {
   resize: vertical;
   min-height: 60px;
+}
+
+/* ═══════════════════ CUSTOM FIELD BUILDER ═══════════════════ */
+.admin-field-card {
+  background: linear-gradient(135deg, rgba(20, 20, 30, 0.7) 0%, rgba(12, 12, 18, 0.85) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+  transition: all 0.2s ease;
+  position: relative;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.admin-field-card:hover {
+  border-color: rgba(113, 196, 255, 0.25);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+.admin-field-card__top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-field-card__index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 8px;
+  background: rgba(113, 196, 255, 0.1);
+  border: 1px solid rgba(113, 196, 255, 0.2);
+  color: #71C4FF;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+.admin-field-card__label-input {
+  flex: 1 1 220px;
+  min-width: 180px;
+  font-weight: 600;
+}
+
+.admin-field-card__type-select {
+  width: 160px;
+  flex-shrink: 0;
+}
+
+.admin-field-card__required-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.admin-field-card__required-toggle--active {
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+  border-color: rgba(52, 211, 153, 0.25);
+}
+
+.admin-field-card__required-toggle--inactive {
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.admin-field-card__required-toggle input {
+  display: none;
+}
+
+.admin-field-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.admin-field-card__bottom {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-field-card__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  padding: 4px 10px;
+  border-radius: 8px;
+}
+
+.admin-field-card__pill input[type="number"] {
+  width: 55px;
+  padding: 2px 6px;
+  height: 26px;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.admin-field-card__type-hint {
+  font-size: 0.73rem;
+  color: rgba(113, 196, 255, 0.75);
+  background: rgba(113, 196, 255, 0.06);
+  border: 1px solid rgba(113, 196, 255, 0.12);
+  padding: 4px 10px;
+  border-radius: 6px;
+  margin-top: 8px;
+  display: inline-block;
 }
 
 .admin-dash__photo-preview {

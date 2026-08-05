@@ -1,8 +1,8 @@
 .shared-back-btn {
-  position: absolute;
-  top: 90px;
-  left: 32px;
-  z-index: 9999;
+  position: relative;
+  top: auto;
+  left: auto;
+  z-index: 10;
   display: inline-flex;
   align-items: center;
   gap: 8px;

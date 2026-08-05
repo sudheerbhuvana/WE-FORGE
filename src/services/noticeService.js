@@ -7,7 +7,10 @@ async function safeJson(res) {
 const noticeService = {
     async getAll() {
         const res = await fetch(`${API_BASE}/notices`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Failed to load notices');
+        if (!res.ok) {
+            const text = await res.text().catch(() => 'Unknown error');
+            throw new Error(`Failed to load notices (${res.status}): ${text}`);
+        }
         return safeJson(res);
     },
 

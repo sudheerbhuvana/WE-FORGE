@@ -257,9 +257,10 @@ const EventDetailPage = () => {
         {event.posterUrl && <meta property="og:image" content={event.posterUrl} />}
       </Helmet>
 
-      <BackButton />
-
       <div className="event-detail__hero">
+        <div className="event-detail__topbar">
+          <BackButton to="/events" />
+        </div>
         {event.posterUrl && (
           <>
             <div className="event-detail__poster-wrap" onClick={() => setShowPoster(true)}>

@@ -291,48 +291,52 @@ export default function AdminEventManagePage() {
           {actionMsg && <div className="admin-dash__alert admin-dash__alert--success">{actionMsg}</div>}
 
           {/* ===== Hero Banner ===== */}
-          <header className="em-hero">
-            {event?.posterUrl && (
-              <div className="em-hero__poster-wrap" onClick={() => setShowPosterModal(true)}>
-                <img src={event.posterUrl} alt={event.title} className="em-hero__poster" />
-              </div>
-            )}
-            <div className="em-hero__content">
-              <div className="em-hero__badges">
-                <span className="cm-badge cm-badge--info">
-                  <Calendar size={11} /> {event?.startTime ? new Date(event.startTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBA'}
-                </span>
-                {event?.venue && (
-                  <span className="cm-badge cm-badge--neutral">
-                    <MapPin size={11} /> {event.venue}
+          {event ? (
+            <header className="em-hero">
+              {event.posterUrl && (
+                <div className="em-hero__poster-wrap" onClick={() => setShowPosterModal(true)}>
+                  <img src={event.posterUrl} alt={event.title} className="em-hero__poster" />
+                </div>
+              )}
+              <div className="em-hero__content">
+                <div className="em-hero__badges">
+                  <span className="cm-badge cm-badge--info">
+                    <Calendar size={11} /> {event.startTime ? new Date(event.startTime).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'TBA'}
                   </span>
-                )}
-                <span className={`cm-badge cm-badge--${event?.status === 'completed' ? 'success' : 'warning'}`}>
-                  {event?.status || 'upcoming'}
-                </span>
-                {event?.accessType && (
-                  <span className="cm-badge cm-badge--neutral" style={{ textTransform: 'capitalize' }}>
-                    {event.accessType} Access
+                  {event.venue && (
+                    <span className="cm-badge cm-badge--neutral">
+                      <MapPin size={11} /> {event.venue}
+                    </span>
+                  )}
+                  <span className={`cm-badge cm-badge--${event.status === 'completed' ? 'success' : 'warning'}`}>
+                    {event.status || 'upcoming'}
                   </span>
-                )}
-              </div>
-              <h1 className="em-hero__title">{event?.title || 'Event Management'}</h1>
-              {event?.description && <p className="em-hero__desc">{event.description}</p>}
+                  {event.accessType && (
+                    <span className="cm-badge cm-badge--neutral" style={{ textTransform: 'capitalize' }}>
+                      {event.accessType} Access
+                    </span>
+                  )}
+                </div>
+                <h1 className="em-hero__title">{event.title || 'Event Management'}</h1>
+                {event.description && <p className="em-hero__desc">{event.description}</p>}
 
-              {/* Progress bar */}
-              <div className="em-hero__progress-wrap">
-                <div className="em-hero__progress-info">
-                  <span>Capacity: {event?.registeredCount || 0} / {event?.slots || 0} Slots ({fillPercent}% Filled)</span>
-                </div>
-                <div className="em-hero__bar-bg">
-                  <div className="em-hero__bar-fill" style={{ width: `${fillPercent}%` }}></div>
+                {/* Progress bar */}
+                <div className="em-hero__progress-wrap">
+                  <div className="em-hero__progress-info">
+                    <span>Capacity: {event.registeredCount || 0} / {event.slots || 0} Slots ({fillPercent}% Filled)</span>
+                  </div>
+                  <div className="em-hero__bar-bg">
+                    <div className="em-hero__bar-fill" style={{ width: `${fillPercent}%` }}></div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </header>
+            </header>
+          ) : (
+            !loading && <div className="cm-empty"><p>Event not found or failed to load.</p></div>
+          )}
 
           {/* ===== Summary stats ===== */}
-          {summary && (
+          {summary && event && (
             <div className="em-stats">
               <Stat icon={Users} value={summary.total} label="Registered" variant="purple" sub={`${fillPercent}% slots`} />
               <Stat icon={UserCheck} value={summary.present} label="Attended" variant="green" sub={`${summary.total ? Math.round((summary.present / summary.total) * 100) : 0}% turn-out`} />
@@ -343,312 +347,316 @@ export default function AdminEventManagePage() {
           )}
 
           {/* ===== Action Toolbar ===== */}
-          <div className="em-toolbar">
-            <div className="em-search">
-              <Search size={14} />
-              <input
-                type="text"
-                placeholder="Search name, roll, or email…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-            </div>
-            
-            <div className="em-filters">
-              {[
-                { id: 'all', label: 'All' },
-                { id: 'present', label: 'Attended' },
-                { id: 'pending', label: 'Pending' },
-                { id: 'absent', label: 'Absent' },
-                { id: 'winners', label: 'Winners' },
-                { id: 'uncertified', label: 'Uncertified' },
-              ].map((f) => (
-                <button
-                  key={f.id}
-                  className={`cm-btn cm-btn--sm ${filter === f.id ? 'cm-btn--primary' : ''}`}
-                  onClick={() => setFilter(f.id)}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
+          {event && (
+            <div className="em-toolbar">
+              <div className="em-search">
+                <Search size={14} />
+                <input
+                  type="text"
+                  placeholder="Search name, roll, or email…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              
+              <div className="em-filters">
+                {[
+                  { id: 'all', label: 'All' },
+                  { id: 'present', label: 'Attended' },
+                  { id: 'pending', label: 'Pending' },
+                  { id: 'absent', label: 'Absent' },
+                  { id: 'winners', label: 'Winners' },
+                  { id: 'uncertified', label: 'Uncertified' },
+                ].map((f) => (
+                  <button
+                    key={f.id}
+                    className={`cm-btn cm-btn--sm ${filter === f.id ? 'cm-btn--primary' : ''}`}
+                    onClick={() => setFilter(f.id)}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
 
-            <div className="em-toolbar__actions">
-              <button className="cm-btn cm-btn--sm" onClick={() => markSelectedAttendance('present')} disabled={loading}>
-                <UserCheck size={12} /> {selectedIds.size > 0 ? `Mark (${selectedIds.size}) Attended` : 'Mark All Attended'}
-              </button>
-              <button className="cm-btn cm-btn--sm cm-btn--primary" onClick={saveAll} disabled={saving}>
-                <RefreshCw size={12} className={saving ? 'spin' : ''} /> {saving ? 'Saving…' : 'Save Changes'}
-              </button>
-              <button className="cm-btn cm-btn--sm" onClick={() => issueCertificates()} disabled={issuing}>
-                <Sparkles size={12} /> {issuing ? 'Issuing…' : 'Issue Certificates'}
-              </button>
-              <button
-                className="cm-btn cm-btn--sm"
-                onClick={() => revokeCertificates()}
-                disabled={issuing || !summary?.certificatesIssued}
-                title={selectedIds.size > 0 ? `Revoke certificates for ${selectedIds.size} selected` : 'Revoke all certificates for this event'}
-                style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}
-              >
-                <Trash2 size={12} /> {selectedIds.size > 0 ? `Revoke (${selectedIds.size})` : 'Revoke All Certs'}
-              </button>
-              <button className="cm-btn cm-btn--sm" onClick={exportCsv} title="Export CSV Data">
-                <Download size={12} /> Export CSV
-              </button>
-              <button className="cm-btn cm-btn--sm" onClick={downloadZip} disabled={!summary?.certificatesIssued} title="Download Bulk Certificates ZIP">
-                <Download size={12} /> Certs ZIP
-              </button>
+              <div className="em-toolbar__actions">
+                <button className="cm-btn cm-btn--sm" onClick={() => markSelectedAttendance('present')} disabled={loading}>
+                  <UserCheck size={12} /> {selectedIds.size > 0 ? `Mark (${selectedIds.size}) Attended` : 'Mark All Attended'}
+                </button>
+                <button className="cm-btn cm-btn--sm cm-btn--primary" onClick={saveAll} disabled={saving}>
+                  <RefreshCw size={12} className={saving ? 'spin' : ''} /> {saving ? 'Saving…' : 'Save Changes'}
+                </button>
+                <button className="cm-btn cm-btn--sm" onClick={() => issueCertificates()} disabled={issuing}>
+                  <Sparkles size={12} /> {issuing ? 'Issuing…' : 'Issue Certificates'}
+                </button>
+                <button
+                  className="cm-btn cm-btn--sm"
+                  onClick={() => revokeCertificates()}
+                  disabled={issuing || !summary?.certificatesIssued}
+                  title={selectedIds.size > 0 ? `Revoke certificates for ${selectedIds.size} selected` : 'Revoke all certificates for this event'}
+                  style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}
+                >
+                  <Trash2 size={12} /> {selectedIds.size > 0 ? `Revoke (${selectedIds.size})` : 'Revoke All Certs'}
+                </button>
+                <button className="cm-btn cm-btn--sm" onClick={exportCsv} title="Export CSV Data">
+                  <Download size={12} /> Export CSV
+                </button>
+                <button className="cm-btn cm-btn--sm" onClick={downloadZip} disabled={!summary?.certificatesIssued} title="Download Bulk Certificates ZIP">
+                  <Download size={12} /> Certs ZIP
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ===== Registrations Table ===== */}
-          <div className="cm-card">
-            <div className="cm-row cm-row--between" style={{ marginBottom: 14 }}>
-              <h3 className="cm-card__title" style={{ margin: 0 }}>
-                <Users size={16} /> Participant Registrations & Attendance
-                <span className="cm-badge cm-badge--neutral" style={{ marginLeft: 8 }}>
-                  {filtered.length} of {regs.length}
-                </span>
-                {selectedIds.size > 0 && (
-                  <span className="cm-badge cm-badge--info" style={{ marginLeft: 6 }}>
-                    {selectedIds.size} selected
+          {event && (
+            <div className="cm-card">
+              <div className="cm-row cm-row--between" style={{ marginBottom: 14 }}>
+                <h3 className="cm-card__title" style={{ margin: 0 }}>
+                  <Users size={16} /> Participant Registrations & Attendance
+                  <span className="cm-badge cm-badge--neutral" style={{ marginLeft: 8 }}>
+                    {filtered.length} of {regs.length}
                   </span>
-                )}
-              </h3>
-            </div>
-
-            {loading ? (
-              <div className="cm-empty"><p>Loading registrations…</p></div>
-            ) : filtered.length === 0 ? (
-              <div className="cm-empty">
-                <div className="cm-empty__icon"><Users size={24} /></div>
-                <p className="cm-empty__title">No matching participants found</p>
-                <p className="cm-empty__desc">Try adjusting your search query or filter chip.</p>
+                  {selectedIds.size > 0 && (
+                    <span className="cm-badge cm-badge--info" style={{ marginLeft: 6 }}>
+                      {selectedIds.size} selected
+                    </span>
+                  )}
+                </h3>
               </div>
-            ) : (
-              <div className="cm-table-wrap">
-                <table className="cm-table">
-                  <thead>
-                    <tr>
-                      <th style={{ width: 40, textAlign: 'center' }}>
-                        <button type="button" className="em-check-btn" onClick={toggleSelectAll}>
-                          {selectedIds.size === filtered.length && filtered.length > 0 ? (
-                            <CheckSquare size={16} color="#71C4FF" />
-                          ) : (
-                            <Square size={16} color="rgba(255,255,255,0.4)" />
-                          )}
-                        </button>
-                      </th>
-                      <th>Participant</th>
-                      <th>Roll Number & Email</th>
-                      <th>Attendance</th>
-                      <th>Position / Role</th>
-                      <th>Certificate</th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((r) => {
-                      const isExpanded = expandedId === r.id;
-                      const hasAnswers = Array.isArray(r.customAnswers) && r.customAnswers.length > 0;
-                      const isSelected = selectedIds.has(r.id);
 
-                      return (
-                        <React.Fragment key={r.id}>
-                          <tr className={isSelected ? 'em-tr--selected' : ''}>
-                            <td style={{ textAlign: 'center' }}>
-                              <button type="button" className="em-check-btn" onClick={() => toggleSelectOne(r.id)}>
-                                {isSelected ? (
-                                  <CheckSquare size={16} color="#71C4FF" />
-                                ) : (
-                                  <Square size={16} color="rgba(255,255,255,0.3)" />
-                                )}
-                              </button>
-                            </td>
-                            <td>
-                              <div className="cm-row" style={{ gap: 10 }}>
-                                {hasAnswers ? (
-                                  <button
-                                    type="button"
-                                    className="cm-btn cm-btn--icon"
-                                    onClick={() => setExpandedId(isExpanded ? null : r.id)}
-                                    title={isExpanded ? 'Hide answers' : 'View form answers'}
-                                    style={{ padding: 4 }}
-                                  >
-                                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                  </button>
-                                ) : (
-                                  <div style={{ width: 22 }} />
-                                )}
-                                <div className="cm-drawer__avatar" style={{ width: 32, height: 32, fontSize: '0.84rem' }}>
-                                  {(r.name || '?').charAt(0).toUpperCase()}
-                                </div>
-                                <div>
-                                  <div className="cm-table__name">{r.name}</div>
-                                  <div className="cm-table__sub">Registered: {new Date(r.registeredAt).toLocaleDateString()}</div>
-                                </div>
-                              </div>
-                            </td>
-                            <td>
-                              <div className="cm-table__name" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.86rem' }}>
-                                {r.rollNumber}
-                              </div>
-                              <div className="cm-table__sub">{r.email}</div>
-                            </td>
-                            <td>
-                              <select
-                                className="em-select"
-                                value={r.attendance || 'pending'}
-                                onChange={(e) => updateRow(r.id, { attendance: e.target.value })}
-                              >
-                                <option value="pending">⏳ Pending</option>
-                                <option value="present">✓ Attended</option>
-                                <option value="absent">✕ Absent</option>
-                              </select>
-                            </td>
-                            <td>
-                              <select
-                                className="em-select"
-                                value={r.eventRole || 'participant'}
-                                onChange={(e) => updateRow(r.id, { eventRole: e.target.value })}
-                              >
-                                {ROLE_OPTIONS.map((o) => (
-                                  <option key={o.value} value={o.value}>
-                                    {o.label}
-                                  </option>
-                                ))}
-                              </select>
-                            </td>
-                            <td>
-                              {r.certificateId ? (
-                                <div className="em-cert-cell">
-                                  <span className="cm-badge cm-badge--success">
-                                    <CheckCircle2 size={11} /> Issued
-                                  </span>
-                                  <code className="em-cert-id">{r.certificateId}</code>
-                                </div>
-                              ) : (
-                                <span className="cm-badge cm-badge--neutral">—</span>
-                              )}
-                            </td>
-                            <td>
-                              <div className="em-action-group">
-                                {r.certificateId ? (
-                                  <>
-                                    <a
-                                      className="em-action-btn em-action-btn--download"
-                                      href={`/api/certificates/${r.certificateId}/download?token=${r.id}`}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      title="Download Certificate PDF"
-                                    >
-                                      <Download size={13} /> PDF
-                                    </a>
+              {loading ? (
+                <div className="cm-empty"><p>Loading registrations…</p></div>
+              ) : filtered.length === 0 ? (
+                <div className="cm-empty">
+                  <div className="cm-empty__icon"><Users size={24} /></div>
+                  <p className="cm-empty__title">No matching participants found</p>
+                  <p className="cm-empty__desc">Try adjusting your search query or filter chip.</p>
+                </div>
+              ) : (
+                <div className="cm-table-wrap">
+                  <table className="cm-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: 40, textAlign: 'center' }}>
+                          <button type="button" className="em-check-btn" onClick={toggleSelectAll}>
+                            {selectedIds.size === filtered.length && filtered.length > 0 ? (
+                              <CheckSquare size={16} color="#71C4FF" />
+                            ) : (
+                              <Square size={16} color="rgba(255,255,255,0.4)" />
+                            )}
+                          </button>
+                        </th>
+                        <th>Participant</th>
+                        <th>Roll Number & Email</th>
+                        <th>Attendance</th>
+                        <th>Position / Role</th>
+                        <th>Certificate</th>
+                        <th style={{ textAlign: 'right' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map((r) => {
+                        const isExpanded = expandedId === r.id;
+                        const hasAnswers = Array.isArray(r.customAnswers) && r.customAnswers.length > 0;
+                        const isSelected = selectedIds.has(r.id);
+
+                        return (
+                          <React.Fragment key={r.id}>
+                            <tr className={isSelected ? 'em-tr--selected' : ''}>
+                              <td style={{ textAlign: 'center' }}>
+                                <button type="button" className="em-check-btn" onClick={() => toggleSelectOne(r.id)}>
+                                  {isSelected ? (
+                                    <CheckSquare size={16} color="#71C4FF" />
+                                  ) : (
+                                    <Square size={16} color="rgba(255,255,255,0.3)" />
+                                  )}
+                                </button>
+                              </td>
+                              <td>
+                                <div className="cm-row" style={{ gap: 10 }}>
+                                  {hasAnswers ? (
                                     <button
                                       type="button"
-                                      className="em-action-btn em-action-btn--reissue"
-                                      onClick={() => issueCertificates([r.id])}
-                                      disabled={issuing}
-                                      title="Re-issue certificate with updated position/role"
+                                      className="cm-btn cm-btn--icon"
+                                      onClick={() => setExpandedId(isExpanded ? null : r.id)}
+                                      title={isExpanded ? 'Hide answers' : 'View form answers'}
+                                      style={{ padding: 4 }}
                                     >
-                                      <RotateCcw size={13} /> Re-issue
+                                      {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                                     </button>
-                                    <button
-                                      type="button"
-                                      className="em-action-btn em-action-btn--revoke"
-                                      onClick={() => revokeCertificate(r.id)}
-                                      disabled={issuing}
-                                      title="Revoke & delete certificate"
-                                    >
-                                      <Trash2 size={13} /> Revoke
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    className="em-action-btn em-action-btn--issue"
-                                    onClick={() => issueCertificates([r.id])}
-                                    disabled={issuing}
-                                    title="Issue certificate & mark attended"
-                                  >
-                                    <Sparkles size={13} /> Issue Cert
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-
-                          {/* Expanded Form Answers Row */}
-                          {isExpanded && hasAnswers && (
-                            <tr>
-                              <td colSpan="7" className="em-expanded-cell">
-                                <div className="em-answers-grid">
-                                  <div className="em-answers-title">Custom Registration Form Answers:</div>
-                                  <div className="em-answers-cards">
-                                    {r.customAnswers.map((a, i) => (
-                                      <div key={i} className="em-answer-card">
-                                        <div className="em-answer-label">{a.label}</div>
-                                        
-                                        {a.type === 'image' && Array.isArray(a.files) && a.files.length > 0 && (
-                                          <div className="em-answer-files">
-                                            {a.files.map((f, k) => (
-                                              <a key={k} href={f.url} target="_blank" rel="noreferrer" className="em-file-thumb">
-                                                <img src={f.url} alt={f.originalName || 'upload'} />
-                                              </a>
-                                            ))}
-                                          </div>
-                                        )}
-
-                                        {a.type === 'video' && Array.isArray(a.files) && a.files.length > 0 && (
-                                          <div className="em-answer-links">
-                                            {a.files.map((f, k) => (
-                                              <a key={k} href={f.url} target="_blank" rel="noreferrer">
-                                                <FileVideo size={12} /> {f.originalName || 'Watch Video'}
-                                              </a>
-                                            ))}
-                                          </div>
-                                        )}
-
-                                        {a.type === 'file' && Array.isArray(a.files) && a.files.length > 0 && (
-                                          <div className="em-answer-links">
-                                            {a.files.map((f, k) => (
-                                              <a key={k} href={f.url} target="_blank" rel="noreferrer">
-                                                <FileText size={12} /> {f.originalName || 'Download File'}
-                                              </a>
-                                            ))}
-                                          </div>
-                                        )}
-
-                                        {a.type === 'link' && Array.isArray(a.workLinks) && a.workLinks.length > 0 && (
-                                          <div className="em-answer-links">
-                                            {a.workLinks.map((l, k) => (
-                                              <a key={k} href={l.url} target="_blank" rel="noreferrer">
-                                                <Link2 size={12} /> {l.title || l.url}
-                                              </a>
-                                            ))}
-                                          </div>
-                                        )}
-
-                                        {!['image', 'video', 'file', 'link'].includes(a.type) && (
-                                          <div className="em-answer-value">
-                                            {a.value || <span style={{ opacity: 0.4 }}>—</span>}
-                                          </div>
-                                        )}
-                                      </div>
-                                    ))}
+                                  ) : (
+                                    <div style={{ width: 22 }} />
+                                  )}
+                                  <div className="cm-drawer__avatar" style={{ width: 32, height: 32, fontSize: '0.84rem' }}>
+                                    {(r.name || '?').charAt(0).toUpperCase()}
+                                  </div>
+                                  <div>
+                                    <div className="cm-table__name">{r.name}</div>
+                                    <div className="cm-table__sub">Registered: {new Date(r.registeredAt).toLocaleDateString()}</div>
                                   </div>
                                 </div>
                               </td>
+                              <td>
+                                <div className="cm-table__name" style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: '0.86rem' }}>
+                                  {r.rollNumber}
+                                </div>
+                                <div className="cm-table__sub">{r.email}</div>
+                              </td>
+                              <td>
+                                <select
+                                  className="em-select"
+                                  value={r.attendance || 'pending'}
+                                  onChange={(e) => updateRow(r.id, { attendance: e.target.value })}
+                                >
+                                  <option value="pending">⏳ Pending</option>
+                                  <option value="present">✓ Attended</option>
+                                  <option value="absent">✕ Absent</option>
+                                </select>
+                              </td>
+                              <td>
+                                <select
+                                  className="em-select"
+                                  value={r.eventRole || 'participant'}
+                                  onChange={(e) => updateRow(r.id, { eventRole: e.target.value })}
+                                >
+                                  {ROLE_OPTIONS.map((o) => (
+                                    <option key={o.value} value={o.value}>
+                                      {o.label}
+                                    </option>
+                                  ))}
+                                </select>
+                              </td>
+                              <td>
+                                {r.certificateId ? (
+                                  <div className="em-cert-cell">
+                                    <span className="cm-badge cm-badge--success">
+                                      <CheckCircle2 size={11} /> Issued
+                                    </span>
+                                    <code className="em-cert-id">{r.certificateId}</code>
+                                  </div>
+                                ) : (
+                                  <span className="cm-badge cm-badge--neutral">—</span>
+                                )}
+                              </td>
+                              <td>
+                                <div className="em-action-group">
+                                  {r.certificateId ? (
+                                    <>
+                                      <a
+                                        className="em-action-btn em-action-btn--download"
+                                        href={`/api/certificates/${r.certificateId}/download?token=${r.id}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        title="Download Certificate PDF"
+                                      >
+                                        <Download size={13} /> PDF
+                                      </a>
+                                      <button
+                                        type="button"
+                                        className="em-action-btn em-action-btn--reissue"
+                                        onClick={() => issueCertificates([r.id])}
+                                        disabled={issuing}
+                                        title="Re-issue certificate with updated position/role"
+                                      >
+                                        <RotateCcw size={13} /> Re-issue
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="em-action-btn em-action-btn--revoke"
+                                        onClick={() => revokeCertificate(r.id)}
+                                        disabled={issuing}
+                                        title="Revoke & delete certificate"
+                                      >
+                                        <Trash2 size={13} /> Revoke
+                                      </button>
+                                    </>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="em-action-btn em-action-btn--issue"
+                                      onClick={() => issueCertificates([r.id])}
+                                      disabled={issuing}
+                                      title="Issue certificate & mark attended"
+                                    >
+                                      <Sparkles size={13} /> Issue Cert
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
                             </tr>
-                          )}
-                        </React.Fragment>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
+
+                            {/* Expanded Form Answers Row */}
+                            {isExpanded && hasAnswers && (
+                              <tr>
+                                <td colSpan="7" className="em-expanded-cell">
+                                  <div className="em-answers-grid">
+                                    <div className="em-answers-title">Custom Registration Form Answers:</div>
+                                    <div className="em-answers-cards">
+                                      {r.customAnswers.map((a, i) => (
+                                        <div key={i} className="em-answer-card">
+                                          <div className="em-answer-label">{a.label}</div>
+                                          
+                                          {a.type === 'image' && Array.isArray(a.files) && a.files.length > 0 && (
+                                            <div className="em-answer-files">
+                                              {a.files.map((f, k) => (
+                                                <a key={k} href={f.url} target="_blank" rel="noreferrer" className="em-file-thumb">
+                                                  <img src={f.url} alt={f.originalName || 'upload'} />
+                                                </a>
+                                              ))}
+                                            </div>
+                                          )}
+
+                                          {a.type === 'video' && Array.isArray(a.files) && a.files.length > 0 && (
+                                            <div className="em-answer-links">
+                                              {a.files.map((f, k) => (
+                                                <a key={k} href={f.url} target="_blank" rel="noreferrer">
+                                                  <FileVideo size={12} /> {f.originalName || 'Watch Video'}
+                                                </a>
+                                              ))}
+                                            </div>
+                                          )}
+
+                                          {a.type === 'file' && Array.isArray(a.files) && a.files.length > 0 && (
+                                            <div className="em-answer-links">
+                                              {a.files.map((f, k) => (
+                                                <a key={k} href={f.url} target="_blank" rel="noreferrer">
+                                                  <FileText size={12} /> {f.originalName || 'Download File'}
+                                                </a>
+                                              ))}
+                                            </div>
+                                          )}
+
+                                          {a.type === 'link' && Array.isArray(a.workLinks) && a.workLinks.length > 0 && (
+                                            <div className="em-answer-links">
+                                              {a.workLinks.map((l, k) => (
+                                                <a key={k} href={l.url} target="_blank" rel="noreferrer">
+                                                  <Link2 size={12} /> {l.title || l.url}
+                                                </a>
+                                              ))}
+                                            </div>
+                                          )}
+
+                                          {!['image', 'video', 'file', 'link'].includes(a.type) && (
+                                            <div className="em-answer-value">
+                                              {a.value || <span style={{ opacity: 0.4 }}>—</span>}
+                                            </div>
+                                          )}
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Lightbox poster modal */}
           {showPosterModal && event?.posterUrl && (
