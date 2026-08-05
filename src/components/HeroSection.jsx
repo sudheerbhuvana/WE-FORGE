@@ -27,17 +27,19 @@ const HeroSection = () => {
     const card = cardRef.current;
     if (!el || !card) return;
 
-    // Hero fade out on scroll
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const vh = window.innerHeight;
-      const progress = Math.min(scrollY / (vh * 0.8), 1);
-
-      el.style.opacity = 1 - progress;
-      el.style.transform = `translateY(-${progress * 60}px) scale(${1 - progress * 0.05})`;
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Hero fade out on scroll using GSAP for better performance
+    gsap.to(el, {
+      opacity: 0,
+      y: -60,
+      scale: 0.95,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: 'body',
+        start: 'top top',
+        end: () => `+=${window.innerHeight * 0.8}`,
+        scrub: true,
+      },
+    });
 
     // Card: starts hidden below, slides up smoothly on scroll
     gsap.set(card, { y: 80, opacity: 0 });
@@ -55,7 +57,6 @@ const HeroSection = () => {
     });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
       ScrollTrigger.getAll().forEach((t) => t.kill());
     };
   }, []);
