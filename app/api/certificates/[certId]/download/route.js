@@ -5,18 +5,16 @@ import connectDB from '@/lib/db';
 import Certificate from '@/lib/models/Certificate';
 import Event from '@/lib/models/Event';
 import { generateCertificate } from '@/lib/certificateGenerator';
+import { checkRateLimit } from '@/lib/rateLimiter';
 
 export const dynamic = 'force-dynamic';
 
 const BASE = process.env.CERT_BASE_URL || 'http://localhost:3000';
 
-/**
- * GET /api/certificates/[certId]/download
- *
- * Public certificate PDF generation/download endpoint.
- * Anyone with a valid certificateId can view & download the authentic PDF.
- */
 export async function GET(req, { params }) {
+    const rateLimit = await checkRateLimit(req, 'certificates');
+    if (!rateLimit.allowed) return rateLimit.response;
+
     try {
         await connectDB();
         const { certId } = await params;

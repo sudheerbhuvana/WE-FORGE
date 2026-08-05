@@ -42,8 +42,7 @@ export default function AdminSidebarWrapper({ activeTab = '' }) {
   return (
     <aside className="admin-sidebar">
       <div className="admin-sidebar__brand" onClick={() => router.push('/admin/dashboard')} style={{ cursor: 'pointer' }}>
-        <div className="admin-sidebar__logo">KF</div>
-        <span className="admin-sidebar__brand-name">KLFORGE</span>
+        <img src="/images/favicon.png?v=2" alt="KLFORGE Logo" className="admin-sidebar__logo-img" />
       </div>
 
       <nav className="admin-sidebar__nav">

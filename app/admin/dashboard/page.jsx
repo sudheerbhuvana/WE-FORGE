@@ -7,22 +7,25 @@ import {
   Users, Calendar, Trophy, FolderKanban, Bell, ImageIcon, UserPlus, Globe, LogOut, FileText, Sparkles, ShieldCheck, Sliders
 } from 'lucide-react';
 
+import dynamic from 'next/dynamic';
+
 import memberService from '../../../src/services/memberService';
 import eventService from '../../../src/services/eventService';
 import noticeService from '../../../src/services/noticeService';
 import projectService from '../../../src/services/projectService';
 
-import MembersSection from '../../../src/components/admin/MembersSection';
-import EventsSection from '../../../src/components/admin/EventsSection';
-import ContestsSection from '../../../src/components/admin/ContestsSection';
-import ProjectsSection from '../../../src/components/admin/ProjectsSection';
-import NoticesSection from '../../../src/components/admin/NoticesSection';
-import MediaSection from '../../../src/components/admin/MediaSection';
-import WallOfKLSection from '../../../src/components/admin/WallOfKLSection';
-import RolesSection from '../../../src/components/admin/RolesSection';
-import SystemSettingsSection from '../../../src/components/admin/SystemSettingsSection';
-import RecruitmentsSection from '../../../src/components/admin/RecruitmentsSection';
-import FormsSection from '../../../src/components/admin/FormsSection';
+// Lazy-loaded section components for optimal bundle splitting and fast initial page load
+const MembersSection = dynamic(() => import('../../../src/components/admin/MembersSection'));
+const EventsSection = dynamic(() => import('../../../src/components/admin/EventsSection'));
+const ContestsSection = dynamic(() => import('../../../src/components/admin/ContestsSection'));
+const ProjectsSection = dynamic(() => import('../../../src/components/admin/ProjectsSection'));
+const NoticesSection = dynamic(() => import('../../../src/components/admin/NoticesSection'));
+const MediaSection = dynamic(() => import('../../../src/components/admin/MediaSection'));
+const WallOfKLSection = dynamic(() => import('../../../src/components/admin/WallOfKLSection'));
+const RolesSection = dynamic(() => import('../../../src/components/admin/RolesSection'));
+const SystemSettingsSection = dynamic(() => import('../../../src/components/admin/SystemSettingsSection'));
+const RecruitmentsSection = dynamic(() => import('../../../src/components/admin/RecruitmentsSection'));
+const FormsSection = dynamic(() => import('../../../src/components/admin/FormsSection'));
 
 import '../../../src/components/admin/MemberEditModal.css';
 import './AdminDashboard.css';
@@ -34,21 +37,22 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [isAdminAuthed, setIsAdminAuthed] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
-  const [adminInfo, setAdminInfo] = useState({ memberId: '', name: '', role: '', domain: '', isElite: false });
+  const [adminInfo, setAdminInfo] = useState({ memberId: '', name: '', role: '', domain: '', isElite: false, permissions: [] });
   const [activeSection, setActiveSection] = useState('members');
   const [error, setError] = useState('');
 
-  // Data lists
+  // Data lists (fetched on-demand per active tab)
   const [members, setMembers] = useState([]);
   const [events, setEvents] = useState([]);
   const [projects, setProjects] = useState([]);
   const [notices, setNotices] = useState([]);
   const [media, setMedia] = useState([]);
   const [mediaFolders, setMediaFolders] = useState([]);
+  const [recruitmentSettings, setRecruitmentSettings] = useState(null);
   const [recruitmentApps, setRecruitmentApps] = useState([]);
-  const [recruitmentSettings, setRecruitmentSettings] = useState({ isOpen: true, title: '', subtitle: '', description: '', heroImageUrl: '' });
   const [recruitmentSettingsSaving, setRecruitmentSettingsSaving] = useState(false);
   const [contestsList, setContestsList] = useState([]);
+  const [fetchedTabs, setFetchedTabs] = useState(new Set());
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -59,19 +63,56 @@ export default function AdminDashboard() {
     fetchAuthCheck();
   }, []);
 
+  // On-demand lazy fetching when activeSection changes
+  useEffect(() => {
+    if (!isAdminAuthed) return;
+    loadDataForSection(activeSection);
+  }, [activeSection, isAdminAuthed]);
+
+  const loadDataForSection = async (sectionKey) => {
+    if (fetchedTabs.has(sectionKey)) return;
+    setFetchedTabs(prev => new Set([...prev, sectionKey]));
+
+    switch (sectionKey) {
+      case 'members':
+        fetchMembersData();
+        break;
+      case 'events':
+        fetchEventsData();
+        break;
+      case 'contests':
+        fetchContestsData();
+        break;
+      case 'projects':
+        fetchProjectsData();
+        break;
+      case 'notices':
+        fetchNoticesData();
+        break;
+      case 'media':
+        fetchMediaData();
+        break;
+      case 'recruitments':
+        fetchRecruitmentsData();
+        break;
+      default:
+        break;
+    }
+  };
+
   const fetchAuthCheck = async () => {
     try {
       const res = await fetch('/api/auth/check', { credentials: 'include' });
+      if (!res.ok) {
+        console.warn('Auth check returned status', res.status);
+        return;
+      }
       const data = await res.json();
       if (data.authenticated) {
         setAdminInfo(data);
         setIsAdminAuthed(true);
-        await Promise.all([
-          fetchMembersData(),
-          fetchEventsData(),
-          fetchContestsData(),
-          data.isElite ? fetchEliteData() : Promise.resolve(),
-        ]);
+        // Initial fast fetch for default section
+        loadDataForSection(activeSection || 'members');
       } else if (data.signedIn) {
         setAccessDenied(true);
       }
@@ -94,20 +135,34 @@ export default function AdminDashboard() {
       if (res.ok) setContestsList(await res.json());
     } catch {}
   };
-  const fetchEliteData = async () => {
+  const fetchProjectsData = async () => {
     try {
-      const [nRes, pRes, mRes, fRes, rCfgRes, rAppRes] = await Promise.all([
-        noticeService.getAll(),
-        projectService.getAll(),
+      const pRes = await projectService.getAll();
+      if (Array.isArray(pRes)) setProjects(pRes);
+    } catch {}
+  };
+  const fetchNoticesData = async () => {
+    try {
+      const nRes = await noticeService.getAll();
+      if (Array.isArray(nRes)) setNotices(nRes);
+    } catch {}
+  };
+  const fetchMediaData = async () => {
+    try {
+      const [mRes, fRes] = await Promise.all([
         fetch('/api/media').then(r => r.json()),
         fetch('/api/media/folders').then(r => r.json()),
+      ]);
+      if (Array.isArray(mRes)) setMedia(mRes);
+      if (Array.isArray(fRes)) setMediaFolders(fRes);
+    } catch {}
+  };
+  const fetchRecruitmentsData = async () => {
+    try {
+      const [rCfgRes, rAppRes] = await Promise.all([
         fetch('/api/recruitments/config').then(r => r.json()),
         fetch('/api/recruitments/applications').then(r => r.json()),
       ]);
-      if (Array.isArray(nRes)) setNotices(nRes);
-      if (Array.isArray(pRes)) setProjects(pRes);
-      if (Array.isArray(mRes)) setMedia(mRes);
-      if (Array.isArray(fRes)) setMediaFolders(fRes);
       if (rCfgRes && !rCfgRes.error) setRecruitmentSettings(rCfgRes);
       if (Array.isArray(rAppRes)) setRecruitmentApps(rAppRes);
     } catch {}
@@ -132,19 +187,22 @@ export default function AdminDashboard() {
     );
   }
 
+  const userPerms = Array.isArray(adminInfo.permissions) ? adminInfo.permissions : [];
+  const hasModulePerm = (prefix) => userPerms.some(p => p.startsWith(prefix));
+
   const NAV_ITEMS = [
-    { id: 'members',      label: 'Members',      icon: <Users size={18} />,        count: members.length,          eliteOnly: false },
-    { id: 'events',       label: 'Events',       icon: <Calendar size={18} />,      count: events.length,           eliteOnly: false },
-    { id: 'contests',     label: 'Contests',     icon: <Trophy size={18} />,        count: contestsList.length,     eliteOnly: false },
-    { id: 'projects',     label: 'Projects',     icon: <FolderKanban size={18} />,  count: projects.length,         eliteOnly: true },
-    { id: 'notices',      label: 'Notices',      icon: <Bell size={18} />,          count: notices.length,          eliteOnly: true },
-    { id: 'media',        label: 'Media',        icon: <ImageIcon size={18} />,     count: media.length,            eliteOnly: true },
-    { id: 'wallofkl',     label: 'Wall of KL',   icon: <Sparkles size={18} />,      count: null,                    eliteOnly: false },
-    { id: 'roles',        label: 'Roles & Permissions', icon: <ShieldCheck size={18} />, count: null,            eliteOnly: true },
-    { id: 'settings',     label: 'System & Security', icon: <Sliders size={18} />,     count: null,            eliteOnly: true },
-    { id: 'recruitments', label: 'Recruitments', icon: <UserPlus size={18} />,      count: recruitmentApps.length,  eliteOnly: true },
-    { id: 'forms',        label: 'Forms',        icon: <FileText size={18} />,      count: null,                    eliteOnly: true },
-  ].filter(i => adminInfo.isElite || !i.eliteOnly);
+    { id: 'members',      label: 'Members',      icon: <Users size={18} />,        count: members.length,          visible: true },
+    { id: 'events',       label: 'Events',       icon: <Calendar size={18} />,      count: events.length,           visible: true },
+    { id: 'contests',     label: 'Contests',     icon: <Trophy size={18} />,        count: contestsList.length,     visible: true },
+    { id: 'projects',     label: 'Projects',     icon: <FolderKanban size={18} />,  count: projects.length,         visible: adminInfo.isElite || hasModulePerm('projects.') },
+    { id: 'notices',      label: 'Notices',      icon: <Bell size={18} />,          count: notices.length,          visible: adminInfo.isElite || hasModulePerm('notices.') },
+    { id: 'media',        label: 'Media',        icon: <ImageIcon size={18} />,     count: media.length,            visible: adminInfo.isElite || hasModulePerm('media.') },
+    { id: 'wallofkl',     label: 'Wall of KL',   icon: <Sparkles size={18} />,      count: null,                    visible: adminInfo.isElite || hasModulePerm('wallofkl.') },
+    { id: 'roles',        label: 'Roles & Permissions', icon: <ShieldCheck size={18} />, count: null,            visible: adminInfo.isElite || hasModulePerm('roles.') },
+    { id: 'settings',     label: 'System & Security', icon: <Sliders size={18} />,     count: null,            visible: adminInfo.isElite },
+    { id: 'recruitments', label: 'Recruitments', icon: <UserPlus size={18} />,      count: recruitmentApps.length,  visible: adminInfo.isElite || hasModulePerm('recruitments.') },
+    { id: 'forms',        label: 'Forms',        icon: <FileText size={18} />,      count: null,                    visible: adminInfo.isElite || hasModulePerm('forms.') },
+  ].filter(i => i.visible);
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -180,8 +238,7 @@ export default function AdminDashboard() {
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar__brand">
-          <div className="admin-sidebar__logo">KF</div>
-          <span className="admin-sidebar__brand-name">KLFORGE</span>
+          <img src="/images/favicon.png?v=2" alt="KLFORGE Logo" className="admin-sidebar__logo-img" />
         </div>
 
         <nav className="admin-sidebar__nav">

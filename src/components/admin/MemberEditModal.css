@@ -24,8 +24,8 @@
 }
 
 .mem-modal {
-    width: min(720px, 100%);
-    max-height: min(90vh, 860px);
+    width: min(1140px, 94vw);
+    max-height: min(90vh, 880px);
     background: linear-gradient(180deg, #0e0e14 0%, #08080c 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;

@@ -328,10 +328,10 @@ export default function RolesSection() {
       {/* CREATE / EDIT ROLE MODAL */}
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(12px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-          <div style={{ background: '#09090f', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, maxWidth: 760, width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 20px 60px rgba(0,0,0,0.8)' }}>
+          <div style={{ background: '#09090f', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 20, maxWidth: 'min(1280px, 94vw)', width: '100%', maxHeight: '92vh', display: 'flex', flexDirection: 'column', position: 'relative', boxShadow: '0 24px 80px rgba(0,0,0,0.9)' }}>
             
             {/* Modal Header */}
-            <div style={{ padding: '24px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '20px 28px', borderBottom: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <ShieldCheck color={roleColor} size={22} /> {editingRole ? `Edit Role: ${editingRole.name}` : 'Create Custom Role'}
@@ -348,7 +348,7 @@ export default function RolesSection() {
             {/* Modal Scrollable Content */}
             <form onSubmit={handleFormSubmit} style={{ overflowY: 'auto', padding: '24px 28px', flex: 1, display: 'flex', flexDirection: 'column', gap: 20 }}>
               
-              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 3fr 1fr', gap: 16, alignItems: 'center' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6, fontWeight: 700 }}>Role Name *</label>
                   <input
@@ -362,6 +362,17 @@ export default function RolesSection() {
                 </div>
 
                 <div>
+                  <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6, fontWeight: 700 }}>Description</label>
+                  <input
+                    type="text"
+                    value={roleDesc}
+                    onChange={(e) => setRoleDesc(e.target.value)}
+                    placeholder="Describe the responsibilities and access granted by this role..."
+                    style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }}
+                  />
+                </div>
+
+                <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6, fontWeight: 700 }}>Badge Color</label>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center', height: 42 }}>
                     {COLOR_PALETTE.map(c => (
@@ -369,7 +380,7 @@ export default function RolesSection() {
                         key={c}
                         onClick={() => setRoleColor(c)}
                         style={{
-                          width: 26, height: 26, borderRadius: '50%', background: c, cursor: 'pointer',
+                          width: 24, height: 24, borderRadius: '50%', background: c, cursor: 'pointer',
                           border: roleColor === c ? '2px solid #fff' : '2px solid transparent',
                           transform: roleColor === c ? 'scale(1.15)' : 'scale(1)',
                           transition: 'all 0.15s ease'
@@ -378,17 +389,6 @@ export default function RolesSection() {
                     ))}
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6, fontWeight: 700 }}>Description</label>
-                <input
-                  type="text"
-                  value={roleDesc}
-                  onChange={(e) => setRoleDesc(e.target.value)}
-                  placeholder="Describe the responsibilities and access granted by this role..."
-                  style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }}
-                />
               </div>
 
               {/* GRANULAR PERMISSIONS SELECTOR BY MODULE */}
@@ -437,7 +437,7 @@ export default function RolesSection() {
 
                         {/* Individual Micro-Permissions List */}
                         {isExpanded && (
-                          <div style={{ padding: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                          <div style={{ padding: 14, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                             {group.permissions.map(perm => {
                               const checked = selectedPermissions.has(perm.id);
                               return (

@@ -4,6 +4,7 @@ import connectDB from '@/lib/db';
 import Event from '@/lib/models/Event';
 import Registration from '@/lib/models/Registration';
 import { saveFile } from '@/lib/uploadHelper';
+import { checkRateLimit } from '@/lib/rateLimiter';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,6 +32,9 @@ async function readBody(request) {
 }
 
 export async function POST(request, { params }) {
+  const rateLimit = await checkRateLimit(request, 'api');
+  if (!rateLimit.allowed) return rateLimit.response;
+
   try {
     await connectDB();
     const { id } = await params;

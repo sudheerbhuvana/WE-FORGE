@@ -4,25 +4,31 @@ import { getActor, isElite, isDomainHead, canAccessAdmin } from '@/lib/permissio
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    const actor = await getActor();
-    if (!actor) return NextResponse.json({ authenticated: false });
+    try {
+        const actor = await getActor();
+        if (!actor) return NextResponse.json({ authenticated: false });
 
-    if (!canAccessAdmin(actor)) {
-        return NextResponse.json({ 
-            authenticated: false, 
-            signedIn: true, 
-            role: actor.role, 
-            domain: actor.domain 
+        if (!canAccessAdmin(actor)) {
+            return NextResponse.json({ 
+                authenticated: false, 
+                signedIn: true, 
+                role: actor.role, 
+                domain: actor.domain 
+            });
+        }
+
+        return NextResponse.json({
+            authenticated: true,
+            isElite: isElite(actor),
+            isDomainHead: isDomainHead(actor),
+            role: actor.role,
+            domain: actor.domain,
+            memberId: actor.id,
+            name: actor.name,
+            permissions: actor.customPermissions || [],
         });
+    } catch (err) {
+        console.error('Error in /api/auth/check GET:', err);
+        return NextResponse.json({ authenticated: false, error: err.message }, { status: 500 });
     }
-
-    return NextResponse.json({
-        authenticated: true,
-        isElite: isElite(actor),
-        isDomainHead: isDomainHead(actor),
-        role: actor.role,
-        domain: actor.domain,
-        memberId: actor.id,
-        name: actor.name,
-    });
 }
