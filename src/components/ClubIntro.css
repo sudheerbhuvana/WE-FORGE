@@ -104,24 +104,35 @@
 /* Responsive constraints */
 @media (max-width: 768px) {
   .club-intro {
-    padding: 72px 16px 56px;
+    padding: 56px 16px 40px;
+    border-radius: 20px;
   }
   
   .club-intro__container {
     gap: 16px;
   }
 
+  .club-intro__heading {
+    font-size: clamp(1.8rem, 7vw, 2.5rem);
+  }
+
   .club-intro__stats {
-    grid-template-columns: 1fr;
-    gap: 12px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    padding: 8px 4px;
   }
 
   .club-intro__stat-card {
-    min-height: 96px;
+    min-height: 72px;
+    gap: 4px;
   }
 
   .club-intro__stat-label {
-    font-size: 0.8rem;
-    letter-spacing: 0.18em;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+  }
+
+  .club-intro__stat-value {
+    font-size: clamp(1.6rem, 6.5vw, 2.4rem);
   }
 }

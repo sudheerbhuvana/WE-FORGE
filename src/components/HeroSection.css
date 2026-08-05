@@ -372,14 +372,18 @@
   }
 
   .hero__image-wrapper {
-    height: calc(100vh - 40px);
+    height: calc(100dvh - 30px);
     border-radius: 16px;
   }
 
   .hero__content {
-    padding: 100px 20px 24px;
+    padding: 84px 16px 20px;
     align-items: center;
     text-align: center;
+  }
+
+  .hero__heading {
+    font-size: clamp(1.75rem, 7.5vw, 2.4rem);
   }
 
   .hero__heading br {
@@ -387,7 +391,7 @@
   }
 
   .hero__description {
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     max-width: 100%;
   }
 
@@ -395,16 +399,16 @@
     align-self: center;
     min-width: unset;
     width: 100%;
-    max-width: 300px;
+    max-width: 280px;
   }
 
   .hero__notice-wrapper {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .hero__notice-toast {
     padding: 6px 12px;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     gap: 6px;
   }
 

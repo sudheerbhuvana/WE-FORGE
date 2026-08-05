@@ -191,8 +191,9 @@ body {
   .featured-gallery__item--hero { grid-column: span 2; grid-row: span 2; }
 }
 @media (max-width: 540px) {
-  .featured-gallery__grid { grid-template-columns: 1fr; grid-auto-rows: 200px; }
-  .featured-gallery__item--hero { grid-column: span 1; grid-row: span 1; }
+  .featured-gallery { padding: 48px 16px 40px; }
+  .featured-gallery__grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 130px; gap: 8px; }
+  .featured-gallery__item--hero { grid-column: span 2; grid-row: span 2; }
 }
 
 /* ── Apple Cards Carousel ───────────────────────────────── */
@@ -355,8 +356,10 @@ body {
 }
 
 @media (max-width: 540px) {
-    .apple-card { flex: 0 0 280px; height: 380px; }
-    .apple-cards__header { grid-template-columns: 1fr; }
+    .apple-cards { padding: 40px 0 48px; }
+    .apple-cards__container { padding: 0 16px; }
+    .apple-card { flex: 0 0 260px; height: 350px; }
+    .apple-cards__header { grid-template-columns: 1fr; margin-bottom: 16px; }
     .apple-cards__header > .apple-cards__nav {
         grid-column: 1;
         grid-row: auto;

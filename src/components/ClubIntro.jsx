@@ -10,17 +10,17 @@ const stats = [
 ];
 
 const ClubIntro = ({ children }) => {
-  const sectionRef = useRef(null);
+  const statsRef = useRef(null);
   const animationFrameRef = useRef(0);
   const hasAnimatedRef = useRef(false);
   const [counts, setCounts] = useState(() => stats.map(() => 0));
 
   useEffect(() => {
-    const section = sectionRef.current;
-    if (!section) return undefined;
+    const statsEl = statsRef.current;
+    if (!statsEl) return undefined;
 
     const startCountAnimation = () => {
-      const duration = 4000;
+      const duration = 2500;
       const startTime = performance.now();
 
       const tick = (now) => {
@@ -37,6 +37,7 @@ const ClubIntro = ({ children }) => {
       animationFrameRef.current = window.requestAnimationFrame(tick);
     };
 
+    // Robust IntersectionObserver observing stats element directly
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (!entry.isIntersecting || hasAnimatedRef.current) return;
@@ -44,19 +45,28 @@ const ClubIntro = ({ children }) => {
         startCountAnimation();
         observer.disconnect();
       },
-      { threshold: 0.35 }
+      { threshold: 0, rootMargin: '50px 0px 50px 0px' }
     );
 
-    observer.observe(section);
+    observer.observe(statsEl);
+
+    // Safety fallback: if user is on mobile and observer didn't fire within 1.5s, trigger animation anyway
+    const fallbackTimer = setTimeout(() => {
+      if (!hasAnimatedRef.current) {
+        hasAnimatedRef.current = true;
+        startCountAnimation();
+      }
+    }, 1500);
 
     return () => {
       observer.disconnect();
+      clearTimeout(fallbackTimer);
       window.cancelAnimationFrame(animationFrameRef.current);
     };
   }, []);
 
   return (
-    <section className="club-intro" ref={sectionRef} id="what-is-forge">
+    <section className="club-intro" id="what-is-forge">
       <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none', opacity: 0.7 }}>
         <PixelSnow 
           variant="round"
@@ -80,7 +90,7 @@ const ClubIntro = ({ children }) => {
           KLForge is a community where developers collaborate,
           build impactful ideas, and grow through technology.
         </p>
-        <div className="club-intro__stats" aria-label="KLForge highlights">
+        <div className="club-intro__stats" ref={statsRef} aria-label="KLForge highlights">
           {stats.map((item, index) => (
             <article key={item.label} className="club-intro__stat-card">
               <span className="club-intro__stat-label">{item.label}</span>
