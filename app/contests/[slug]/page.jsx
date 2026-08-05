@@ -454,7 +454,7 @@ export default function SingleContestPage({ params }) {
       <section className="sc-hero">
         <div className="sc-hero__banner-wrap">
           {template.bannerUrl ? (
-            <img src={template.bannerUrl} alt={template.title} className="sc-hero__banner-img" />
+            <img src={template.bannerUrl} alt="" className="sc-hero__banner-img" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
           ) : (
             <div className="sc-hero__banner-fallback"><Trophy size={48} /></div>
           )}

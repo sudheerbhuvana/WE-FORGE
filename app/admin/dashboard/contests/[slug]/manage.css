@@ -602,29 +602,32 @@
 
 /* ===== Modal (used by edit / winners / judging) ===== */
 .admin-dash__modal-overlay {
-  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px); z-index: 100;
+  position: fixed; inset: 0; background: rgba(0, 0, 0, 0.78);
+  backdrop-filter: blur(8px); z-index: 100;
   display: flex; align-items: center; justify-content: center;
-  padding: 20px;
+  padding: 24px 16px; overflow: hidden;
 }
 .admin-dash__modal-box {
   background: var(--cm-bg); border: 1px solid var(--cm-border-strong);
   border-radius: var(--cm-radius); width: 100%; max-width: 1100px;
-  max-height: 90vh; display: flex; flex-direction: column;
-  box-shadow: var(--cm-shadow-2);
+  max-height: min(90vh, 860px); display: flex; flex-direction: column;
+  box-shadow: var(--cm-shadow-2); overflow: hidden;
   animation: cm-fade-in 0.15s ease;
 }
 .admin-dash__modal-header {
   display: flex; justify-content: space-between; align-items: center;
   padding: 16px 20px; border-bottom: 1px solid var(--cm-border);
+  flex-shrink: 0;
 }
 .admin-dash__modal-header h2 { margin: 0; font-size: 1.05rem; font-weight: 600; }
 .admin-dash__modal-body {
-  padding: 20px; overflow-y: auto; flex: 1;
+  padding: 24px; overflow-y: auto; flex: 1 1 auto; min-height: 0;
+  overscroll-behavior: contain;
 }
 .admin-dash__modal-footer {
   padding: 14px 20px; border-top: 1px solid var(--cm-border);
-  display: flex; justify-content: flex-end; gap: 8px;
+  display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0;
+  background: rgba(10, 10, 15, 0.85); backdrop-filter: blur(10px);
 }
 .admin-dash__close-btn {
   background: transparent; border: none; color: var(--cm-text-3);

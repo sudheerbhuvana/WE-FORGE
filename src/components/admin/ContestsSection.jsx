@@ -423,238 +423,240 @@ export default function ContestsSection({ contestsList = [], refreshData }) {
               <button className="admin-dash__close-btn" onClick={() => setShowContestForm(false)}><X size={20} /></button>
             </div>
 
-            <form onSubmit={saveContestForm} className="admin-dash__modal-body">
-              <div className="admin-dash__form-grid">
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Title *</label>
-                  <input type="text" required value={contestForm.title} onChange={e => setContestForm({ ...contestForm, title: e.target.value })} placeholder="Photography Challenge 2026" />
-                </div>
-                <div className="admin-dash__field">
-                  <label>Permanent Slug (URL)</label>
-                  <input type="text" value={contestForm.slug} onChange={e => setContestForm({ ...contestForm, slug: e.target.value })} placeholder="photography (leave blank to auto-generate)" />
-                </div>
-                <div className="admin-dash__field">
-                  <label>Contest Type / Frequency *</label>
-                  <select value={contestForm.type} onChange={e => setContestForm({ ...contestForm, type: e.target.value })} className="admin-dash__input">
-                    <option value="one_time">One-Time Contest</option>
-                    <option value="immediate">Immediate Contest with Deadline</option>
-                    <option value="recurring_weekly">Weekly Recurring Contest</option>
-                    <option value="recurring_monthly">Monthly Recurring Contest</option>
-                  </select>
-                </div>
+            <form onSubmit={saveContestForm} className="admin-dash__modal-form">
+              <div className="admin-dash__modal-body">
+                <div className="admin-dash__form-grid">
+                  <div className="admin-dash__field admin-dash__field--full">
+                    <label>Title *</label>
+                    <input type="text" required value={contestForm.title} onChange={e => setContestForm({ ...contestForm, title: e.target.value })} placeholder="Photography Challenge 2026" />
+                  </div>
+                  <div className="admin-dash__field">
+                    <label>Permanent Slug (URL)</label>
+                    <input type="text" value={contestForm.slug} onChange={e => setContestForm({ ...contestForm, slug: e.target.value })} placeholder="photography (leave blank to auto-generate)" />
+                  </div>
+                  <div className="admin-dash__field">
+                    <label>Contest Type / Frequency *</label>
+                    <select value={contestForm.type} onChange={e => setContestForm({ ...contestForm, type: e.target.value })} className="admin-dash__input">
+                      <option value="one_time">One-Time Contest</option>
+                      <option value="immediate">Immediate Contest with Deadline</option>
+                      <option value="recurring_weekly">Weekly Recurring Contest</option>
+                      <option value="recurring_monthly">Monthly Recurring Contest</option>
+                    </select>
+                  </div>
 
-                {/* Schedule Parameters */}
-                {contestForm.type === 'one_time' && (
-                  <>
-                    <div className="admin-dash__field">
-                      <label>Start Date & Time</label>
-                      <ModernDateTimePicker
-                        value={contestForm.startDate}
-                        onChange={val => setContestForm({ ...contestForm, startDate: val })}
-                        placeholder="Select start date & time"
-                      />
-                    </div>
-                    <div className="admin-dash__field">
-                      <label>End Date & Time</label>
+                  {/* Schedule Parameters */}
+                  {contestForm.type === 'one_time' && (
+                    <>
+                      <div className="admin-dash__field">
+                        <label>Start Date & Time</label>
+                        <ModernDateTimePicker
+                          value={contestForm.startDate}
+                          onChange={val => setContestForm({ ...contestForm, startDate: val })}
+                          placeholder="Select start date & time"
+                        />
+                      </div>
+                      <div className="admin-dash__field">
+                        <label>End Date & Time</label>
+                        <ModernDateTimePicker
+                          value={contestForm.endDate}
+                          onChange={val => setContestForm({ ...contestForm, endDate: val })}
+                          placeholder="Select end date & time"
+                        />
+                      </div>
+                    </>
+                  )}
+
+                  {contestForm.type === 'immediate' && (
+                    <div className="admin-dash__field admin-dash__field--full">
+                      <label>Submission Deadline Date & Time *</label>
                       <ModernDateTimePicker
                         value={contestForm.endDate}
                         onChange={val => setContestForm({ ...contestForm, endDate: val })}
-                        placeholder="Select end date & time"
+                        placeholder="Select deadline date & time"
                       />
                     </div>
-                  </>
-                )}
-
-                {contestForm.type === 'immediate' && (
-                  <div className="admin-dash__field admin-dash__field--full">
-                    <label>Submission Deadline Date & Time *</label>
-                    <ModernDateTimePicker
-                      value={contestForm.endDate}
-                      onChange={val => setContestForm({ ...contestForm, endDate: val })}
-                      placeholder="Select deadline date & time"
-                    />
-                  </div>
-                )}
-
-                {contestForm.type === 'recurring_weekly' && (
-                  <>
-                    <div className="admin-dash__field">
-                      <label>Opens Every (Start Day)</label>
-                      <select value={contestForm.startDay} onChange={e => setContestForm({ ...contestForm, startDay: e.target.value })} className="admin-dash__input">
-                        {DAY_NAMES.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                      </select>
-                    </div>
-                    <div className="admin-dash__field">
-                      <label>Opens At (Start Time)</label>
-                      <input type="time" value={contestForm.startTime} onChange={e => setContestForm({ ...contestForm, startTime: e.target.value })} className="admin-dash__input" />
-                    </div>
-                    <div className="admin-dash__field">
-                      <label>Closes Every (End Day)</label>
-                      <select value={contestForm.endDay} onChange={e => setContestForm({ ...contestForm, endDay: e.target.value })} className="admin-dash__input">
-                        {DAY_NAMES.map((d, i) => <option key={i} value={i}>{d}</option>)}
-                      </select>
-                    </div>
-                    <div className="admin-dash__field">
-                      <label>Closes At (End Time)</label>
-                      <input type="time" value={contestForm.endTime} onChange={e => setContestForm({ ...contestForm, endTime: e.target.value })} className="admin-dash__input" />
-                    </div>
-                  </>
-                )}
-
-                {contestForm.type === 'recurring_monthly' && (
-                  <>
-                    <div className="admin-dash__field">
-                      <label>Opens Day of Month (1-28)</label>
-                      <input type="number" min={1} max={28} value={contestForm.startDayOfMonth} onChange={e => setContestForm({ ...contestForm, startDayOfMonth: e.target.value })} className="admin-dash__input" />
-                    </div>
-                    <div className="admin-dash__field">
-                      <label>Closes Day of Month (1-28)</label>
-                      <input type="number" min={1} max={28} value={contestForm.endDayOfMonth} onChange={e => setContestForm({ ...contestForm, endDayOfMonth: e.target.value })} className="admin-dash__input" />
-                    </div>
-                  </>
-                )}
-
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Banner Image URL</label>
-                  <input type="url" value={contestForm.bannerUrl} onChange={e => setContestForm({ ...contestForm, bannerUrl: e.target.value })} placeholder="https://..." />
-                </div>
-
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Description</label>
-                  <textarea rows={2} value={contestForm.description} onChange={e => setContestForm({ ...contestForm, description: e.target.value })} />
-                </div>
-
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Rules & Guidelines</label>
-                  <textarea rows={3} value={contestForm.rules} onChange={e => setContestForm({ ...contestForm, rules: e.target.value })} />
-                </div>
-
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Prize Information</label>
-                  <input type="text" value={contestForm.prizeInfo} onChange={e => setContestForm({ ...contestForm, prizeInfo: e.target.value })} placeholder="1st Place: 500 Pts + Certificate" />
-                </div>
-
-                <div className="admin-dash__field admin-dash__field--full">
-                  <label>Tags / Categories (comma separated)</label>
-                  <input type="text" value={contestForm.tags} onChange={e => setContestForm({ ...contestForm, tags: e.target.value })} placeholder="photography, design, weekly" />
-                </div>
-
-                {/* Full Custom Form Builder */}
-                <div className="admin-dash__field admin-dash__field--full" style={{ background: 'rgba(255,255,255,0.03)', padding: 18, borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', marginTop: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <div>
-                      <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#71C4FF', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Sparkles size={14} /> Custom Submission Form Builder
-                      </h4>
-                      <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>Add, remove, reorder, or customize any field type & size limits required for this contest.</p>
-                    </div>
-
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      <button type="button" className="admin-dash__icon-btn" title="Add Text Input" onClick={() => handleAddCustomField('text')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Text</button>
-                      <button type="button" className="admin-dash__icon-btn" title="Add Paragraph" onClick={() => handleAddCustomField('textarea')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Writeup</button>
-                      <button type="button" className="admin-dash__icon-btn" title="Add Image Field" onClick={() => handleAddCustomField('image')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Image</button>
-                      <button type="button" className="admin-dash__icon-btn" title="Add Video Field" onClick={() => handleAddCustomField('video')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Video</button>
-                      <button type="button" className="admin-dash__icon-btn" title="Add File Field" onClick={() => handleAddCustomField('file')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> File</button>
-                      <button type="button" className="admin-dash__icon-btn" title="Add Link Field" onClick={() => handleAddCustomField('link')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Link</button>
-                    </div>
-                  </div>
-
-                  {contestForm.customFields.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: 20, border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 10, color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
-                      No fields configured. Participants can submit entries with 0 required inputs. Use buttons above to add fields.
-                    </div>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                      {contestForm.customFields.map((field, idx) => (
-                        <div key={field.id || idx} style={{ background: 'rgba(0,0,0,0.25)', padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 100px auto', gap: 8, alignItems: 'center' }}>
-                            <input
-                              type="text"
-                              className="admin-dash__input"
-                              placeholder="Field Title / Question Label"
-                              value={field.label}
-                              onChange={e => handleUpdateCustomField(idx, { label: e.target.value })}
-                            />
-                            <select
-                              className="admin-dash__input"
-                              value={field.type}
-                              onChange={e => handleUpdateCustomField(idx, { type: e.target.value })}
-                            >
-                              <option value="text">Text (Single Line)</option>
-                              <option value="textarea">Writeup (Multi-line)</option>
-                              <option value="number">Number</option>
-                              <option value="image">Image Upload / URL</option>
-                              <option value="video">Video Upload / URL</option>
-                              <option value="file">File (PDF/Zip)</option>
-                              <option value="link">Work Link(s)</option>
-                              <option value="select">Dropdown Select</option>
-                            </select>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', cursor: 'pointer', margin: 0 }}>
-                              <input
-                                type="checkbox"
-                                checked={field.required}
-                                onChange={e => handleUpdateCustomField(idx, { required: e.target.checked })}
-                              />
-                              Required
-                            </label>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                              <button type="button" className="admin-dash__icon-btn" onClick={() => handleMoveCustomField(idx, -1)} disabled={idx === 0}>↑</button>
-                              <button type="button" className="admin-dash__icon-btn" onClick={() => handleMoveCustomField(idx, 1)} disabled={idx === contestForm.customFields.length - 1}>↓</button>
-                              <button type="button" className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleRemoveCustomField(idx)}><Trash2 size={13} /></button>
-                            </div>
-                          </div>
-
-                          {/* Extra Size / Limits Row based on Type */}
-                          {(field.type === 'image' || field.type === 'video' || field.type === 'file' || field.type === 'link') && (
-                            <div style={{ display: 'flex', gap: 14, marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.78rem' }}>
-                              {(field.type === 'image' || field.type === 'video' || field.type === 'file') && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <span>Max File Size (MB):</span>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={1000}
-                                    style={{ width: '80px' }}
-                                    className="admin-dash__input"
-                                    value={field.maxSizeMB || 10}
-                                    onChange={e => handleUpdateCustomField(idx, { maxSizeMB: parseInt(e.target.value, 10) || 10 })}
-                                  />
-                                </div>
-                              )}
-                              {(field.type === 'image' || field.type === 'link') && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <span>Max Items Count:</span>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={20}
-                                    style={{ width: '70px' }}
-                                    className="admin-dash__input"
-                                    value={field.maxCount || 1}
-                                    onChange={e => handleUpdateCustomField(idx, { maxCount: parseInt(e.target.value, 10) || 1 })}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
                   )}
+
+                  {contestForm.type === 'recurring_weekly' && (
+                    <>
+                      <div className="admin-dash__field">
+                        <label>Opens Every (Start Day)</label>
+                        <select value={contestForm.startDay} onChange={e => setContestForm({ ...contestForm, startDay: e.target.value })} className="admin-dash__input">
+                          {DAY_NAMES.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                        </select>
+                      </div>
+                      <div className="admin-dash__field">
+                        <label>Opens At (Start Time)</label>
+                        <input type="time" value={contestForm.startTime} onChange={e => setContestForm({ ...contestForm, startTime: e.target.value })} className="admin-dash__input" />
+                      </div>
+                      <div className="admin-dash__field">
+                        <label>Closes Every (End Day)</label>
+                        <select value={contestForm.endDay} onChange={e => setContestForm({ ...contestForm, endDay: e.target.value })} className="admin-dash__input">
+                          {DAY_NAMES.map((d, i) => <option key={i} value={i}>{d}</option>)}
+                        </select>
+                      </div>
+                      <div className="admin-dash__field">
+                        <label>Closes At (End Time)</label>
+                        <input type="time" value={contestForm.endTime} onChange={e => setContestForm({ ...contestForm, endTime: e.target.value })} className="admin-dash__input" />
+                      </div>
+                    </>
+                  )}
+
+                  {contestForm.type === 'recurring_monthly' && (
+                    <>
+                      <div className="admin-dash__field">
+                        <label>Opens Day of Month (1-28)</label>
+                        <input type="number" min={1} max={28} value={contestForm.startDayOfMonth} onChange={e => setContestForm({ ...contestForm, startDayOfMonth: e.target.value })} className="admin-dash__input" />
+                      </div>
+                      <div className="admin-dash__field">
+                        <label>Closes Day of Month (1-28)</label>
+                        <input type="number" min={1} max={28} value={contestForm.endDayOfMonth} onChange={e => setContestForm({ ...contestForm, endDayOfMonth: e.target.value })} className="admin-dash__input" />
+                      </div>
+                    </>
+                  )}
+
+                  <div className="admin-dash__field admin-dash__field--full">
+                    <label>Banner Image URL</label>
+                    <input type="url" value={contestForm.bannerUrl} onChange={e => setContestForm({ ...contestForm, bannerUrl: e.target.value })} placeholder="https://..." />
+                  </div>
+
+                  <div className="admin-dash__field admin-dash__field--full">
+                    <label>Description</label>
+                    <textarea rows={2} value={contestForm.description} onChange={e => setContestForm({ ...contestForm, description: e.target.value })} />
+                  </div>
+
+                  <div className="admin-dash__field admin-dash__field--full">
+                    <label>Rules & Guidelines</label>
+                    <textarea rows={3} value={contestForm.rules} onChange={e => setContestForm({ ...contestForm, rules: e.target.value })} />
+                  </div>
+
+                  <div className="admin-dash__field admin-dash__field--full">
+                    <label>Prize Information</label>
+                    <input type="text" value={contestForm.prizeInfo} onChange={e => setContestForm({ ...contestForm, prizeInfo: e.target.value })} placeholder="1st Place: 500 Pts + Certificate" />
+                  </div>
+
+                  <div className="admin-dash__field admin-dash__field--full">
+                    <label>Tags / Categories (comma separated)</label>
+                    <input type="text" value={contestForm.tags} onChange={e => setContestForm({ ...contestForm, tags: e.target.value })} placeholder="photography, design, weekly" />
+                  </div>
+
+                  {/* Full Custom Form Builder */}
+                  <div className="admin-dash__field admin-dash__field--full" style={{ background: 'rgba(255,255,255,0.03)', padding: 18, borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', marginTop: 10 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <div>
+                        <h4 style={{ fontSize: '0.92rem', fontWeight: 700, color: '#71C4FF', margin: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <Sparkles size={14} /> Custom Submission Form Builder
+                        </h4>
+                        <p style={{ fontSize: '0.78rem', color: 'rgba(255,255,255,0.45)', margin: '2px 0 0' }}>Add, remove, reorder, or customize any field type & size limits required for this contest.</p>
+                      </div>
+
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <button type="button" className="admin-dash__icon-btn" title="Add Text Input" onClick={() => handleAddCustomField('text')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Text</button>
+                        <button type="button" className="admin-dash__icon-btn" title="Add Paragraph" onClick={() => handleAddCustomField('textarea')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Writeup</button>
+                        <button type="button" className="admin-dash__icon-btn" title="Add Image Field" onClick={() => handleAddCustomField('image')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Image</button>
+                        <button type="button" className="admin-dash__icon-btn" title="Add Video Field" onClick={() => handleAddCustomField('video')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Video</button>
+                        <button type="button" className="admin-dash__icon-btn" title="Add File Field" onClick={() => handleAddCustomField('file')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> File</button>
+                        <button type="button" className="admin-dash__icon-btn" title="Add Link Field" onClick={() => handleAddCustomField('link')} style={{ padding: '4px 8px', fontSize: '0.75rem', gap: 4 }}><Plus size={12} /> Link</button>
+                      </div>
+                    </div>
+
+                    {contestForm.customFields.length === 0 ? (
+                      <div style={{ textAlign: 'center', padding: 20, border: '1px dashed rgba(255,255,255,0.15)', borderRadius: 10, color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
+                        No fields configured. Participants can submit entries with 0 required inputs. Use buttons above to add fields.
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        {contestForm.customFields.map((field, idx) => (
+                          <div key={field.id || idx} style={{ background: 'rgba(0,0,0,0.25)', padding: 12, borderRadius: 10, border: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 100px auto', gap: 8, alignItems: 'center' }}>
+                              <input
+                                type="text"
+                                className="admin-dash__input"
+                                placeholder="Field Title / Question Label"
+                                value={field.label}
+                                onChange={e => handleUpdateCustomField(idx, { label: e.target.value })}
+                              />
+                              <select
+                                className="admin-dash__input"
+                                value={field.type}
+                                onChange={e => handleUpdateCustomField(idx, { type: e.target.value })}
+                              >
+                                <option value="text">Text (Single Line)</option>
+                                <option value="textarea">Writeup (Multi-line)</option>
+                                <option value="number">Number</option>
+                                <option value="image">Image Upload / URL</option>
+                                <option value="video">Video Upload / URL</option>
+                                <option value="file">File (PDF/Zip)</option>
+                                <option value="link">Work Link(s)</option>
+                                <option value="select">Dropdown Select</option>
+                              </select>
+                              <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.78rem', cursor: 'pointer', margin: 0 }}>
+                                <input
+                                  type="checkbox"
+                                  checked={field.required}
+                                  onChange={e => handleUpdateCustomField(idx, { required: e.target.checked })}
+                                />
+                                Required
+                              </label>
+                              <div style={{ display: 'flex', gap: 4 }}>
+                                <button type="button" className="admin-dash__icon-btn" onClick={() => handleMoveCustomField(idx, -1)} disabled={idx === 0}>↑</button>
+                                <button type="button" className="admin-dash__icon-btn" onClick={() => handleMoveCustomField(idx, 1)} disabled={idx === contestForm.customFields.length - 1}>↓</button>
+                                <button type="button" className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleRemoveCustomField(idx)}><Trash2 size={13} /></button>
+                              </div>
+                            </div>
+
+                            {/* Extra Size / Limits Row based on Type */}
+                            {(field.type === 'image' || field.type === 'video' || field.type === 'file' || field.type === 'link') && (
+                              <div style={{ display: 'flex', gap: 14, marginTop: 8, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '0.78rem' }}>
+                                {(field.type === 'image' || field.type === 'video' || field.type === 'file') && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span>Max File Size (MB):</span>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={1000}
+                                      style={{ width: '80px' }}
+                                      className="admin-dash__input"
+                                      value={field.maxSizeMB || 10}
+                                      onChange={e => handleUpdateCustomField(idx, { maxSizeMB: parseInt(e.target.value, 10) || 10 })}
+                                    />
+                                  </div>
+                                )}
+                                {(field.type === 'image' || field.type === 'link') && (
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <span>Max Items Count:</span>
+                                    <input
+                                      type="number"
+                                      min={1}
+                                      max={20}
+                                      style={{ width: '70px' }}
+                                      className="admin-dash__input"
+                                      value={field.maxCount || 1}
+                                      onChange={e => handleUpdateCustomField(idx, { maxCount: parseInt(e.target.value, 10) || 1 })}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="admin-dash__field" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                    <input type="checkbox" id="featured" checked={contestForm.featured} onChange={e => setContestForm({ ...contestForm, featured: e.target.checked })} />
+                    <label htmlFor="featured" style={{ margin: 0 }}>Featured Contest (Show Spotlight Card)</label>
+                  </div>
+
+                  <div className="admin-dash__field" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                    <input type="checkbox" id="published" checked={contestForm.isPublished} onChange={e => setContestForm({ ...contestForm, isPublished: e.target.checked })} />
+                    <label htmlFor="published" style={{ margin: 0 }}>Published (Visible Publicly)</label>
+                  </div>
                 </div>
 
-                <div className="admin-dash__field" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-                  <input type="checkbox" id="featured" checked={contestForm.featured} onChange={e => setContestForm({ ...contestForm, featured: e.target.checked })} />
-                  <label htmlFor="featured" style={{ margin: 0 }}>Featured Contest (Show Spotlight Card)</label>
-                </div>
-
-                <div className="admin-dash__field" style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
-                  <input type="checkbox" id="published" checked={contestForm.isPublished} onChange={e => setContestForm({ ...contestForm, isPublished: e.target.checked })} />
-                  <label htmlFor="published" style={{ margin: 0 }}>Published (Visible Publicly)</label>
-                </div>
+                {error && <p style={{ color: '#ff6b6b', margin: '12px 0 0', fontSize: '0.88rem' }}>{error}</p>}
               </div>
-
-              {error && <p style={{ color: '#ff6b6b', margin: '12px 0 0', fontSize: '0.88rem' }}>{error}</p>}
 
               <div className="admin-dash__modal-actions">
                 <button type="button" className="admin-dash__cancel-btn" onClick={() => setShowContestForm(false)}>Cancel</button>

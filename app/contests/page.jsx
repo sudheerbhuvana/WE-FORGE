@@ -180,7 +180,7 @@ export default function ContestsPage() {
                 >
                   <div className="contest-card__banner">
                     {item.bannerUrl ? (
-                      <img src={item.bannerUrl} alt={item.title} />
+                      <img src={item.bannerUrl} alt="" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                     ) : (
                       <div className="contest-card__banner-fallback">
                         <Trophy size={48} />
