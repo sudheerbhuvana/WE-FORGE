@@ -780,9 +780,10 @@ export default function SingleContestPage({ params }) {
               </div>
             ) : (
               <div className="sc-winners-container">
+                {/* Announcement banner */}
                 {cycle?.announcementNotes && (
                   <div className="sc-announcement-card">
-                    <Sparkles size={20} />
+                    <Sparkles size={18} />
                     <div>
                       <h3>Judges' Announcement</h3>
                       <p>{cycle.announcementNotes}</p>
@@ -790,20 +791,47 @@ export default function SingleContestPage({ params }) {
                   </div>
                 )}
 
-                {/* Podium Cards */}
-                <div className="sc-podium-grid">
-                  {winners.map((win, idx) => (
-                    <div key={idx} className={`sc-podium-card sc-podium-card--rank-${win.rank}`}>
-                      <div className="sc-podium-card__rank-badge">
-                        {win.rank === 1 ? '🥇 1st Place' : win.rank === 2 ? '🥈 2nd Place' : win.rank === 3 ? '🥉 3rd Place' : '⭐ Special Mention'}
+                {/* Podium grid — same style as admin */}
+                <div className="sc-winner-grid">
+                  {[
+                    { rank: 1, label: '1st Place', emoji: '🥇', cls: 'gold' },
+                    { rank: 2, label: '2nd Place', emoji: '🥈', cls: 'silver' },
+                    { rank: 3, label: '3rd Place', emoji: '🥉', cls: 'bronze' },
+                  ].map(({ rank, label, emoji, cls }) => {
+                    const w = winners.find(w => Number(w.rank) === rank);
+                    return (
+                      <div key={rank} className={`sc-winner sc-winner--${cls}`}>
+                        <div className="sc-winner__rank">{emoji}</div>
+                        <div className="sc-winner__medal">{label}</div>
+                        {w ? (
+                          <>
+                            <p className="sc-winner__name">{w.name || w.memberId || 'Participant'}</p>
+                            {(w.rollNumber) && <p className="sc-winner__roll">{w.rollNumber}</p>}
+                            {w.awardTitle && <span className="sc-winner__award">{w.awardTitle}</span>}
+                            {w.judgeNotes && <div className="sc-winner__notes">"{w.judgeNotes}"</div>}
+                          </>
+                        ) : (
+                          <p className="sc-winner__roll" style={{ color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>Not awarded</p>
+                        )}
                       </div>
-                      <h3 className="sc-podium-card__name">{win.name || win.memberId || 'Participant'}</h3>
-                      {win.rollNumber && <p className="sc-podium-card__sub">{win.rollNumber}</p>}
-                      {win.awardTitle && <div className="sc-podium-card__award">{win.awardTitle}</div>}
-                      {win.judgeNotes && <p className="sc-podium-card__notes">"{win.judgeNotes}"</p>}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
+
+                {/* Special mentions */}
+                {winners.filter(w => Number(w.rank) === 99).length > 0 && (
+                  <div className="sc-mentions-section">
+                    <h4 className="sc-mentions-title">⭐ Special Mentions</h4>
+                    <div className="sc-mentions-row">
+                      {winners.filter(w => Number(w.rank) === 99).map((w, i) => (
+                        <div key={i} className="sc-mention-chip">
+                          <span className="sc-mention-chip__name">{w.name || w.memberId}</span>
+                          {w.rollNumber && <span className="sc-mention-chip__roll">{w.rollNumber}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

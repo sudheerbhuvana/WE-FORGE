@@ -374,11 +374,20 @@ export default function RecruitmentsSection({
               </div>
 
               <div className="admin-dash__field">
-                <label>Why this domain?</label>
+                <label>Why {viewingRecApp.primaryDomain}? (Primary)</label>
                 <div className="admin-rec-motivation-box">
                   {viewingRecApp.whyDomain}
                 </div>
               </div>
+
+              {viewingRecApp.secondaryDomain && viewingRecApp.whySecondaryDomain && (
+                <div className="admin-dash__field">
+                  <label>Why {viewingRecApp.secondaryDomain}? (Secondary)</label>
+                  <div className="admin-rec-motivation-box">
+                    {viewingRecApp.whySecondaryDomain}
+                  </div>
+                </div>
+              )}
 
               <div className="admin-dash__modal-actions" style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <button

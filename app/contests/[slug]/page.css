@@ -756,3 +756,145 @@
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.5);
 }
+
+/* ── Winners Podium ──────────────────────────────── */
+.sc-winners-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.sc-winner-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 700px) {
+  .sc-winner-grid { grid-template-columns: 1fr; }
+}
+
+.sc-winner {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 28px 20px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.sc-winner:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+}
+
+.sc-winner--gold {
+  background: rgba(255, 215, 0, 0.06);
+  border-color: rgba(255, 215, 0, 0.25);
+}
+
+.sc-winner--silver {
+  background: rgba(192, 192, 192, 0.05);
+  border-color: rgba(192, 192, 192, 0.2);
+}
+
+.sc-winner--bronze {
+  background: rgba(205, 127, 50, 0.05);
+  border-color: rgba(205, 127, 50, 0.2);
+}
+
+.sc-winner__rank {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.sc-winner__medal {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.sc-winner__name {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 6px;
+  line-height: 1.3;
+}
+
+.sc-winner__roll {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0 0 14px;
+}
+
+.sc-winner__award {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.25);
+  color: #fbbf24;
+  font-size: 0.76rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.sc-winner__notes {
+  font-size: 0.83rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-style: italic;
+  line-height: 1.5;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  text-align: left;
+}
+
+/* Special Mentions */
+.sc-mentions-section {
+  margin-top: 8px;
+}
+
+.sc-mentions-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  margin: 0 0 12px;
+}
+
+.sc-mentions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.sc-mention-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(167, 139, 250, 0.1);
+  border: 1px solid rgba(167, 139, 250, 0.25);
+  border-radius: 999px;
+  padding: 6px 16px;
+}
+
+.sc-mention-chip__name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: #a78bfa;
+}
+
+.sc-mention-chip__roll {
+  font-size: 0.76rem;
+  color: rgba(255, 255, 255, 0.4);
+}

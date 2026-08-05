@@ -62,13 +62,17 @@ export async function POST(req) {
     const primaryDomain = (body.primaryDomain || '').trim();
     const secondaryDomain = (body.secondaryDomain || '').trim();
     const whyDomain = (body.whyDomain || '').trim();
+    const whySecondaryDomain = (body.whySecondaryDomain || '').trim();
     const rawLinks = Array.isArray(body.workLinks) ? body.workLinks : [];
 
     if (!primaryDomain) {
       return NextResponse.json({ error: 'Primary domain selection is required.' }, { status: 400 });
     }
     if (!whyDomain || whyDomain.length < 10) {
-      return NextResponse.json({ error: 'Please enter a detailed answer for why you chose this domain (min 10 characters).' }, { status: 400 });
+      return NextResponse.json({ error: 'Please explain why you chose your primary domain (min 10 characters).' }, { status: 400 });
+    }
+    if (secondaryDomain && (!whySecondaryDomain || whySecondaryDomain.length < 10)) {
+      return NextResponse.json({ error: 'Please explain why you chose your secondary domain (min 10 characters).' }, { status: 400 });
     }
 
     const workLinks = rawLinks
@@ -91,6 +95,7 @@ export async function POST(req) {
       primaryDomain,
       secondaryDomain,
       whyDomain,
+      whySecondaryDomain: secondaryDomain ? whySecondaryDomain : '',
       workLinks,
       updatedAt: new Date(),
     };

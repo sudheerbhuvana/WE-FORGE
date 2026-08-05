@@ -11,12 +11,13 @@ import BackButton from '../../src/components/BackButton';
 import Footer from '../../src/components/Footer';
 import './page.css';
 
-const DEFAULT_DOMAINS = [
-  { id: 'Tech & Innovation', title: 'Tech & Innovation', desc: 'Software, systems, web apps, AI/ML, and technical architecture.', icon: 'Code' },
-  { id: 'Media & Content', title: 'Media & Content', desc: 'Visual media, videography, photography, design, and branding.', icon: 'Camera' },
-  { id: 'Content & Creation', title: 'Content & Creation', desc: 'Creative writing, technical documentation, blogs, and copy.', icon: 'Edit3' },
-  { id: 'Operations', title: 'Operations', desc: 'Event planning, logistics, coordination, and community management.', icon: 'FolderKanban' },
-  { id: 'Speaking', title: 'Speaking', desc: 'Public speaking, event anchoring, workshops, and presentations.', icon: 'Mic' }
+const RECRUITMENT_DOMAINS = [
+  { id: 'Tech', title: 'Tech', desc: 'Software, systems, web apps, AI/ML, hardware, and technical architecture.' },
+  { id: 'Creative', title: 'Creative', desc: 'Graphic design, UI/UX, branding, illustrations, and creative direction.' },
+  { id: 'Media', title: 'Media', desc: 'Videography, photography, reels, event coverage, and visual storytelling.' },
+  { id: 'Protocols', title: 'Protocols', desc: 'Event planning, logistics, ops coordination, and community management.' },
+  { id: 'Public Speaking', title: 'Public Speaking', desc: 'Event anchoring, workshops, presentations, and stage presence.' },
+  { id: 'Advisor', title: 'Advisor', desc: 'Strategic guidance, mentoring, and advisory roles across club activities.' },
 ];
 
 export default function JoinPage() {
@@ -29,7 +30,7 @@ export default function JoinPage() {
   const [successMsg, setSuccessMsg] = useState('');
 
   const [settings, setSettings] = useState({ isOpen: true, title: 'KLFORGE Recruitment Drive', subtitle: 'Shape the future of technology, design, media, and leadership.', description: '', heroImageUrl: '' });
-  const [domains, setDomains] = useState(DEFAULT_DOMAINS);
+  const domains = RECRUITMENT_DOMAINS; // Fixed — never pulled from /api/domains
   const [actorInfo, setActorInfo] = useState({ rollNumber: '', year: 'Y24', email: '', name: '' });
   const [existingApp, setExistingApp] = useState(null);
 
@@ -37,6 +38,7 @@ export default function JoinPage() {
   const [primaryDomain, setPrimaryDomain] = useState('');
   const [secondaryDomain, setSecondaryDomain] = useState('');
   const [whyDomain, setWhyDomain] = useState('');
+  const [whySecondaryDomain, setWhySecondaryDomain] = useState('');
   const [workLinks, setWorkLinks] = useState([{ title: 'Portfolio / GitHub', url: '' }]);
 
   useEffect(() => {
@@ -47,21 +49,7 @@ export default function JoinPage() {
   const loadInitData = async () => {
     setLoading(true);
     try {
-      // 1. Fetch domains
-      const domRes = await fetch('/api/domains');
-      if (domRes.ok) {
-        const dData = await domRes.json();
-        if (Array.isArray(dData) && dData.length > 0) {
-          setDomains(dData.map(d => ({
-            id: d.name,
-            title: d.name,
-            desc: d.description || 'Contribute and excel in this domain.',
-            color: d.color || '#71C4FF'
-          })));
-        }
-      }
-
-      // 2. Fetch config & application state if authenticated
+      // Fetch config & application state if authenticated
       if (status === 'authenticated') {
         const appRes = await fetch('/api/recruitments/apply');
         if (appRes.ok) {
@@ -73,6 +61,7 @@ export default function JoinPage() {
             setPrimaryDomain(data.application.primaryDomain || '');
             setSecondaryDomain(data.application.secondaryDomain || '');
             setWhyDomain(data.application.whyDomain || '');
+            setWhySecondaryDomain(data.application.whySecondaryDomain || '');
             if (Array.isArray(data.application.workLinks) && data.application.workLinks.length > 0) {
               setWorkLinks(data.application.workLinks);
             }
@@ -117,7 +106,11 @@ export default function JoinPage() {
       return;
     }
     if (!whyDomain.trim() || whyDomain.trim().length < 10) {
-      setError('Please explain why you chose this domain (min 10 characters).');
+      setError('Please explain why you chose your primary domain (min 10 characters).');
+      return;
+    }
+    if (secondaryDomain && (!whySecondaryDomain.trim() || whySecondaryDomain.trim().length < 10)) {
+      setError('Please explain why you chose your secondary domain (min 10 characters).');
       return;
     }
 
@@ -130,6 +123,7 @@ export default function JoinPage() {
           primaryDomain,
           secondaryDomain,
           whyDomain,
+          whySecondaryDomain,
           workLinks,
         }),
       });
@@ -384,21 +378,39 @@ export default function JoinPage() {
                 </select>
               </div>
 
-              {/* Motivation */}
+              {/* Why Primary Domain */}
               <div className="join-form-section">
                 <div className="join-section-header">
-                  <h2>3. Why did you choose this domain? <span className="join-req">*</span></h2>
-                  <p>Tell us about your interest, previous experience, or what you hope to build/accomplish with us.</p>
+                  <h2>3. Why did you choose your primary domain? <span className="join-req">*</span></h2>
+                  <p>Tell us about your interest, previous experience, or what you hope to build/accomplish in <strong>{primaryDomain || 'this domain'}</strong>.</p>
                 </div>
                 <textarea
                   className="join-textarea"
                   rows={5}
                   value={whyDomain}
                   onChange={(e) => setWhyDomain(e.target.value)}
-                  placeholder="Share your story, skills, and why you are excited to join this domain..."
+                  placeholder={`Share your story, skills, and why you are excited to join ${primaryDomain || 'this domain'}...`}
                   required
                 />
               </div>
+
+              {/* Why Secondary Domain — only shows when one is selected */}
+              {secondaryDomain && (
+                <div className="join-form-section">
+                  <div className="join-section-header">
+                    <h2>3b. Why did you choose your secondary domain? <span className="join-req">*</span></h2>
+                    <p>Explain your interest and relevant skills in <strong>{secondaryDomain}</strong>.</p>
+                  </div>
+                  <textarea
+                    className="join-textarea"
+                    rows={4}
+                    value={whySecondaryDomain}
+                    onChange={(e) => setWhySecondaryDomain(e.target.value)}
+                    placeholder={`Why do you want to contribute to ${secondaryDomain}? What skills do you bring?`}
+                    required
+                  />
+                </div>
+              )}
 
               {/* Work Links */}
               <div className="join-form-section">
@@ -454,7 +466,7 @@ export default function JoinPage() {
                 <button
                   type="submit"
                   className="join-btn join-btn--submit"
-                  disabled={submitting || !primaryDomain || !whyDomain.trim()}
+                  disabled={submitting || !primaryDomain || !whyDomain.trim() || (!!secondaryDomain && !whySecondaryDomain.trim())}
                 >
                   {submitting ? (
                     <span>Submitting Application...</span>

@@ -116,7 +116,7 @@
 
 /* ── Premium Contest Card ─────────────────────────────── */
 .contest-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   overflow: hidden;
@@ -124,7 +124,7 @@
   transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
   display: flex;
   flex-direction: column;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.25);
   width: 100%;
 }
 
@@ -137,7 +137,7 @@
 .contest-card__banner {
   position: relative;
   height: 180px;
-  background: linear-gradient(135deg, #161524 0%, #0d0e17 100%);
+  background: #111117;
   overflow: hidden;
 }
 
@@ -154,14 +154,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  color: rgba(113, 196, 255, 0.25);
-  background: radial-gradient(circle at 50% 30%, rgba(113, 196, 255, 0.15) 0%, rgba(10, 10, 15, 0.95) 80%);
+  color: rgba(113, 196, 255, 0.2);
+  background: #0e0f14;
 }
 
 .contest-card__overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(5, 5, 8, 0.95) 100%);
+  background: rgba(0, 0, 0, 0.55);
 }
 
 .contest-card__badges {
@@ -298,9 +298,9 @@
 }
 
 .contest-card:hover .contest-card__btn {
-  background: linear-gradient(135deg, rgba(139, 92, 246, 0.25), rgba(245, 158, 11, 0.15));
-  border-color: rgba(139, 92, 246, 0.4);
-  color: #ffffff;
+  background: rgba(113, 196, 255, 0.1);
+  border-color: rgba(113, 196, 255, 0.35);
+  color: #71C4FF;
 }
 
 /* Loading & Empty State */

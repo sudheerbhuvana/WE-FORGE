@@ -460,9 +460,10 @@ export default function MemberEditModal({
                                     disabled={!canEditRoles}
                                     onBlur={() => setTouched(t => ({ ...t, domain: true }))}
                                     onChange={(e) => setField('domain', e.target.value)}
+                                    style={{ colorScheme: 'dark' }}
                                 >
                                     {availableDomains.map(d => (
-                                        <option key={d.name} value={d.name}>{d.name}</option>
+                                        <option key={d.name} value={d.name} style={{ background: '#0a0a14', color: '#fff' }}>{d.name}</option>
                                     ))}
                                 </select>
                             </Field>
@@ -475,9 +476,10 @@ export default function MemberEditModal({
                                     value={form.role || ''}
                                     disabled={!canEditRoles}
                                     onChange={(e) => setField('role', e.target.value)}
+                                    style={{ colorScheme: 'dark' }}
                                 >
                                     {primaryRoleOptions.map(r => (
-                                        <option key={r} value={r}>{r}</option>
+                                        <option key={r} value={r} style={{ background: '#0a0a14', color: '#fff' }}>{r}</option>
                                     ))}
                                 </select>
                             </Field>
@@ -509,10 +511,11 @@ export default function MemberEditModal({
                                                 disabled={!canEditRoles}
                                                 onChange={(e) => updateDomainRole(i, 'domain', e.target.value)}
                                                 aria-label="Domain"
+                                                style={{ colorScheme: 'dark' }}
                                             >
-                                                <option value="">Choose a domain…</option>
+                                                <option value="" style={{ background: '#0a0a14', color: '#fff' }}>Choose a domain…</option>
                                                 {availableDomains.map(d => (
-                                                    <option key={d.name} value={d.name}>{d.name}</option>
+                                                    <option key={d.name} value={d.name} style={{ background: '#0a0a14', color: '#fff' }}>{d.name}</option>
                                                 ))}
                                             </select>
                                             <select
@@ -520,9 +523,10 @@ export default function MemberEditModal({
                                                 disabled={!canEditRoles}
                                                 onChange={(e) => updateDomainRole(i, 'role', e.target.value)}
                                                 aria-label="Role in this domain"
+                                                style={{ colorScheme: 'dark' }}
                                             >
                                                 {roleOptionsForDomain(r.domain, availableDomains).map(opt => (
-                                                    <option key={opt} value={opt}>{opt}</option>
+                                                    <option key={opt} value={opt} style={{ background: '#0a0a14', color: '#fff' }}>{opt}</option>
                                                 ))}
                                             </select>
                                             {canEditRoles && (
