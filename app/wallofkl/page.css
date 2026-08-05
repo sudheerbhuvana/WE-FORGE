@@ -249,6 +249,26 @@
     grid-column: span 1 !important;
     grid-row: span 1 !important;
   }
+  .wallkl-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .wallkl-search-box {
+    max-width: 100%;
+  }
+  .wallkl-lightbox-overlay {
+    padding: 12px;
+  }
+  .wallkl-lightbox-nav--prev { left: 8px; }
+  .wallkl-lightbox-nav--next { right: 8px; }
+  .wallkl-lightbox-footer {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .wallkl-btn-action {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* ══════════════════ GALLERY CARD ══════════════════ */

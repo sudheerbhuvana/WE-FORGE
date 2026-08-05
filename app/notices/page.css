@@ -131,3 +131,10 @@
         margin-bottom: 40px;
     }
 }
+
+@media (max-width: 480px) {
+    .notices-page__grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+}
