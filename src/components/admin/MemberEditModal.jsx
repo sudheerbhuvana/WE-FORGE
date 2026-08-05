@@ -66,6 +66,7 @@ const EMPTY = {
     linkedin: '',
     status: 'Online',
     color: '#71C4FF',
+    customRoleId: '',
     isSuspended: false,
     photoUrl: '',
 };
@@ -139,6 +140,7 @@ function buildInitialForm(member) {
         linkedin: member.linkedin || '',
         status: member.status || 'Online',
         color: member.color || '#71C4FF',
+        customRoleId: member.customRoleId || '',
         photoUrl: member.photoUrl || '',
         isSuspended: !!member.isSuspended,
         skills: Array.isArray(member.skills) ? member.skills.join(', ') : (member.skills || ''),
@@ -159,7 +161,15 @@ export default function MemberEditModal({
     // before declaring hooks. We initialise lazily from `member` so the values
     // are pre-filled on the first render itself.
     const [form, setForm] = useState(() => buildInitialForm(member));
+    const [customRoleOptions, setCustomRoleOptions] = useState([]);
     const [errors, setErrors] = useState({});
+
+    useEffect(() => {
+        fetch('/api/roles')
+            .then(r => r.json())
+            .then(d => { if (d.success) setCustomRoleOptions(d.roles || []); })
+            .catch(() => {});
+    }, []);
     const [touched, setTouched] = useState({});
     const [photoFile, setPhotoFile] = useState(null);
     const [photoPreview, setPhotoPreview] = useState(null);
@@ -303,6 +313,7 @@ export default function MemberEditModal({
         fd.append('skills', JSON.stringify(skillsArray));
         fd.append('status', form.status || 'Online');
         fd.append('color', form.color || '#71C4FF');
+        fd.append('customRoleId', form.customRoleId || '');
         fd.append('telegram', (form.telegram || '').trim());
         fd.append('github', (form.github || '').trim());
         fd.append('linkedin', (form.linkedin || '').trim());
@@ -480,6 +491,24 @@ export default function MemberEditModal({
                                 >
                                     {primaryRoleOptions.map(r => (
                                         <option key={r} value={r} style={{ background: '#0a0a14', color: '#fff' }}>{r}</option>
+                                    ))}
+                                </select>
+                            </Field>
+
+                            <Field
+                                label="Custom Security Role"
+                                hint="Assign custom micro-permissions role created in Roles & Permissions"
+                            >
+                                <select
+                                    value={form.customRoleId || ''}
+                                    onChange={(e) => setField('customRoleId', e.target.value)}
+                                    style={{ colorScheme: 'dark' }}
+                                >
+                                    <option value="" style={{ background: '#0a0a14', color: '#fff' }}>None (Default Permissions)</option>
+                                    {customRoleOptions.map(r => (
+                                        <option key={r.id} value={r.id} style={{ background: '#0a0a14', color: '#fff' }}>
+                                            {r.name} ({r.permissions?.length || 0} perms)
+                                        </option>
                                     ))}
                                 </select>
                             </Field>

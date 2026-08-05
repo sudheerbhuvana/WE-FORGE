@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { 
-  Users, Calendar, Trophy, FolderKanban, Bell, ImageIcon, UserPlus, Globe, LogOut, FileText, Sparkles
+  Users, Calendar, Trophy, FolderKanban, Bell, ImageIcon, UserPlus, Globe, LogOut, FileText, Sparkles, ShieldCheck, Sliders
 } from 'lucide-react';
 
 import memberService from '../../../src/services/memberService';
@@ -19,6 +19,8 @@ import ProjectsSection from '../../../src/components/admin/ProjectsSection';
 import NoticesSection from '../../../src/components/admin/NoticesSection';
 import MediaSection from '../../../src/components/admin/MediaSection';
 import WallOfKLSection from '../../../src/components/admin/WallOfKLSection';
+import RolesSection from '../../../src/components/admin/RolesSection';
+import SystemSettingsSection from '../../../src/components/admin/SystemSettingsSection';
 import RecruitmentsSection from '../../../src/components/admin/RecruitmentsSection';
 import FormsSection from '../../../src/components/admin/FormsSection';
 
@@ -138,6 +140,8 @@ export default function AdminDashboard() {
     { id: 'notices',      label: 'Notices',      icon: <Bell size={18} />,          count: notices.length,          eliteOnly: true },
     { id: 'media',        label: 'Media',        icon: <ImageIcon size={18} />,     count: media.length,            eliteOnly: true },
     { id: 'wallofkl',     label: 'Wall of KL',   icon: <Sparkles size={18} />,      count: null,                    eliteOnly: false },
+    { id: 'roles',        label: 'Roles & Permissions', icon: <ShieldCheck size={18} />, count: null,            eliteOnly: true },
+    { id: 'settings',     label: 'System & Security', icon: <Sliders size={18} />,     count: null,            eliteOnly: true },
     { id: 'recruitments', label: 'Recruitments', icon: <UserPlus size={18} />,      count: recruitmentApps.length,  eliteOnly: true },
     { id: 'forms',        label: 'Forms',        icon: <FileText size={18} />,      count: null,                    eliteOnly: true },
   ].filter(i => adminInfo.isElite || !i.eliteOnly);
@@ -158,6 +162,10 @@ export default function AdminDashboard() {
         return <MediaSection media={media} events={events} mediaFolders={mediaFolders} refreshData={fetchEliteData} />;
       case 'wallofkl':
         return <WallOfKLSection />;
+      case 'roles':
+        return <RolesSection />;
+      case 'settings':
+        return <SystemSettingsSection />;
       case 'recruitments':
         return <RecruitmentsSection recruitmentSettings={recruitmentSettings} recruitmentApps={recruitmentApps} refreshData={fetchEliteData} />;
       case 'forms':
