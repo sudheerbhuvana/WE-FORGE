@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { 
-  Users, Calendar, Trophy, FolderKanban, Bell, ImageIcon, UserPlus, Globe, LogOut, FileText, Sparkles, ShieldCheck, Sliders
+  Users, Calendar, Trophy, FolderKanban, Bell, ImageIcon, UserPlus, Globe, LogOut, FileText, Sparkles, ShieldCheck, Sliders, Menu, X
 } from 'lucide-react';
 
 import dynamic from 'next/dynamic';
@@ -39,6 +39,7 @@ export default function AdminDashboard() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [adminInfo, setAdminInfo] = useState({ memberId: '', name: '', role: '', domain: '', isElite: false, permissions: [] });
   const [activeSection, setActiveSection] = useState('members');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [error, setError] = useState('');
 
   // Data lists (fetched on-demand per active tab)
@@ -233,9 +234,88 @@ export default function AdminDashboard() {
     }
   };
 
+  const currentNav = NAV_ITEMS.find(n => n.id === activeSection) || NAV_ITEMS[0];
+
   return (
     <div className="admin-dash">
-      {/* Sidebar */}
+      {/* Mobile Top Header */}
+      <header className="admin-mob-header">
+        <button 
+          className="admin-mob-header__menu-btn" 
+          onClick={() => setMobileMenuOpen(true)}
+          aria-label="Open menu"
+        >
+          <Menu size={22} />
+        </button>
+        <div className="admin-mob-header__title-wrap">
+          <span className="admin-mob-header__icon">{currentNav.icon}</span>
+          <h1 className="admin-mob-header__title">{currentNav.label}</h1>
+        </div>
+        <img src="/images/favicon.png?v=2" alt="KLFORGE" className="admin-mob-header__logo-img" />
+      </header>
+
+      {/* Mobile Left Navigation Drawer */}
+      <div 
+        className={`admin-mob-drawer-overlay ${mobileMenuOpen ? 'admin-mob-drawer-overlay--open' : ''}`}
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        <aside 
+          className={`admin-mob-drawer ${mobileMenuOpen ? 'admin-mob-drawer--open' : ''}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="admin-mob-drawer__header">
+            <div className="admin-mob-drawer__brand">
+              <img src="/images/favicon.png?v=2" alt="KLFORGE" className="admin-mob-drawer__logo" />
+              <span>ADMIN PANEL</span>
+            </div>
+            <button className="admin-mob-drawer__close" onClick={() => setMobileMenuOpen(false)}>
+              <X size={20} />
+            </button>
+          </div>
+
+          <nav className="admin-mob-drawer__nav">
+            <div className="admin-mob-drawer__group-label">MANAGEMENT</div>
+            {NAV_ITEMS.map((item) => (
+              <button
+                key={item.id}
+                className={`admin-mob-drawer__item ${activeSection === item.id ? 'admin-mob-drawer__item--active' : ''}`}
+                onClick={() => {
+                  handleTabChange(item.id);
+                  setMobileMenuOpen(false);
+                }}
+              >
+                <span className="admin-mob-drawer__item-icon">{item.icon}</span>
+                <span className="admin-mob-drawer__item-label">{item.label}</span>
+                {item.count !== undefined && item.count !== null && (
+                  <span className="admin-mob-drawer__badge">{item.count}</span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          <div className="admin-mob-drawer__bottom">
+            {adminInfo && (
+              <div className="admin-mob-drawer__user">
+                <div className="admin-mob-drawer__avatar">
+                  {(adminInfo.name || adminInfo.email || '?').slice(0, 1).toUpperCase()}
+                </div>
+                <div className="admin-mob-drawer__user-meta">
+                  <span className="admin-mob-drawer__user-name">{adminInfo.name || 'Admin'}</span>
+                  <span className="admin-mob-drawer__user-role">
+                    {adminInfo.isElite ? 'Elite' : adminInfo.role || adminInfo.domain || 'Member'}
+                  </span>
+                </div>
+              </div>
+            )}
+            <button className="admin-mob-drawer__logout" onClick={handleLogout}>
+              <LogOut size={16} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </aside>
+      </div>
+
+      {/* Desktop Sidebar */}
       <aside className="admin-sidebar">
         <div className="admin-sidebar__brand">
           <img src="/images/favicon.png?v=2" alt="KLFORGE Logo" className="admin-sidebar__logo-img" />
@@ -285,20 +365,6 @@ export default function AdminDashboard() {
           {renderActiveSection()}
         </div>
       </main>
-
-      {/* Mobile navigation tabs */}
-      <nav className="admin-mob-tabs">
-        {NAV_ITEMS.map(item => (
-          <button
-            key={item.id}
-            className={`admin-mob-tab ${activeSection === item.id ? 'admin-mob-tab--active' : ''}`}
-            onClick={() => handleTabChange(item.id)}
-          >
-            <span className="admin-mob-tab__icon">{item.icon}</span>
-            {item.label}
-          </button>
-        ))}
-      </nav>
     </div>
   );
 }
