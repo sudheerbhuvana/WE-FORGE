@@ -260,24 +260,33 @@ export default function SingleContestPage({ params }) {
 
         {queued.length > 0 && (
           <ul className="sc-file-list">
-            {queued.map((file, i) => (
-              <li key={`q-${i}`} className="sc-file-row sc-file-row--queued">
-                <div className="sc-file-thumb sc-file-thumb--icon"><Icon size={18} /></div>
-                <div className="sc-file-row__meta">
-                  <span className="sc-file-row__name">{file.name}</span>
-                  <span className="sc-file-row__size">{formatBytes(file.size)}</span>
-                </div>
-                <span className="sc-file-row__status">Queued</span>
-                <button
-                  type="button"
-                  className="sc-file-row__remove"
-                  onClick={() => handleRemoveQueuedFile(field.id, i)}
-                  title="Remove"
-                >
-                  <X size={14} />
-                </button>
-              </li>
-            ))}
+            {queued.map((file, i) => {
+              const isImg = file.type?.startsWith('image/') || field.type === 'image';
+              const previewUrl = isImg ? URL.createObjectURL(file) : null;
+
+              return (
+                <li key={`q-${i}`} className="sc-file-row sc-file-row--queued">
+                  {previewUrl ? (
+                    <img src={previewUrl} alt={file.name} className="sc-file-thumb" />
+                  ) : (
+                    <div className="sc-file-thumb sc-file-thumb--icon"><Icon size={18} /></div>
+                  )}
+                  <div className="sc-file-row__meta">
+                    <span className="sc-file-row__name">{file.name}</span>
+                    <span className="sc-file-row__size">{formatBytes(file.size)}</span>
+                  </div>
+                  <span className="sc-file-row__status">Ready to Upload</span>
+                  <button
+                    type="button"
+                    className="sc-file-row__remove"
+                    onClick={() => handleRemoveQueuedFile(field.id, i)}
+                    title="Remove"
+                  >
+                    <X size={14} />
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -515,9 +524,11 @@ export default function SingleContestPage({ params }) {
           <button className={`sc-tab ${activeTab === 'winners' ? 'sc-tab--active' : ''}`} onClick={() => setActiveTab('winners')}>
             <Trophy size={16} /> Winners {winners.length > 0 && <span className="sc-tab-dot" />}
           </button>
-          <button className={`sc-tab ${activeTab === 'history' ? 'sc-tab--active' : ''}`} onClick={() => setActiveTab('history')}>
-            <History size={16} /> History ({historyCycles.length})
-          </button>
+          {!(template.type === 'one_time' || template.type === 'immediate') && historyCycles.length > 1 && (
+            <button className={`sc-tab ${activeTab === 'history' ? 'sc-tab--active' : ''}`} onClick={() => setActiveTab('history')}>
+              <History size={16} /> History ({historyCycles.length})
+            </button>
+          )}
         </div>
 
         {/* Feedback messages */}
@@ -786,8 +797,8 @@ export default function SingleContestPage({ params }) {
                       <div className="sc-podium-card__rank-badge">
                         {win.rank === 1 ? '🥇 1st Place' : win.rank === 2 ? '🥈 2nd Place' : win.rank === 3 ? '🥉 3rd Place' : '⭐ Special Mention'}
                       </div>
-                      <h3 className="sc-podium-card__name">{win.name}</h3>
-                      <p className="sc-podium-card__sub">{win.rollNumber}</p>
+                      <h3 className="sc-podium-card__name">{win.name || win.memberId || 'Participant'}</h3>
+                      {win.rollNumber && <p className="sc-podium-card__sub">{win.rollNumber}</p>}
                       {win.awardTitle && <div className="sc-podium-card__award">{win.awardTitle}</div>}
                       {win.judgeNotes && <p className="sc-podium-card__notes">"{win.judgeNotes}"</p>}
                     </div>

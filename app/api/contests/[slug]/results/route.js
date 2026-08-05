@@ -65,16 +65,45 @@ export async function POST(req, { params }) {
       return NextResponse.json({ error: 'Contest cycle not found' }, { status: 404 });
     }
 
-    const cleanWinners = Array.isArray(winners) ? winners.map((w) => ({
-      rank: parseInt(w.rank, 10) || 1,
-      memberId: w.memberId,
-      name: w.name,
-      email: w.email || '',
-      rollNumber: w.rollNumber || '',
-      awardTitle: (w.awardTitle || '').trim(),
-      judgeNotes: (w.judgeNotes || '').trim(),
-      submissionId: w.submissionId || null,
-    })) : [];
+    // Auto-resolve Member names and details if missing
+    const cleanWinners = [];
+    if (Array.isArray(winners)) {
+      const Member = (await import('@/lib/models/Member')).default;
+      for (const w of winners) {
+        let name = (w.name || '').trim();
+        let email = (w.email || '').trim();
+        let rollNumber = (w.rollNumber || '').trim();
+
+        if (!name && w.memberId) {
+          const mem = await Member.findOne({ $or: [{ memberId: w.memberId }, { rollNumber: w.memberId }] }).lean();
+          if (mem) {
+            name = mem.name || mem.fullName || '';
+            email = email || mem.email || '';
+            rollNumber = rollNumber || mem.rollNumber || mem.memberId || '';
+          }
+        }
+
+        if (!name && w.submissionId) {
+          const sub = await ContestSubmission.findById(w.submissionId).lean();
+          if (sub) {
+            name = name || sub.authorName || '';
+            email = email || sub.authorEmail || '';
+            rollNumber = rollNumber || sub.authorRollNumber || '';
+          }
+        }
+
+        cleanWinners.push({
+          rank: parseInt(w.rank, 10) || 1,
+          memberId: w.memberId || '',
+          name: name || w.memberId || 'Participant',
+          email,
+          rollNumber: rollNumber || w.memberId || '',
+          awardTitle: (w.awardTitle || '').trim(),
+          judgeNotes: (w.judgeNotes || '').trim(),
+          submissionId: w.submissionId || null,
+        });
+      }
+    }
 
     const newStatus = status || 'results_published';
 

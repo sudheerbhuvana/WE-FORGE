@@ -33,14 +33,16 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none', opacity: 0.6 }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none', opacity: 0.55 }}>
           <PixelSnow 
             variant="round" 
-            density={0.04} 
-            speed={0.15} 
-            flakeSize={0.004} 
-            brightness={0.3}
             color="#71C4FF"
+            flakeSize={0.003}
+            minFlakeSize={0.8}
+            pixelResolution={800}
+            speed={0.2}
+            density={0.03}
+            brightness={0.4}
           />
         </div>
         <AuthProvider>

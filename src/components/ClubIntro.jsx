@@ -57,20 +57,16 @@ const ClubIntro = ({ children }) => {
 
   return (
     <section className="club-intro" ref={sectionRef} id="what-is-forge">
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none', opacity: 0.7 }}>
         <PixelSnow 
-          color="#ffffff"
-          flakeSize={0.01}
-          minFlakeSize={1.25}
-          pixelResolution={200}
-          speed={0.8}
-          density={0.1}
-          direction={125}
-          brightness={1}
-          depthFade={8}
-          farPlane={20}
-          gamma={0.4545}
-          variant="square"
+          variant="round"
+          color="#71C4FF"
+          flakeSize={0.004}
+          minFlakeSize={0.9}
+          pixelResolution={800}
+          speed={0.25}
+          density={0.04}
+          brightness={0.5}
         />
       </div>
       <div className="club-intro__container" style={{ position: 'relative', zIndex: 1 }}>

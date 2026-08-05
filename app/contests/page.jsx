@@ -201,7 +201,9 @@ export default function ContestsPage() {
                     </div>
 
                     <div className="contest-card__banner-content">
-                      <div className="contest-card__edition">{cycleLabel}</div>
+                      <div className="contest-card__edition">
+                        {item.type === 'one_time' || item.type === 'immediate' ? 'One-Time Challenge' : cycleLabel}
+                      </div>
                       <h3 className="contest-card__title">{item.title}</h3>
                     </div>
                   </div>
