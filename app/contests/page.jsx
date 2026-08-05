@@ -4,17 +4,17 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
-  Trophy, Clock, Calendar, Users, ArrowRight, Sparkles, Filter, Search, Award, CheckCircle2, Zap
+  Trophy, Clock, Calendar, Users, ArrowRight, Sparkles, Filter, Search, Award, CheckCircle2, Zap, Layers
 } from 'lucide-react';
-import BackButton from '../../src/components/BackButton';
-import Footer from '../../src/components/Footer';
+import BackButton from '@/src/components/BackButton';
+import Footer from '@/src/components/Footer';
 import './page.css';
 
 const TYPE_LABELS = {
   one_time: 'One-Time',
   immediate: 'Immediate',
-  recurring_weekly: 'Weekly',
-  recurring_monthly: 'Monthly',
+  recurring_weekly: 'Weekly Series',
+  recurring_monthly: 'Monthly Series',
 };
 
 export default function ContestsPage() {
@@ -60,7 +60,7 @@ export default function ContestsPage() {
       }
       return `Ends in ${diffHours}h`;
     }
-    return 'Deadline Passed';
+    return 'Submissions Closed';
   };
 
   let filtered = contests.slice();
@@ -80,23 +80,18 @@ export default function ContestsPage() {
   }
 
   return (
-    <div className="contests-page">
-      <BackButton href="/" label="Back to Home" />
+    <div className="events-page contests-page">
+      <div className="events-page__topbar">
+        <BackButton to="/" />
+      </div>
 
-      {/* Hero Section */}
-      <section className="contests-hero">
-        <div className="contests-hero__glow" />
-        <div className="contests-hero__content">
-          <div className="contests-hero__badge">
-            <Trophy size={14} />
-            <span>KLFORGE COMPETITIONS</span>
-          </div>
-          <h1 className="contests-hero__title">Challenge Yourself & Build</h1>
-          <p className="contests-hero__subtitle">
-            Participate in weekly, monthly, and featured challenges. Win prizes, earn recognition, and build your portfolio.
-          </p>
-        </div>
-      </section>
+      {/* Header matching site layout */}
+      <div className="events-page__header">
+        <h1 className="events-page__title">Contests &amp; Challenges</h1>
+        <p className="events-page__subtitle">
+          Participate in weekly, monthly, and hackathon challenges. Build projects, compete, and climb the leaderboard.
+        </p>
+      </div>
 
       {/* Catalog Main */}
       <main className="contests-container">
@@ -115,28 +110,32 @@ export default function ContestsPage() {
           <div className="contests-filters">
             <div className="contests-chip-group">
               <button
+                type="button"
                 className={`contests-chip ${filterType === 'all' ? 'contests-chip--active' : ''}`}
                 onClick={() => setFilterType('all')}
               >
-                All Types
+                All Contests
               </button>
               <button
+                type="button"
                 className={`contests-chip ${filterType === 'recurring_weekly' ? 'contests-chip--active' : ''}`}
                 onClick={() => setFilterType('recurring_weekly')}
               >
-                Weekly
+                Weekly Series
               </button>
               <button
+                type="button"
                 className={`contests-chip ${filterType === 'recurring_monthly' ? 'contests-chip--active' : ''}`}
                 onClick={() => setFilterType('recurring_monthly')}
               >
-                Monthly
+                Monthly Series
               </button>
               <button
+                type="button"
                 className={`contests-chip ${filterType === 'one_time' ? 'contests-chip--active' : ''}`}
                 onClick={() => setFilterType('one_time')}
               >
-                One-Time
+                One-Time / Hackathons
               </button>
             </div>
 
@@ -146,10 +145,10 @@ export default function ContestsPage() {
               className="contests-select"
             >
               <option value="all">All Statuses</option>
-              <option value="active">Ongoing (Submissions Open)</option>
+              <option value="active">Submissions Open</option>
               <option value="upcoming">Upcoming</option>
-              <option value="submission_closed">Judging / Ended</option>
-              <option value="results_published">Results Declared</option>
+              <option value="submission_closed">Judging Phase</option>
+              <option value="results_published">Winners Announced</option>
             </select>
           </div>
         </div>
@@ -164,62 +163,70 @@ export default function ContestsPage() {
           <div className="contests-empty">
             <Trophy size={48} />
             <h2>No Contests Found</h2>
-            <p>No active competitions match your current filter selection. Check back soon!</p>
+            <p>No active competitions match your filter selection. Check back soon for new editions!</p>
           </div>
         ) : (
           <div className="contests-grid">
             {filtered.map((item) => {
-              const cycle = item.activeCycle;
-              const status = cycle?.status || 'upcoming';
-              const countdownStr = getCountdownString(cycle);
+              const activeCycle = item.activeCycle;
+              const status = activeCycle?.status || (item.isPublished ? 'upcoming' : 'draft');
+              const cycleLabel = activeCycle?.cycleLabel || 'Current Edition';
 
               return (
-                <div key={item._id} className="contest-card" onClick={() => router.push(`/contests/${item.slug}`)}>
-                  {/* Banner */}
+                <div 
+                  key={item._id} 
+                  className="contest-card"
+                  onClick={() => router.push(`/contests/${item.slug}`)}
+                >
                   <div className="contest-card__banner">
                     {item.bannerUrl ? (
                       <img src={item.bannerUrl} alt={item.title} />
                     ) : (
                       <div className="contest-card__banner-fallback">
-                        <Trophy size={36} />
+                        <Trophy size={48} />
                       </div>
                     )}
-                    <div className="contest-card__banner-overlay" />
+                    <div className="contest-card__overlay" />
                     
-                    <div className="contest-card__top-badges">
-                      <span className="contest-type-badge">
-                        {TYPE_LABELS[item.type] || 'Contest'}
+                    <div className="contest-card__badges">
+                      <span className="contest-badge contest-badge--type">
+                        <Layers size={11} /> {TYPE_LABELS[item.type] || 'Contest'}
                       </span>
-                      <span className={`contest-status-pill contest-status-pill--${status}`}>
-                        {status === 'active' ? '● ONGOING' : status === 'results_published' ? '🏆 RESULTS OUT' : status.toUpperCase()}
+                      <span className={`contest-badge contest-badge--${status}`}>
+                        {status === 'active' ? '● Submissions Open' :
+                         status === 'judging' ? '⏳ Judging Phase' :
+                         status === 'results_published' ? '🏆 Winners Out' :
+                         status === 'upcoming' ? '🗓️ Upcoming' : status}
                       </span>
+                    </div>
+
+                    <div className="contest-card__banner-content">
+                      <div className="contest-card__edition">{cycleLabel}</div>
+                      <h3 className="contest-card__title">{item.title}</h3>
                     </div>
                   </div>
 
-                  {/* Body */}
                   <div className="contest-card__body">
-                    <h3 className="contest-card__title">{item.title}</h3>
-                    <p className="contest-card__desc">{item.description || 'Join this competition and showcase your work.'}</p>
+                    <p className="contest-card__desc">
+                      {item.description ? item.description.slice(0, 100) + (item.description.length > 100 ? '…' : '') : 'Click to view guidelines, rules, and submit entries.'}
+                    </p>
 
-                    {cycle && (
-                      <div className="contest-card__cycle-lbl">
-                        <Zap size={13} /> {cycle.cycleLabel}
+                    <div className="contest-card__meta">
+                      <div className="contest-card__meta-item">
+                        <Clock size={13} />
+                        <span>{getCountdownString(activeCycle)}</span>
                       </div>
-                    )}
+                      {activeCycle?.submissionCount > 0 && (
+                        <div className="contest-card__meta-item">
+                          <Users size={13} />
+                          <span>{activeCycle.submissionCount} Entries</span>
+                        </div>
+                      )}
+                    </div>
 
-                    {/* Stats & Countdown */}
                     <div className="contest-card__footer">
-                      <div className="contest-card__info-row">
-                        <span className="contest-card__countdown">
-                          <Clock size={13} /> {countdownStr}
-                        </span>
-                        <span className="contest-card__participants">
-                          <Users size={13} /> {cycle?.participantCount || 0} participants
-                        </span>
-                      </div>
-
-                      <button className="contest-card__action-btn">
-                        <span>View Contest</span>
+                      <button type="button" className="contest-card__btn">
+                        <span>View Details</span>
                         <ArrowRight size={14} />
                       </button>
                     </div>
@@ -231,6 +238,7 @@ export default function ContestsPage() {
         )}
       </main>
 
+      <div className="footer-separator" />
       <Footer />
     </div>
   );

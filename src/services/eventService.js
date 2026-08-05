@@ -11,6 +11,10 @@ const eventService = {
         return safeJson(res);
     },
 
+    async getAllAdmin() {
+        return this.getAll();
+    },
+
     async getById(id) {
         const res = await fetch(`${API_BASE}/events/${encodeURIComponent(id)}`, { credentials: 'include' });
         if (!res.ok) throw new Error('Event not found');
@@ -53,6 +57,10 @@ const eventService = {
             throw new Error(data.error || 'Failed to delete event');
         }
         return safeJson(res);
+    },
+
+    async delete(id) {
+        return this.remove(id);
     },
 
     async register(id, data) {

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { User, Mail, Hash, Calendar, Edit3, Save, X, LogOut, ChevronRight, Camera, Shield, Code, Search, ExternalLink, Package, Github, Linkedin, Send, FolderGit2, Plus, Trash2, ImagePlus, Link2, GraduationCap, School, Award, BadgeCheck, Trophy } from 'lucide-react';
+import { User, Mail, Hash, Calendar, Edit3, Save, X, LogOut, ChevronRight, Camera, Shield, Code, Search, ExternalLink, Package, Github, Linkedin, Send, FolderGit2, Plus, Trash2, ImagePlus, Link2, GraduationCap, School, Award, BadgeCheck, Trophy, Download } from 'lucide-react';
 import './page.css';
 
 export default function ProfilePage() {
@@ -263,15 +263,55 @@ export default function ProfilePage() {
                 <button onClick={() => router.push('/events')} className="browse-btn">Browse Events <ChevronRight size={14}/></button>
               </div>
             ) : (
-              events.map(event => (
-                <div key={event.id} className="reg-item">
-                  <div className="reg-info">
-                    <h4>{event.eventTitle}</h4>
-                    <span>{new Date(event.eventDate).toLocaleDateString()}</span>
+              events.map((event) => {
+                const roleLabel = {
+                  winner: '🏆 1st Place (Winner)',
+                  runner_up: '🥈 2nd Place (Runner-Up)',
+                  third_place: '🥉 3rd Place',
+                  participant: 'Participant',
+                }[event.eventRole] || 'Participant';
+
+                return (
+                  <div key={event.id} className="reg-item" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, marginBottom: 10 }}>
+                    <div className="reg-info">
+                      <h4 style={{ margin: '0 0 6px', fontSize: '1rem', fontWeight: 600 }}>{event.eventTitle}</h4>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'center', fontSize: '0.82rem', color: 'rgba(255,255,255,0.6)', flexWrap: 'wrap' }}>
+                        <span>Registered: {new Date(event.registeredAt || event.eventDate).toLocaleDateString()}</span>
+                        {event.eventRole && event.eventRole !== 'participant' && (
+                          <span style={{ color: '#f59e0b', fontWeight: 600 }}>{roleLabel}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                      {event.attendance === 'present' ? (
+                        <span style={{ background: 'rgba(16,185,129,0.15)', color: '#10b981', border: '1px solid rgba(16,185,129,0.3)', padding: '4px 10px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600 }}>
+                          ✓ Attended
+                        </span>
+                      ) : event.attendance === 'absent' ? (
+                        <span style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', padding: '4px 10px', borderRadius: 20, fontSize: '0.78rem', fontWeight: 600 }}>
+                          ✕ Absent
+                        </span>
+                      ) : (
+                        <span style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.15)', padding: '4px 10px', borderRadius: 20, fontSize: '0.78rem' }}>
+                          Registered
+                        </span>
+                      )}
+
+                      {event.certificateId ? (
+                        <a
+                          href={`/api/certificates/${event.certificateId}/download?token=${event.id}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="browse-btn"
+                          style={{ padding: '6px 14px', fontSize: '0.82rem', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', color: '#fff', border: 'none', borderRadius: 8, display: 'inline-flex', alignItems: 'center', gap: 6, textDecoration: 'none', fontWeight: 600 }}
+                        >
+                          <Download size={14} /> Download Certificate PDF
+                        </a>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="reg-status">Registered</div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </div>

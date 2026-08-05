@@ -168,7 +168,7 @@ const ProfilePage = () => {
             <div className="profile-layout">
                 {/* ════════════ LEFT RAIL — avatar + role + quick contact ════════════ */}
                 <aside className="profile-rail">
-                    <div className="profile-rail__avatar" aria-hidden="true" style={{ overflow: 'visible', background: 'transparent', border: 'none', maxWidth: '320px', aspectRatio: 'auto', margin: '0 0 16px 0' }}>
+                    <div className="profile-rail__avatar" aria-hidden="true" style={{ overflow: 'visible', background: 'transparent', border: 'none', width: '100%', maxWidth: '340px', aspectRatio: 'auto', margin: '0 0 16px 0' }}>
                         <style>{`
                             .member-profile-card {
                                 width: 100%;

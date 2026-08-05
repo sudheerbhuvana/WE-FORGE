@@ -72,8 +72,14 @@ body {
 .footer-separator {
   height: 1px;
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12) 20%, rgba(255, 255, 255, 0.12) 80%, transparent);
-  margin: 0;
+  margin: 60px 0 0 0;
 }
+
+/* Global Footer Spacing Fix — Never stick to content */
+.site-footer {
+  margin-top: 60px !important;
+}
+
 /* ── Featured Gallery (landing page) ─────────────────── */
 .featured-gallery {
   position: relative;

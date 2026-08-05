@@ -24,7 +24,8 @@ export default function SubmissionsTab({
       <div className="cm-card">
         <div className="cm-row cm-row--between" style={{ marginBottom: 14 }}>
           <h3 className="cm-card__title" style={{ margin: 0 }}>
-            <Upload size={14} /> All Submissions ({submissions.length})
+            <Upload size={14} /> All Submissions
+            <span className="cm-badge cm-badge--neutral" style={{ marginLeft: 8, fontSize: '0.74rem' }}>{submissions.length} total</span>
           </h3>
           <div className="cm-row">
             <div style={{ position: 'relative' }}>

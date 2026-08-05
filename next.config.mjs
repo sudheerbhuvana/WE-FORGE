@@ -1,5 +1,4 @@
 /** @type {import('next').NextConfig} */
-// restart trigger
 const nextConfig = {
   images: {
     remotePatterns: [
@@ -16,6 +15,15 @@ const nextConfig = {
         pathname: '/**',
       }
     ],
+  },
+  async redirects() {
+    return [
+      {
+        source: '/certifications/verify/:certId*',
+        destination: '/certification/verify/:certId*',
+        permanent: true,
+      },
+    ];
   },
 }
 

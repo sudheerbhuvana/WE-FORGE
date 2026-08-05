@@ -71,21 +71,20 @@ export default function OverviewTab({
   return (
     <>
       {/* ===== Schedule + details ===== */}
-      <div className="cm-grid cm-grid--2">
-        <div className="cm-card">
-          <div className="cm-row cm-row--between" style={{ marginBottom: 12 }}>
-            <h3 className="cm-card__title" style={{ margin: 0 }}>
-              <Calendar size={14} /> Contest Schedule
-            </h3>
-            {template?.type === 'recurring_weekly' && <span className="cm-badge cm-badge--info">Weekly</span>}
-            {template?.type === 'recurring_monthly' && <span className="cm-badge cm-badge--info">Monthly</span>}
-          </div>
+      <div className="cm-card">
+        <div className="cm-row cm-row--between" style={{ marginBottom: 12 }}>
+          <h3 className="cm-card__title" style={{ margin: 0 }}>
+            <Calendar size={14} /> Contest Schedule
+          </h3>
+          {template?.type === 'recurring_weekly' && <span className="cm-badge cm-badge--info">Weekly</span>}
+          {template?.type === 'recurring_monthly' && <span className="cm-badge cm-badge--info">Monthly</span>}
+        </div>
 
-          <div className="cm-detail-list">
-            <div className="cm-detail-list__row">
-              <div className="cm-detail-list__label">Start Date</div>
-              <div className="cm-detail-list__value">{fmtDate(schedule.startDate)}</div>
-            </div>
+        <div className="cm-detail-list cm-detail-list--horiz">
+          <div className="cm-detail-list__row">
+            <div className="cm-detail-list__label">Start Date</div>
+            <div className="cm-detail-list__value">{fmtDate(schedule.startDate)}</div>
+          </div>
             <div className="cm-detail-list__row">
               <div className="cm-detail-list__label">End Date</div>
               <div className="cm-detail-list__value">{fmtDate(schedule.endDate)}</div>
@@ -172,7 +171,6 @@ export default function OverviewTab({
             </div>
           </div>
         </div>
-      </div>
 
       {/* ===== Submission form summary ===== */}
       <div className="cm-card">

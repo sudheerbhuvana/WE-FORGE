@@ -1,0 +1,66 @@
+{
+  "_comment": "Text, masks, and QR placement for certificate PDFs (A4 landscape, 842x595 pt, origin bottom-left). winner.pdf is used for winner, runner_up, and third_place. participant.pdf is used for participant.",
+  "_defaultFont": "Helvetica-Bold",
+
+  "winner": {
+    "template": "winner.pdf",
+    "pageIndex": 0,
+    "masks": [
+      { "x": 275, "y": 235, "width": 480, "height": 65 },
+      { "x": 275, "y": 160, "width": 500, "height": 65 }
+    ],
+    "fields": {
+      "role":         { "x": 283, "y": 355, "size": 16, "color": "#b8860b", "font": "Helvetica-Bold", "align": "left", "text": "1st Place — Winner" },
+      "name":         { "x": 283, "y": 255, "size": 32, "color": "#1a1a2e", "font": "Helvetica-Bold", "align": "left", "maxWidth": 480 },
+      "eventText":    { "x": 283, "y": 198, "size": 14, "color": "#333333", "font": "Helvetica",      "align": "left", "maxWidth": 460, "format": "For winning 1st Place in {eventName}." },
+      "certId":       { "x": 283, "y": 35,  "size": 9,  "color": "#777777", "font": "Courier",        "align": "left" },
+      "qr":           { "x": 740, "y": 25,  "size": 65 }
+    }
+  },
+
+  "runner_up": {
+    "template": "winner.pdf",
+    "pageIndex": 0,
+    "masks": [
+      { "x": 275, "y": 235, "width": 480, "height": 65 },
+      { "x": 275, "y": 160, "width": 500, "height": 65 }
+    ],
+    "fields": {
+      "role":         { "x": 283, "y": 355, "size": 16, "color": "#4b5563", "font": "Helvetica-Bold", "align": "left", "text": "2nd Place — Runner-Up" },
+      "name":         { "x": 283, "y": 255, "size": 32, "color": "#1a1a2e", "font": "Helvetica-Bold", "align": "left", "maxWidth": 480 },
+      "eventText":    { "x": 283, "y": 198, "size": 14, "color": "#333333", "font": "Helvetica",      "align": "left", "maxWidth": 460, "format": "For securing 2nd Place (Runner-Up) in {eventName}." },
+      "certId":       { "x": 283, "y": 35,  "size": 9,  "color": "#777777", "font": "Courier",        "align": "left" },
+      "qr":           { "x": 740, "y": 25,  "size": 65 }
+    }
+  },
+
+  "third_place": {
+    "template": "winner.pdf",
+    "pageIndex": 0,
+    "masks": [
+      { "x": 275, "y": 235, "width": 480, "height": 65 },
+      { "x": 275, "y": 160, "width": 500, "height": 65 }
+    ],
+    "fields": {
+      "role":         { "x": 283, "y": 355, "size": 16, "color": "#92400e", "font": "Helvetica-Bold", "align": "left", "text": "3rd Place" },
+      "name":         { "x": 283, "y": 255, "size": 32, "color": "#1a1a2e", "font": "Helvetica-Bold", "align": "left", "maxWidth": 480 },
+      "eventText":    { "x": 283, "y": 198, "size": 14, "color": "#333333", "font": "Helvetica",      "align": "left", "maxWidth": 460, "format": "For securing 3rd Place in {eventName}." },
+      "certId":       { "x": 283, "y": 35,  "size": 9,  "color": "#777777", "font": "Courier",        "align": "left" },
+      "qr":           { "x": 740, "y": 25,  "size": 65 }
+    }
+  },
+
+  "participant": {
+    "template": "participant.pdf",
+    "pageIndex": 0,
+    "masks": [
+      { "x": 167, "y": 210, "width": 650, "height": 65 }
+    ],
+    "fields": {
+      "name":         { "x": 490, "y": 294, "size": 28, "color": "#111827", "font": "Helvetica-Bold", "align": "center", "maxWidth": 380 },
+      "eventText":    { "x": 490, "y": 248, "size": 12, "color": "#374151", "font": "Helvetica",      "align": "center", "maxWidth": 600, "format": "This certificate is proudly presented in recognition of your participation in {eventName}.\nThank you for your enthusiasm and commitment to learning." },
+      "certId":       { "x": 490, "y": 25,  "size": 9,  "color": "#6b7280", "font": "Courier",        "align": "center" },
+      "qr":           { "x": 755, "y": 25,  "size": 60 }
+    }
+  }
+}

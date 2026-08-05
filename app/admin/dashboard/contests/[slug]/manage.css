@@ -232,14 +232,31 @@
 
 /* ===== Grid ===== */
 .cm-grid { display: grid; gap: 16px; }
-.cm-grid--2 { grid-template-columns: repeat(2, 1fr); }
-.cm-grid--3 { grid-template-columns: repeat(3, 1fr); }
-.cm-grid--4 { grid-template-columns: repeat(4, 1fr); }
+.cm-grid--2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.cm-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cm-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .cm-grid--auto { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
-.cm-grid--stat { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+.cm-grid--stat { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
+  .cm-grid--3, .cm-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 700px) {
   .cm-grid--2, .cm-grid--3, .cm-grid--4 { grid-template-columns: 1fr; }
+}
+
+/* Settings: 2-col on wide screens for compact sections */
+.cm-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 32px;
+}
+.cm-settings-grid .cm-settings-section { padding: 14px 0; }
+@media (max-width: 900px) { .cm-settings-grid { grid-template-columns: 1fr; } }
+
+/* Quick Actions: dense horizontal row */
+.cm-actions-grid {
+  display: flex; flex-wrap: wrap; gap: 8px;
 }
 
 /* ===== Stat cards ===== */
@@ -374,38 +391,39 @@
 .cm-req__required { color: var(--cm-danger); font-size: 0.72rem; font-weight: 600; }
 
 /* ===== Cycle timeline ===== */
-.cm-timeline { position: relative; padding-left: 24px; }
-.cm-timeline::before {
-  content: ''; position: absolute; left: 6px; top: 8px; bottom: 8px;
-  width: 2px; background: var(--cm-border);
+.cm-timeline {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  position: relative;
 }
+@media (max-width: 900px) { .cm-timeline { grid-template-columns: 1fr; } }
 .cm-timeline__item {
-  position: relative; padding: 12px 14px;
+  position: relative; padding: 10px 14px;
   background: var(--cm-surface); border: 1px solid var(--cm-border);
-  border-radius: var(--cm-radius-sm); margin-bottom: 12px;
+  border-radius: var(--cm-radius-sm);
+  display: grid; grid-template-columns: 1.2fr 1fr auto; gap: 12px;
+  align-items: center;
 }
 .cm-timeline__item::before {
-  content: ''; position: absolute; left: -22px; top: 18px;
-  width: 12px; height: 12px; border-radius: 50%;
-  background: var(--cm-bg); border: 2px solid var(--cm-text-4);
+  content: ''; position: absolute; left: -1px; top: 12px;
+  width: 3px; height: calc(100% - 24px); border-radius: 2px;
+  background: var(--cm-text-4);
 }
-.cm-timeline__item--current::before { border-color: var(--cm-success); background: var(--cm-success); }
-.cm-timeline__item--completed::before { border-color: var(--cm-accent); background: var(--cm-accent); }
-.cm-timeline__head {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 6px;
-}
-.cm-timeline__title { font-size: 0.95rem; font-weight: 600; color: var(--cm-text); }
-.cm-timeline__date { font-size: 0.78rem; color: var(--cm-text-3); margin-bottom: 8px; }
+.cm-timeline__item--current::before { background: var(--cm-success); }
+.cm-timeline__item--completed::before { background: var(--cm-accent); }
+.cm-timeline__head { min-width: 0; }
+.cm-timeline__title { font-size: 0.9rem; font-weight: 600; color: var(--cm-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cm-timeline__date { font-size: 0.72rem; color: var(--cm-text-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .cm-timeline__stats {
-  display: flex; gap: 16px; font-size: 0.8rem;
-  color: var(--cm-text-2);
+  display: flex; flex-wrap: wrap; gap: 10px;
+  font-size: 0.78rem; color: var(--cm-text-2);
 }
+.cm-timeline__stats > span { white-space: nowrap; }
 .cm-timeline__stats strong { color: var(--cm-text); }
 
 /* ===== Winner podium ===== */
 .cm-winner-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px; margin-bottom: 16px;
 }
 @media (max-width: 800px) { .cm-winner-grid { grid-template-columns: 1fr; } }

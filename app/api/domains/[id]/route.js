@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Domain from '@/lib/models/Domain';
-import { requirePermission, canManageDomain, isEliteByShape } from '@/lib/permissions';
+import { requirePermission, canManageDomain, isElite } from '@/lib/permissions';
 import Member from '@/lib/models/Member';
 
 export const dynamic = 'force-dynamic';
@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 // PUT /api/domains/[id]  — update a domain (color, description, adminRoles)
 // Only elite (Zero Order / Advisor / HoD / President / etc.) can edit domains.
 export async function PUT(request, { params }) {
-    const { response } = await requirePermission(isEliteByShape);
+    const { response } = await requirePermission(isElite);
     if (response) return response;
 
     try {

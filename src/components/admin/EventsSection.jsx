@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Eye, Users, Edit3, Trash2, Calendar, CheckCircle, X, ListChecks, ChevronUp, ChevronDown, FileText, Image as ImageIcon, FileVideo, Link2, Hash, Plus as PlusIcon } from 'lucide-react';
+import { Plus, Eye, Users, Edit3, Trash2, Calendar, CheckCircle, X, ListChecks, ChevronUp, ChevronDown, FileText, Image as ImageIcon, FileVideo, Link2, Hash, Plus as PlusIcon, ClipboardCheck } from 'lucide-react';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import eventService from '../../../src/services/eventService';
@@ -230,6 +230,7 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
                   <button className="admin-dash__icon-btn" title="View Event Page" onClick={() => router.push(`/events/${ev.id}`)}><Eye size={15} /></button>
                   {(adminInfo?.isElite || canManageEventClient(adminInfo, ev)) && (
                     <>
+                      <button className="admin-dash__icon-btn" title="Manage Attendance & Certificates" onClick={() => router.push(`/admin/dashboard/events/${ev.id}`)}><ClipboardCheck size={15} /></button>
                       <button className="admin-dash__icon-btn" title="View Registrations" onClick={() => viewRegistrations(ev)}><Users size={15} /></button>
                       <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" onClick={() => openEditEvent(ev)}><Edit3 size={15} /></button>
                     </>

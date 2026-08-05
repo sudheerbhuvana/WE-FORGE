@@ -1,0 +1,405 @@
+/* ==========================================================================
+   Cyber-Forge Theme Aligned Certificate Verification Stylesheet (Purple & Gold)
+   ========================================================================== */
+
+.cv-page {
+  background: #050508;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.1), transparent 70%),
+    radial-gradient(circle at 80% 80%, rgba(245, 158, 11, 0.05), transparent 60%);
+  color: #ffffff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  padding-bottom: 80px;
+}
+
+.cv-main {
+  flex: 1 0 auto;
+  padding-bottom: 60px;
+}
+
+.cv-container {
+  max-width: 1320px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Brand Header ── */
+.cv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 24px;
+  margin-bottom: 32px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.cv-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.cv-logo {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.3), rgba(245, 158, 11, 0.15));
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #a78bfa;
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.25);
+}
+
+.cv-brand-title {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #ffffff;
+}
+
+.cv-brand-sub {
+  display: block;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 2px;
+}
+
+.cv-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 16px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  border-radius: 20px;
+  color: #34d399;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+/* ── Split Layout ── */
+.cv-split {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 28px;
+  align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+  .cv-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Left Column: PDF Preview Card ── */
+.cv-preview-card {
+  background: rgba(18, 22, 36, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(16px);
+}
+
+.cv-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cv-preview-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.cv-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: #a78bfa;
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  transition: all 0.15s ease;
+}
+
+.cv-btn-ghost:hover {
+  background: rgba(139, 92, 246, 0.22);
+  color: #ffffff;
+}
+
+.cv-pdf-frame-wrap {
+  width: 100%;
+  aspect-ratio: 1.414 / 1;
+  background: #0b0d14;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.cv-pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+.cv-preview-footer {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cv-security-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* ── Right Column: Details Card ── */
+.cv-details-card {
+  background: linear-gradient(135deg, rgba(22, 20, 36, 0.95), rgba(12, 14, 24, 0.98));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 20px;
+  padding: 32px 28px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.cv-card-top {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.cv-shield-icon {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 30px rgba(16, 185, 129, 0.25);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.cv-badge-valid {
+  display: inline-block;
+  padding: 4px 14px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #34d399;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin-bottom: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.cv-details-card h2 {
+  margin: 0 0 6px 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.cv-sub {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.86rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.cv-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.cv-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+}
+
+.cv-field-icon {
+  color: #a78bfa;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.cv-field-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.cv-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.45);
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.cv-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.cv-value--highlight {
+  color: #fbbf24;
+}
+
+.cv-subvalue {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 2px;
+}
+
+.cv-cert-id-block {
+  text-align: center;
+  padding: 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  margin-bottom: 24px;
+}
+
+.cv-cert-id-block .cv-label {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.cv-cert-id {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  color: #a78bfa;
+  letter-spacing: 0.04em;
+}
+
+.cv-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.cv-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.cv-btn--primary {
+  background: linear-gradient(135deg, #8b5cf6, #6d28d9);
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+}
+
+.cv-btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.cv-btn--secondary {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.cv-btn--secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.cv-card-footer {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.4);
+  text-align: center;
+}
+
+.cv-card-footer code {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.cv-legal {
+  margin-top: 4px;
+}
+
+/* Loading & Invalid Card */
+.cv-card {
+  max-width: 520px;
+  width: 100%;
+  margin: 40px auto;
+  background: rgba(20, 24, 38, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 40px 32px;
+  text-align: center;
+}
+
+.cv-card--invalid {
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.cv-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: cv-spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes cv-spin {
+  to { transform: rotate(0deg); }
+}

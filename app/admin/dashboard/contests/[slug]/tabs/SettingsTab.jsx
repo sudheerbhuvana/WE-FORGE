@@ -39,60 +39,62 @@ export default function SettingsTab({ template, onEdit, triggerAction, actionBus
           Manage every aspect of this contest. Most sections open the full editor.
         </p>
 
-        <Section icon={FileText} title="General" desc="Title, banner, description, and tags."
-          onEdit={onEdit}>
-          <div className="cm-row" style={{ flexWrap: 'wrap' }}>
-            <span className="cm-text-muted">Title:</span>
-            <span className="cm-text-strong">{template?.title}</span>
-            <span className="cm-text-muted">Type:</span>
-            <span className="cm-text-strong">{{ one_time: 'One-Time', immediate: 'Immediate', recurring_weekly: 'Weekly', recurring_monthly: 'Monthly' }[template?.type] || 'One-Time'}</span>
-          </div>
-        </Section>
+        <div className="cm-settings-grid">
+          <Section icon={FileText} title="General" desc="Title, banner, description, and tags."
+            onEdit={onEdit}>
+            <div className="cm-row" style={{ flexWrap: 'wrap' }}>
+              <span className="cm-text-muted">Title:</span>
+              <span className="cm-text-strong">{template?.title}</span>
+              <span className="cm-text-muted">Type:</span>
+              <span className="cm-text-strong">{{ one_time: 'One-Time', immediate: 'Immediate', recurring_weekly: 'Weekly', recurring_monthly: 'Monthly' }[template?.type] || 'One-Time'}</span>
+            </div>
+          </Section>
 
-        <Section icon={Calendar} title="Schedule" desc="Start/end dates and recurring window."
-          onEdit={onEdit}>
-          <div className="cm-row" style={{ flexWrap: 'wrap', gap: 10 }}>
-            <span className="cm-text-muted">Start:</span>
-            <span className="cm-text-strong">{cycleSchedule.startDate ? new Date(cycleSchedule.startDate).toLocaleDateString() : '—'}</span>
-            <span className="cm-text-muted">End:</span>
-            <span className="cm-text-strong">{cycleSchedule.endDate ? new Date(cycleSchedule.endDate).toLocaleDateString() : '—'}</span>
-          </div>
-        </Section>
+          <Section icon={Calendar} title="Schedule" desc="Start/end dates and recurring window."
+            onEdit={onEdit}>
+            <div className="cm-row" style={{ flexWrap: 'wrap', gap: 10 }}>
+              <span className="cm-text-muted">Start:</span>
+              <span className="cm-text-strong">{cycleSchedule.startDate ? new Date(cycleSchedule.startDate).toLocaleDateString() : '—'}</span>
+              <span className="cm-text-muted">End:</span>
+              <span className="cm-text-strong">{cycleSchedule.endDate ? new Date(cycleSchedule.endDate).toLocaleDateString() : '—'}</span>
+            </div>
+          </Section>
 
-        <Section icon={ListChecks} title="Submission Form" desc="Custom fields participants fill in."
-          onEdit={onEdit}>
-          <span className="cm-text-muted">{(template?.customFields || []).length} fields configured</span>
-        </Section>
+          <Section icon={ListChecks} title="Submission Form" desc="Custom fields participants fill in."
+            onEdit={onEdit}>
+            <span className="cm-text-muted">{(template?.customFields || []).length} fields configured</span>
+          </Section>
 
-        <Section icon={Eye} title="Visibility" desc="Controls who can see and submit to this contest."
-          onEdit={onEdit}>
-          <div className="cm-row">
-            {template?.visibility === 'private' ? <Lock size={14} /> : <Globe size={14} />}
-            <span className="cm-text-strong">{template?.visibility === 'private' ? 'Private' : 'Public'}</span>
-            {template?.featured && <span className="cm-badge cm-badge--warning">Featured</span>}
-            {template?.isPublished ? (
-              <span className="cm-badge cm-badge--success">Published</span>
-            ) : (
-              <span className="cm-badge cm-badge--neutral">Draft</span>
-            )}
-          </div>
-        </Section>
+          <Section icon={Eye} title="Visibility" desc="Controls who can see and submit to this contest."
+            onEdit={onEdit}>
+            <div className="cm-row">
+              {template?.visibility === 'private' ? <Lock size={14} /> : <Globe size={14} />}
+              <span className="cm-text-strong">{template?.visibility === 'private' ? 'Private' : 'Public'}</span>
+              {template?.featured && <span className="cm-badge cm-badge--warning">Featured</span>}
+              {template?.isPublished ? (
+                <span className="cm-badge cm-badge--success">Published</span>
+              ) : (
+                <span className="cm-badge cm-badge--neutral">Draft</span>
+              )}
+            </div>
+          </Section>
 
-        <Section icon={FileText} title="Rules" desc="Rules of the contest." onEdit={onEdit}>
-          <p className="cm-text-muted" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-            {template?.rules || 'No rules set yet.'}
-          </p>
-        </Section>
+          <Section icon={FileText} title="Rules" desc="Rules of the contest." onEdit={onEdit}>
+            <p className="cm-text-muted" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+              {template?.rules || 'No rules set yet.'}
+            </p>
+          </Section>
 
-        <Section icon={Award} title="Prizes" desc="Prize information for winners." onEdit={onEdit}>
-          <p className="cm-text-muted" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
-            {template?.prizeInfo || 'No prize information yet.'}
-          </p>
-        </Section>
+          <Section icon={Award} title="Prizes" desc="Prize information for winners." onEdit={onEdit}>
+            <p className="cm-text-muted" style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+              {template?.prizeInfo || 'No prize information yet.'}
+            </p>
+          </Section>
 
-        <Section icon={Megaphone} title="Notifications" desc="Winners publication & reminder emails.">
-          <span className="cm-text-muted">Managed through the contest scheduler.</span>
-        </Section>
+          <Section icon={Megaphone} title="Notifications" desc="Winners publication & reminder emails.">
+            <span className="cm-text-muted">Managed through the contest scheduler.</span>
+          </Section>
+        </div>
       </div>
 
       {/* Quick actions card */}

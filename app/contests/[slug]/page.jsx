@@ -445,8 +445,10 @@ export default function SingleContestPage({ params }) {
   const winners = cycle?.winners || [];
 
   return (
-    <div className="single-contest-page">
-      <BackButton href="/contests" label="Back to Contests" />
+    <div className="events-page single-contest-page">
+      <div className="events-page__topbar">
+        <BackButton to="/contests" />
+      </div>
 
       {/* Header / Hero */}
       <section className="sc-hero">
@@ -832,6 +834,7 @@ export default function SingleContestPage({ params }) {
 
       </main>
 
+      <div className="footer-separator" />
       <Footer />
     </div>
   );

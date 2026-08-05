@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import '../../AdminDashboard.css';
 import './manage.css';
+import AdminSidebarWrapper from '@/src/components/admin/AdminSidebarWrapper';
 import OverviewTab from './tabs/OverviewTab';
 import SubmissionsTab from './tabs/SubmissionsTab';
 import WinnersTab from './tabs/WinnersTab';
@@ -21,7 +22,7 @@ const TABS = [
   { id: 'overview', label: 'Overview', icon: Grid3x3 },
   { id: 'submissions', label: 'Submissions', icon: Upload },
   { id: 'winners', label: 'Winners', icon: Trophy },
-  { id: 'cycles', label: 'Cycles', icon: CalendarClock },
+  { id: 'cycles', label: 'Editions / History', icon: CalendarClock },
   { id: 'analytics', label: 'Analytics', icon: BarChart3 },
   { id: 'settings', label: 'Settings', icon: SettingsIcon },
 ];
@@ -353,6 +354,7 @@ export default function ContestManagePage({ params }) {
   if (!authReady || loading) {
     return (
       <div className="admin-dash">
+        <AdminSidebarWrapper activeTab="contests" />
         <main className="admin-main">
           <div className="admin-main__content">
             <div className="admin-rec-loading">Loading contest…</div>
@@ -365,6 +367,7 @@ export default function ContestManagePage({ params }) {
   if (error && !template) {
     return (
       <div className="admin-dash">
+        <AdminSidebarWrapper activeTab="contests" />
         <main className="admin-main">
           <div className="admin-main__content">
             <button className="admin-dash__back-link" onClick={() => router.push('/admin/dashboard?tab=contests')}>
@@ -395,6 +398,7 @@ export default function ContestManagePage({ params }) {
 
   return (
     <div className="admin-dash">
+      <AdminSidebarWrapper activeTab="contests" />
       <main className="admin-main">
         <div className="admin-main__content" data-lenis-prevent="true">
 

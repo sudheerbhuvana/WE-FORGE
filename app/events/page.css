@@ -80,11 +80,13 @@
 
 .events-page__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 24px;
-    max-width: 1200px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 28px;
+    max-width: 1440px;
+    width: 100%;
     margin: 0 auto;
-    padding: 0 48px;
+    padding: 0 32px;
+    box-sizing: border-box;
 }
 
 /* ── Premium Event Card ──────────────────────────────────── */
