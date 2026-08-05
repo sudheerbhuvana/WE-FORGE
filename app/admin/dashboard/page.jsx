@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
 import { 
-  Users, Calendar, Trophy, FolderKanban, Bell, ImageIcon, UserPlus, Globe, LogOut 
+  Users, Calendar, Trophy, FolderKanban, Bell, ImageIcon, UserPlus, Globe, LogOut, FileText
 } from 'lucide-react';
 
 import memberService from '../../../src/services/memberService';
@@ -19,6 +19,7 @@ import ProjectsSection from '../../../src/components/admin/ProjectsSection';
 import NoticesSection from '../../../src/components/admin/NoticesSection';
 import MediaSection from '../../../src/components/admin/MediaSection';
 import RecruitmentsSection from '../../../src/components/admin/RecruitmentsSection';
+import FormsSection from '../../../src/components/admin/FormsSection';
 
 import '../../../src/components/admin/MemberEditModal.css';
 import './AdminDashboard.css';
@@ -136,6 +137,7 @@ export default function AdminDashboard() {
     { id: 'notices',      label: 'Notices',      icon: <Bell size={18} />,          count: notices.length,          eliteOnly: true },
     { id: 'media',        label: 'Media',        icon: <ImageIcon size={18} />,     count: media.length,            eliteOnly: true },
     { id: 'recruitments', label: 'Recruitments', icon: <UserPlus size={18} />,      count: recruitmentApps.length,  eliteOnly: true },
+    { id: 'forms',        label: 'Forms',        icon: <FileText size={18} />,      count: null,                    eliteOnly: true },
   ].filter(i => adminInfo.isElite || !i.eliteOnly);
 
   const renderActiveSection = () => {
@@ -154,6 +156,8 @@ export default function AdminDashboard() {
         return <MediaSection media={media} events={events} mediaFolders={mediaFolders} refreshData={fetchEliteData} />;
       case 'recruitments':
         return <RecruitmentsSection recruitmentSettings={recruitmentSettings} recruitmentApps={recruitmentApps} refreshData={fetchEliteData} />;
+      case 'forms':
+        return <FormsSection />;
       default:
         return <MembersSection members={members} adminInfo={adminInfo} refreshData={fetchMembersData} />;
     }

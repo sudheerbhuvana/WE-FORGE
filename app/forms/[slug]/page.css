@@ -1,0 +1,457 @@
+/* ── Public Form Page ──────────────────────────────────────── */
+
+.pf-page {
+  /* The site navbar is `position: fixed` at top: 32px and is roughly 60px tall,
+     so we leave ~120px of headroom to clear both the navbar and the floating
+     BackButton (which is `position: absolute; top: 90px`). */
+  min-height: 100vh;
+  background: #000;
+  color: #fff;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  display: flex;
+  flex-direction: column;
+  padding: 110px 0 0;
+  box-sizing: border-box;
+  position: relative;
+}
+
+.pf-topbar {
+  /* BackButton inside is `position: absolute; top: 90px; left: 32px;`
+     so the wrapper can stay a 0-height layer without weird offsets. */
+  position: relative;
+}
+
+/* ── Centered state blocks (loading / error / login) ───────── */
+
+.pf-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 120px 24px 80px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.7);
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.pf-state h2 {
+  margin: 8px 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pf-state p {
+  margin: 0;
+  max-width: 420px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.pf-state--error svg {
+  color: rgba(255, 255, 255, 0.45);
+}
+
+/* ── Spinner ────────────────────────────────────────────────── */
+
+.pf-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: #8b5cf6;
+  border-radius: 50%;
+  animation: pf-spin 0.8s linear infinite;
+}
+
+.pf-spinner--sm {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 8px;
+}
+
+@keyframes pf-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Main card ──────────────────────────────────────────────── */
+
+.pf-card {
+  max-width: 820px;
+  width: calc(100% - 48px);
+  margin: 0 auto 80px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.6);
+}
+
+.pf-cover {
+  width: 100%;
+  height: 200px;
+  background-size: cover;
+  background-position: center;
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.pf-header {
+  padding: 36px 40px 8px;
+}
+
+.pf-header-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #a78bfa;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.pf-title {
+  margin: 0 0 12px;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.pf-description {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+/* ── Form ───────────────────────────────────────────────────── */
+
+.pf-form {
+  padding: 24px 40px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Field ──────────────────────────────────────────────────── */
+
+.pf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.01em;
+}
+
+.pf-required {
+  color: #fb7185;
+  font-weight: 700;
+}
+
+.pf-help {
+  margin: 0 0 4px;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.pf-input,
+.pf-textarea,
+.pf-select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 14px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.92rem;
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.pf-input:focus,
+.pf-textarea:focus,
+.pf-select:focus {
+  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.06);
+}
+
+.pf-input::placeholder,
+.pf-textarea::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.pf-textarea {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.5;
+}
+
+.pf-select {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.5) 50%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.5) 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) center,
+    calc(100% - 13px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 36px;
+}
+
+/* ── Radio / Checkbox groups ────────────────────────────────── */
+
+.pf-options {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pf-options--stack {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.pf-option:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.pf-option input {
+  accent-color: #8b5cf6;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+/* ── File input ─────────────────────────────────────────────── */
+
+.pf-file {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pf-file-drop {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pf-file-drop:hover {
+  background: rgba(139, 92, 246, 0.06);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #fff;
+}
+
+.pf-file-drop small {
+  color: rgba(255, 255, 255, 0.4);
+  margin-left: 4px;
+}
+
+.pf-file-chosen {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(139, 92, 246, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 10px;
+  font-size: 0.88rem;
+}
+
+.pf-file-name {
+  flex: 1;
+  color: #fff;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pf-file-size {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.78rem;
+}
+
+.pf-file-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.pf-file-remove:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.pf-file-error {
+  margin: 0;
+  color: #fb7185;
+  font-size: 0.82rem;
+}
+
+/* ── Submit + buttons ───────────────────────────────────────── */
+
+.pf-submit {
+  margin-top: 8px;
+}
+
+.pf-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 22px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.pf-btn--primary {
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  border-color: transparent;
+}
+
+.pf-btn--primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #7c4ff0, #5258e8);
+  transform: translateY(-1px);
+}
+
+.pf-btn--primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pf-btn--ghost {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.pf-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+/* ── Inline error banner ────────────────────────────────────── */
+
+.pf-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(251, 113, 133, 0.08);
+  border: 1px solid rgba(251, 113, 133, 0.3);
+  color: #fda4af;
+  font-size: 0.88rem;
+}
+
+/* ── Success state ──────────────────────────────────────────── */
+
+.pf-card--success {
+  text-align: center;
+  padding: 56px 40px;
+}
+
+.pf-success-icon {
+  color: #34d399;
+  margin-bottom: 16px;
+}
+
+.pf-success-title {
+  margin: 0 0 8px;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.pf-success-message {
+  margin: 0 auto 28px;
+  max-width: 480px;
+  color: rgba(255, 255, 255, 0.65);
+  line-height: 1.55;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .pf-page {
+    padding-top: 90px;
+  }
+  .pf-state {
+    padding: 80px 20px 60px;
+  }
+  .pf-card {
+    width: calc(100% - 24px);
+    margin: 0 auto 60px;
+    border-radius: 16px;
+  }
+  .pf-header,
+  .pf-form,
+  .pf-card--success {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+  .pf-cover {
+    height: 140px;
+  }
+}

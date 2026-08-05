@@ -7,6 +7,7 @@ import {
   FileText, Users, Calendar, Hash, Type, Mail, Phone,
   Link2, AlignLeft, ChevronRight, Download, X, Save
 } from 'lucide-react';
+import '../../../app/admin/dashboard/AdminDashboard.css';
 
 const FIELD_TYPES = [
   { value: 'text',     label: 'Short Text',  icon: <Type size={14} /> },
@@ -488,12 +489,12 @@ export default function FormsSection({ forms: initialForms = [], refreshData }) 
   };
 
   return (
-    <div className="admin-main__content">
+    <div className="admin-section">
       {/* Header */}
-      <div className="admin-section-header">
+      <div className="admin-dash__title-row">
         <div>
-          <h1 className="admin-section-title">Forms</h1>
-          <p className="admin-section-sub">Create and manage custom forms. Share at klforge.in/forms/[slug]</p>
+          <h2 className="admin-section__title admin-section__title--large">Forms</h2>
+          <p className="admin-section__subtitle">Create and manage custom forms. Share at klforge.in/forms/[slug]</p>
         </div>
         <button
           type="button"
