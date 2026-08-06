@@ -188,9 +188,11 @@ export default function MemberEditModal({
 
     const isEdit = Boolean(member);
     const isElite = !!actor?.isElite;
+    const userPerms = Array.isArray(actor?.permissions) ? actor.permissions : [];
     const actorDomain = actor?.domain || '';
-    const canEditRoles = isElite;
-    const canSuspend = isElite;
+    const canEditRoles = isElite || userPerms.includes('members.edit_domain_role');
+    const canAssignSecurityRole = isElite || userPerms.includes('members.assign_security_role');
+    const canSuspend = isElite || userPerms.includes('members.suspend');
 
     // Re-sync state whenever the modal target changes.
     // We track the *identity* of `member` (not just the object) so reopening with
@@ -529,6 +531,7 @@ export default function MemberEditModal({
                             >
                                 <select
                                     value={form.customRoleId || ''}
+                                    disabled={!canAssignSecurityRole}
                                     onChange={(e) => setField('customRoleId', e.target.value)}
                                     style={{ colorScheme: 'dark' }}
                                 >
