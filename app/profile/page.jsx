@@ -1,8 +1,10 @@
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Hash, Calendar, Edit3, Save, X, LogOut, ChevronRight, Camera, Shield, Code, Search, ExternalLink, Package, Github, Linkedin, Send, FolderGit2, Plus, Trash2, ImagePlus, Link2, GraduationCap, School, Award, BadgeCheck, Trophy, Download } from 'lucide-react';
+import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 import './page.css';
 
 export default function ProfilePage() {
@@ -13,8 +15,14 @@ export default function ProfilePage() {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
-  const [editForm, setEditForm] = useState({ bio: '', skills: '', telegram: '', github: '', linkedin: '' });
+  const [editForm, setEditForm] = useState({ bio: '', skills: '', telegram: '', github: '', linkedin: '', username: '', department: '', branch: '' });
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState(null); // { msg, type: 'success'|'error' }
+
+  const showToast = (msg, type = 'success') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3500);
+  };
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
@@ -53,6 +61,9 @@ export default function ProfilePage() {
         telegram: mData.telegram || '',
         github: mData.github || '',
         linkedin: mData.linkedin || '',
+        username: mData.username || '',
+        department: mData.department || '',
+        branch: mData.branch || '',
       });
     } catch (err) {
       console.error(err);
@@ -74,49 +85,180 @@ export default function ProfilePage() {
           telegram: editForm.telegram.trim(),
           github: editForm.github.trim(),
           linkedin: editForm.linkedin.trim(),
-          skills: editForm.skills.split(',').map(s => s.trim()).filter(Boolean)
+          department: editForm.department.trim(),
+          branch: editForm.branch.trim(),
+          skills: editForm.skills.split(',').map(s => s.trim()).filter(Boolean),
+          username: editForm.username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, ''),
         })
       });
       if (res.ok) {
         const updated = await res.json();
         console.log('[Profile] Update response:', updated);
-        alert("Profile saved successfully!");
+        showToast('Profile saved successfully!');
         setMember(updated);
         setIsEditing(false);
       } else {
         const errData = await res.json();
         console.error('[Profile] Update error data:', errData);
-        alert("Server error: " + (errData.error || 'Unknown error'));
+        showToast('Error: ' + (errData.error || 'Unknown error'), 'error');
       }
     } catch (err) {
       console.error('Save error:', err);
-      alert("Failed to save profile: " + err.message);
+      showToast('Failed to save: ' + err.message, 'error');
     } finally {
       setSaving(false);
     }
   };
 
+  // ── Avatar upload state ──────────────────────────────────────
+  const [avatarModal, setAvatarModal] = useState(false);
+  const [rawAvatarSrc, setRawAvatarSrc] = useState('');
+  const [crop, setCrop] = useState();
+  const [completedCrop, setCompletedCrop] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const imgRef = useRef(null);
+  const avatarInputRef = useRef(null);
+
+  const onAvatarImageLoad = useCallback((e) => {
+    const { width, height } = e.currentTarget;
+    const c = centerCrop(
+      makeAspectCrop({ unit: '%', width: 80 }, 1, width, height),
+      width, height
+    );
+    setCrop(c);
+  }, []);
+
+  const getCroppedBlob = useCallback(() => new Promise((resolve, reject) => {
+    const img = imgRef.current;
+    if (!img || !completedCrop) return resolve(null);
+    const canvas = document.createElement('canvas');
+    
+    // Check if the crop values are percentages or pixels
+    const isPercent = completedCrop.unit === '%';
+    const cropX = isPercent ? (completedCrop.x / 100) * img.naturalWidth : completedCrop.x * (img.naturalWidth / img.width);
+    const cropY = isPercent ? (completedCrop.y / 100) * img.naturalHeight : completedCrop.y * (img.naturalHeight / img.height);
+    const cropW = isPercent ? (completedCrop.width / 100) * img.naturalWidth : completedCrop.width * (img.naturalWidth / img.width);
+    const cropH = isPercent ? (completedCrop.height / 100) * img.naturalHeight : completedCrop.height * (img.naturalHeight / img.height);
+
+    const size = 400;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(
+      img,
+      cropX,
+      cropY,
+      cropW,
+      cropH,
+      0, 0, size, size
+    );
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error('Canvas empty')), 'image/jpeg', 0.92);
+  }), [completedCrop]);
+
+  const handleAvatarUpload = async () => {
+    setUploadingAvatar(true);
+    try {
+      const blob = await getCroppedBlob();
+      if (!blob) return;
+      const fd = new FormData();
+      fd.append('photo', blob, 'avatar.jpg');
+      const res = await fetch('/api/members/me', { method: 'PUT', body: fd, credentials: 'include' });
+      if (!res.ok) throw new Error((await res.json()).error || 'Upload failed');
+      const updated = await res.json();
+      setMember(updated);
+      setAvatarModal(false);
+      setRawAvatarSrc('');
+      showToast('Profile photo updated!');
+    } catch (err) {
+      showToast('Avatar upload failed: ' + err.message, 'error');
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!confirm('Remove your profile picture?')) return;
+    const fd = new FormData();
+    fd.append('removePhoto', 'true');
+    const res = await fetch('/api/members/me', { method: 'PUT', body: fd, credentials: 'include' });
+    if (res.ok) { setMember(await res.json()); showToast('Photo removed'); }
+  };
+  // ─────────────────────────────────────────────────────────────
+
   if (!member) return null;
 
   const domain = member.domain || 'General';
   const isElite = domain === 'Zero Order' || domain === 'Advisor';
+  // A Forge team member is anyone with at least one assigned role
+  const isForgeTeam = Array.isArray(member.roles) && member.roles.length > 0;
 
   return (
     <div className={`profile-container ${isElite ? 'profile-container--elite' : ''}`}>
+      {/* ── Inline Toast ── */}
+      {toast && (
+        <div style={{
+          position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+          padding: '12px 20px', borderRadius: 12,
+          background: toast.type === 'error' ? 'rgba(239,68,68,0.92)' : 'rgba(16,185,129,0.92)',
+          color: '#fff', fontWeight: 600, fontSize: '0.9rem',
+          backdropFilter: 'blur(8px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+          display: 'flex', alignItems: 'center', gap: 10,
+          animation: 'fadeInUp 0.25s ease',
+          maxWidth: 340,
+        }}>
+          <span>{toast.type === 'error' ? '✕' : '✓'}</span>
+          {toast.msg}
+        </div>
+      )}
       <div className="profile-header">
         <div className="profile-header__info">
-          <div className="profile-avatar">
+          <div className="profile-avatar" style={{ position: 'relative', display: 'inline-block' }}>
             <img
-              src={member.photoUrl || `https://ui-avatars.com/api/?name=${member.name}&background=random`}
+              src={member.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=1a1a2e&color=71c4ff&bold=true`}
               alt={member.name}
-              width={120}
-              height={120}
+              width={80}
+              height={80}
               loading="lazy"
+              style={{ display: 'block', borderRadius: '50%' }}
+            />
+            {/* Camera button — visible to ALL logged-in members */}
+            <button
+              className="avatar-edit-btn"
+              title="Change profile picture"
+              onClick={() => avatarInputRef.current?.click()}
+            >
+              <Camera size={14} />
+            </button>
+            <input
+              ref={avatarInputRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => { setRawAvatarSrc(String(reader.result)); setAvatarModal(true); };
+                reader.readAsDataURL(file);
+                e.target.value = '';
+              }}
             />
           </div>
           <div>
             <h1>{member.name}</h1>
             <p className="profile-role">{member.role} • {member.department}</p>
+            {member.username && (
+              <p style={{ fontSize: '0.82rem', color: 'rgba(113,196,255,0.8)', marginTop: 2 }}>@{member.username}</p>
+            )}
+            {isForgeTeam && member.photoUrl && (
+              <button
+                onClick={handleRemoveAvatar}
+                style={{ marginTop: 6, fontSize: '0.75rem', color: 'rgba(255,100,100,0.8)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+              >
+                Remove photo
+              </button>
+            )}
           </div>
         </div>
         <div className="profile-actions">
@@ -130,6 +272,42 @@ export default function ProfilePage() {
           </button>
         </div>
       </div>
+
+      {/* Avatar Crop Modal */}
+      {avatarModal && rawAvatarSrc && (
+        <div className="avatar-modal-overlay" onClick={() => setAvatarModal(false)}>
+          <div className="avatar-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="avatar-modal__header">
+              <h3>Crop your profile photo</h3>
+              <button className="avatar-modal__close" onClick={() => setAvatarModal(false)}><X size={18} /></button>
+            </div>
+            <div className="avatar-modal__body">
+              <ReactCrop
+                crop={crop}
+                onChange={(_, pct) => setCrop(pct)}
+                onComplete={(_, pct) => setCompletedCrop(pct)}
+                aspect={1}
+                circularCrop
+                keepSelection
+              >
+                <img
+                  ref={imgRef}
+                  src={rawAvatarSrc}
+                  alt="Crop preview"
+                  onLoad={onAvatarImageLoad}
+                  style={{ maxHeight: '60vh', maxWidth: '100%' }}
+                />
+              </ReactCrop>
+            </div>
+            <div className="avatar-modal__footer">
+              <button className="cancel-btn" onClick={() => setAvatarModal(false)}>Cancel</button>
+              <button className="save-btn" onClick={handleAvatarUpload} disabled={uploadingAvatar}>
+                {uploadingAvatar ? 'Uploading…' : 'Save photo'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="profile-grid">
         {/* Profile Info */}
@@ -153,6 +331,18 @@ export default function ProfilePage() {
             <div className="info-item">
               <Hash size={16} /> <span>{member.rollNumber}</span>
             </div>
+            {member.department && (
+              <div className="info-item">
+                <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginRight: 6 }}>DEPT:</span>
+                <span>{member.department}</span>
+              </div>
+            )}
+            {member.branch && (
+              <div className="info-item">
+                <span style={{ fontWeight: 600, color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginRight: 6 }}>BRANCH:</span>
+                <span>{member.branch}</span>
+              </div>
+            )}
             {member.github && (
               <a href={`https://github.com/${member.github}`} target="_blank" rel="noopener noreferrer" className="info-item info-item--link">
                 <Github size={16} /> <span>{member.github}</span>
@@ -177,6 +367,72 @@ export default function ProfilePage() {
               <p>{member.bio || 'No bio added yet.'}</p>
             )}
           </div>
+
+          {isEditing && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '16px' }}>
+              <div className="skills-box" style={{ marginTop: 0 }}>
+                <label>Department</label>
+                <input
+                  value={editForm.department}
+                  onChange={e => setEditForm({...editForm, department: e.target.value})}
+                  placeholder="e.g. CSE, ECE"
+                />
+              </div>
+              <div className="skills-box" style={{ marginTop: 0 }}>
+                <label>Branch</label>
+                <input
+                  value={editForm.branch}
+                  onChange={e => setEditForm({...editForm, branch: e.target.value})}
+                  placeholder="e.g. Honours, Regular"
+                />
+              </div>
+            </div>
+          )}
+
+          {isEditing && (
+            <div className="skills-box" style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <label>Profile Picture</label>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                <button
+                  type="button"
+                  onClick={() => avatarInputRef.current?.click()}
+                  className="save-btn"
+                  style={{ padding: '8px 16px', fontSize: '0.8rem', background: 'rgba(113,196,255,0.15)', color: '#71c4ff', border: '1px solid rgba(113,196,255,0.3)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                >
+                  Upload New Photo
+                </button>
+                {member.photoUrl && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    className="cancel-btn"
+                    style={{ padding: '8px 16px', fontSize: '0.8rem', background: 'rgba(239,68,68,0.1)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '8px', cursor: 'pointer', fontWeight: 600 }}
+                  >
+                    Remove Photo
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {isEditing && (
+            <div className="skills-box" style={{ marginTop: '16px' }}>
+              <label>Username (3–30 chars, letters/numbers/_/-)</label>
+              <input
+                autoComplete="username"
+                spellCheck={false}
+                value={editForm.username}
+                onChange={e => setEditForm({...editForm, username: e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, '')})}
+                placeholder="e.g. john_doe"
+                maxLength={30}
+              />
+              {member.username && (
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.35)', marginTop: 4 }}>
+                  Current: @{member.username} · Profile URL: /profile/{member.username}
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="skills-box">
             <label>Skills (comma separated)</label>
@@ -203,6 +459,7 @@ export default function ProfilePage() {
               onRemovedCgpa={(id) => setMember((m) => ({ ...m, cgpas: (m.cgpas || []).filter((x) => x._id !== id) }))}
               onAddedSchool={(s) => setMember((m) => ({ ...m, schools: [...(m.schools || []), s] }))}
               onRemovedSchool={(id) => setMember((m) => ({ ...m, schools: (m.schools || []).filter((x) => x._id !== id) }))}
+              showToast={showToast}
             />
           </div>
 
@@ -320,10 +577,12 @@ export default function ProfilePage() {
         <ProjectsEditor
           projects={member.projects || []}
           onAdded={(p) => setMember((m) => ({ ...m, projects: [...(m.projects || []), p] }))}
+          onUpdated={(p) => setMember((m) => ({ ...m, projects: (m.projects || []).map((x) => x._id === p._id ? p : x) }))}
           onRemoved={(id) => setMember((m) => ({
             ...m,
             projects: (m.projects || []).filter((p) => p._id !== id),
           }))}
+          showToast={showToast}
         />
 
         {/* Achievements — editable on the private profile page */}
@@ -334,6 +593,7 @@ export default function ProfilePage() {
             ...m,
             achievements: (m.achievements || []).filter((a) => a._id !== id),
           }))}
+          showToast={showToast}
         />
 
         {/* Certifications — editable on the private profile page */}
@@ -344,6 +604,7 @@ export default function ProfilePage() {
             ...m,
             certifications: (m.certifications || []).filter((c) => c._id !== id),
           }))}
+          showToast={showToast}
         />
       </div>
     </div>
@@ -351,13 +612,15 @@ export default function ProfilePage() {
 }
 
 // ── Projects editor (private profile) ─────────────────────
-function ProjectsEditor({ projects, onAdded, onRemoved }) {
+function ProjectsEditor({ projects, onAdded, onUpdated, onRemoved, showToast }) {
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState('');
   const [title, setTitle] = useState('');
   const [link, setLink] = useState('');
   const [description, setDescription] = useState('');
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
+  const [removeImageFlag, setRemoveImageFlag] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [removingId, setRemovingId] = useState('');
@@ -366,6 +629,7 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
   const reset = () => {
     setTitle(''); setLink(''); setDescription('');
     setImageFile(null); setImagePreview(''); setError('');
+    setEditingId(''); setRemoveImageFlag(false);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -373,9 +637,25 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
     const file = e.target.files?.[0];
     if (!file) return;
     setImageFile(file);
+    setRemoveImageFlag(false);
     const reader = new FileReader();
     reader.onload = () => setImagePreview(String(reader.result));
     reader.readAsDataURL(file);
+  };
+
+  const handleStartEdit = (p) => {
+    setEditingId(p._id);
+    setTitle(p.title);
+    setLink(p.link || '');
+    setDescription(p.description || '');
+    setImagePreview(p.imageUrl || '');
+    setImageFile(null);
+    setRemoveImageFlag(false);
+    setError('');
+    setShowForm(true);
+    setTimeout(() => {
+      fileInputRef.current?.closest('.profile-projects-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   const handleSubmit = async (e) => {
@@ -388,10 +668,21 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
       fd.append('title', title.trim());
       fd.append('description', description.trim());
       fd.append('link', link.trim());
-      if (imageFile) fd.append('image', imageFile);
+      if (imageFile) {
+        fd.append('image', imageFile);
+      }
+      if (removeImageFlag) {
+        fd.append('removeImage', 'true');
+      }
 
-      const res = await fetch('/api/members/me/projects', {
-        method: 'POST',
+      const url = editingId 
+        ? `/api/members/me/projects/${encodeURIComponent(editingId)}`
+        : '/api/members/me/projects';
+      
+      const method = editingId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         body: fd,
         credentials: 'include',
       });
@@ -399,8 +690,14 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Save failed (${res.status})`);
       }
-      const created = await res.json();
-      onAdded(created);
+      const saved = await res.json();
+      if (editingId) {
+        onUpdated(saved);
+        showToast('Project updated successfully!');
+      } else {
+        onAdded(saved);
+        showToast('Project added successfully!');
+      }
       reset();
       setShowForm(false);
     } catch (err) {
@@ -423,8 +720,9 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
         throw new Error(data.error || `Delete failed (${res.status})`);
       }
       onRemoved(id);
+      showToast('Project removed successfully!');
     } catch (err) {
-      alert(err.message || 'Could not remove project');
+      showToast(err.message || 'Could not remove project', 'error');
     } finally {
       setRemovingId('');
     }
@@ -437,7 +735,15 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
         <button
           type="button"
           className="edit-btn"
-          onClick={() => { setShowForm((s) => !s); setError(''); }}
+          onClick={() => { 
+            if (showForm) {
+              reset();
+              setShowForm(false);
+            } else {
+              setShowForm(true);
+            }
+            setError(''); 
+          }}
           aria-expanded={showForm}
         >
           {showForm ? <><X size={14}/> Cancel</> : <><Plus size={14}/> Add project</>}
@@ -507,7 +813,12 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
                 <button
                   type="button"
                   className="profile-projects-image-clear"
-                  onClick={() => { setImageFile(null); setImagePreview(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
+                  onClick={() => { 
+                    setImageFile(null); 
+                    setImagePreview(''); 
+                    setRemoveImageFlag(true);
+                    if (fileInputRef.current) fileInputRef.current.value = ''; 
+                  }}
                   aria-label="Remove image"
                 >
                   <X size={14} />
@@ -520,7 +831,7 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
 
           <div className="profile-projects-form-actions">
             <button type="submit" className="save-btn" disabled={submitting}>
-              {submitting ? 'Saving…' : 'Add project'}
+              {submitting ? 'Saving…' : editingId ? 'Update project' : 'Add project'}
             </button>
           </div>
         </form>
@@ -558,15 +869,27 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
                   <p className="profile-project-card__desc">{p.description}</p>
                 )}
               </div>
-              <button
-                type="button"
-                className="profile-project-card__remove"
-                onClick={() => handleRemove(p._id)}
-                disabled={removingId === p._id}
-                aria-label={`Remove ${p.title}`}
-              >
-                <Trash2 size={14} />
-              </button>
+              <div style={{ display: 'flex', gap: '6px', position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
+                <button
+                  type="button"
+                  className="profile-project-card__btn-edit"
+                  style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', cursor: 'pointer', color: '#71c4ff' }}
+                  onClick={() => handleStartEdit(p)}
+                  title={`Edit ${p.title}`}
+                >
+                  <Edit3 size={12} />
+                </button>
+                <button
+                  type="button"
+                  className="profile-project-card__btn-remove"
+                  style={{ background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.1)', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', cursor: 'pointer', color: '#ef4444' }}
+                  onClick={() => handleRemove(p._id)}
+                  disabled={removingId === p._id}
+                  title={`Remove ${p.title}`}
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -576,7 +899,7 @@ function ProjectsEditor({ projects, onAdded, onRemoved }) {
 }
 
 // ── Achievements editor (private profile) ─────────────────
-function AchievementsEditor({ achievements, onAdded, onRemoved }) {
+function AchievementsEditor({ achievements, onAdded, onRemoved, showToast }) {
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
   const [issuer, setIssuer] = useState('');
@@ -605,6 +928,7 @@ function AchievementsEditor({ achievements, onAdded, onRemoved }) {
       }
       const created = await res.json();
       onAdded(created);
+      showToast('Achievement added successfully!');
       reset();
       setShowForm(false);
     } catch (err) {
@@ -626,8 +950,9 @@ function AchievementsEditor({ achievements, onAdded, onRemoved }) {
         throw new Error(data.error || `Delete failed (${res.status})`);
       }
       onRemoved(id);
+      showToast('Achievement removed successfully!');
     } catch (err) {
-      alert(err.message || 'Could not remove');
+      showToast(err.message || 'Could not remove', 'error');
     }
   };
 
@@ -696,7 +1021,7 @@ function AchievementsEditor({ achievements, onAdded, onRemoved }) {
 }
 
 // ── Certifications editor (private profile) ───────────────
-function CertificationsEditor({ certifications, onAdded, onRemoved }) {
+function CertificationsEditor({ certifications, onAdded, onRemoved, showToast }) {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState('');
   const [issuer, setIssuer] = useState('');
@@ -725,6 +1050,7 @@ function CertificationsEditor({ certifications, onAdded, onRemoved }) {
       }
       const created = await res.json();
       onAdded(created);
+      showToast('Certification added successfully!');
       reset();
       setShowForm(false);
     } catch (err) {
@@ -746,8 +1072,9 @@ function CertificationsEditor({ certifications, onAdded, onRemoved }) {
         throw new Error(data.error || `Delete failed (${res.status})`);
       }
       onRemoved(id);
+      showToast('Certification removed successfully!');
     } catch (err) {
-      alert(err.message || 'Could not remove');
+      showToast(err.message || 'Could not remove', 'error');
     }
   };
 
@@ -816,7 +1143,7 @@ function CertificationsEditor({ certifications, onAdded, onRemoved }) {
 }
 
 // ── Academic editor (repeatable CGPAs + Schools) ──────────
-function AcademicEditor({ cgpas, schools, onAddedCgpa, onRemovedCgpa, onAddedSchool, onRemovedSchool }) {
+function AcademicEditor({ cgpas, schools, onAddedCgpa, onRemovedCgpa, onAddedSchool, onRemovedSchool, showToast }) {
   const [adding, setAdding] = useState(null); // 'cgpa' | 'school' | null
 
   // Local form state per active form
@@ -854,6 +1181,7 @@ function AcademicEditor({ cgpas, schools, onAddedCgpa, onRemovedCgpa, onAddedSch
       }
       const created = await res.json();
       onAddedCgpa(created);
+      showToast('CGPA added successfully!');
       resetCgpa();
       setAdding(null);
     } catch (err) {
@@ -881,6 +1209,7 @@ function AcademicEditor({ cgpas, schools, onAddedCgpa, onRemovedCgpa, onAddedSch
       }
       const created = await res.json();
       onAddedSchool(created);
+      showToast('School/Institution added successfully!');
       resetSchool();
       setAdding(null);
     } catch (err) {
@@ -902,8 +1231,9 @@ function AcademicEditor({ cgpas, schools, onAddedCgpa, onRemovedCgpa, onAddedSch
         throw new Error(data.error || `Delete failed (${res.status})`);
       }
       if (kind === 'cgpa') onRemovedCgpa(id); else onRemovedSchool(id);
+      showToast(`${kind === 'cgpa' ? 'CGPA' : 'School'} entry removed!`);
     } catch (err) {
-      alert(err.message || 'Could not remove');
+      showToast(err.message || 'Could not remove', 'error');
     }
   };
 

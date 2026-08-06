@@ -8,21 +8,14 @@ import {
     AlertCircle, Loader2, Sparkles, FolderGit2,
     GraduationCap, School, Trophy, BadgeCheck,
 } from 'lucide-react';
-import BackButton from '../../src/components/BackButton';
-import ProfileCard from '../../src/components/ProfileCard';
-import { getAvatarUrl } from '../../src/services/memberService';
-import '../../src/styles/profile.css';
+import BackButton from '../../../src/components/BackButton';
+import ProfileCard from '../../../src/components/ProfileCard';
+import { getAvatarUrl } from '../../../src/services/memberService';
+import '../../../src/styles/profile.css';
 
 // ── Constants ──────────────────────────────────────────────
 
-const STATUS_COLOR = {
-    Online: '#22c55e',
-    Away: '#f59e0b',
-    Busy: '#ef4444',
-    Offline: '#6b7280',
-};
 const ELITE_DOMAINS = new Set(['Zero Order', 'Advisor']);
-const HEAD_ROLES = new Set(['Chief', 'Lead', 'Co-Lead', 'Head']);
 const PALETTE = ['#71C4FF', '#a855f7', '#f43f5e', '#f59e0b', '#10b981', '#ec4899', '#94a3b8'];
 
 function pickAccent(domain) {
@@ -42,14 +35,14 @@ function formatDate(d) {
 // ── Page ──────────────────────────────────────────────────
 
 const ProfilePage = () => {
-    const { memberId } = useParams();
+    const { username } = useParams();
     const [member, setMember] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [registrations, setRegistrations] = useState([]);
 
     useEffect(() => {
-        if (!memberId) return;
+        if (!username) return;
         let cancelled = false;
         setLoading(true);
         setError(null);
@@ -57,7 +50,7 @@ const ProfilePage = () => {
         (async () => {
             try {
                 const res = await fetch(
-                    `/api/members/by-slug/${encodeURIComponent(memberId)}`,
+                    `/api/members/by-slug/${encodeURIComponent(username)}`,
                     { credentials: 'include' }
                 );
                 if (cancelled) return;
@@ -94,7 +87,7 @@ const ProfilePage = () => {
         })();
 
         return () => { cancelled = true; };
-    }, [memberId]);
+    }, [username]);
 
     const accent = useMemo(() => {
         if (!member) return '#71C4FF';
@@ -122,7 +115,7 @@ const ProfilePage = () => {
                     <AlertCircle size={36} aria-hidden="true" />
                     <h2>Profile not found</h2>
                     <p>
-                        We couldn’t find a member with the handle <code>/{memberId}</code>.
+                        We couldn't find a member with the handle <code>@{username}</code>.
                         They may have graduated, been suspended, or the link might be wrong.
                     </p>
                     <div className="profile-page__error-actions">
@@ -185,7 +178,7 @@ const ProfilePage = () => {
                         <ProfileCard
                             name={member.name}
                             title={displayRole}
-                            handle={member.rollNumber || member.id}
+                            handle={member.username || member.rollNumber || member.id}
                             status={member.status || 'Online'}
                             contactText="Contact"
                             avatarUrl={avatarUrl}
@@ -204,9 +197,12 @@ const ProfilePage = () => {
                         />
                     </div>
 
-                    {/* Identity header — name + tagline only. Role/status pills dropped. */}
+                    {/* Identity header — name + tagline only. */}
                     <div className="profile-rail__header">
                         <h1 className="profile-rail__name">{member.name}</h1>
+                        {member.username && (
+                            <p className="profile-rail__username">@{member.username}</p>
+                        )}
                         {member.description && (
                             <p className="profile-rail__tagline">{member.description}</p>
                         )}
@@ -292,12 +288,17 @@ const ProfilePage = () => {
 
                 {/* ════════════ RIGHT COLUMN — sections ════════════ */}
                 <main className="profile-main">
-                    {/* Identity card moved here */}
+                    {/* Identity card */}
                     <section className="profile-card">
                         <h2 className="profile-card__title">
                             <Hash size={15} aria-hidden="true" /> Identity
                         </h2>
                         <dl className="profile-rail__id">
+                            {member.username && (
+                                <RailRow icon={<Star size={13} aria-hidden="true" />} label="Username">
+                                    <span className="mono">@{member.username}</span>
+                                </RailRow>
+                            )}
                             <RailRow icon={<Hash size={13} aria-hidden="true" />} label="Roll Number">
                                 <span className="mono">{member.rollNumber || member.id}</span>
                             </RailRow>
@@ -310,6 +311,9 @@ const ProfilePage = () => {
                             </RailRow>
                             <RailRow icon={<Briefcase size={13} aria-hidden="true" />} label="Department">
                                 {member.department || <span className="muted">—</span>}
+                            </RailRow>
+                            <RailRow icon={<Briefcase size={13} aria-hidden="true" />} label="Branch">
+                                {member.branch || <span className="muted">—</span>}
                             </RailRow>
                             <RailRow icon={<Building2 size={13} aria-hidden="true" />} label="Primary Domain">
                                 <DomainBadge domain={displayDomain} accent={accent} small />
@@ -396,7 +400,7 @@ const ProfilePage = () => {
                         </h2>
                         {registrations.length === 0 ? (
                             <p className="profile-card__empty">
-                                No public registrations yet. Once this member signs up for events, they’ll show up here.
+                                No public registrations yet. Once this member signs up for events, they'll show up here.
                             </p>
                         ) : (
                             <ul className="profile-activity">

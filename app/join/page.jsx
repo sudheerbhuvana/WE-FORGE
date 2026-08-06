@@ -17,7 +17,6 @@ const RECRUITMENT_DOMAINS = [
   { id: 'Media', title: 'Media', desc: 'Videography, photography, reels, event coverage, and visual storytelling.' },
   { id: 'Protocols', title: 'Protocols', desc: 'Event planning, logistics, ops coordination, and community management.' },
   { id: 'Public Speaking', title: 'Public Speaking', desc: 'Event anchoring, workshops, presentations, and stage presence.' },
-  { id: 'Advisor', title: 'Advisor', desc: 'Strategic guidance, mentoring, and advisory roles across club activities.' },
 ];
 
 export default function JoinPage() {

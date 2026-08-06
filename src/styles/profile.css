@@ -33,7 +33,7 @@
 
 .profile-page__back {
     position: absolute;
-    top: 24px;
+    top: 96px;
     left: 24px;
     z-index: 5;
 }
@@ -223,6 +223,14 @@
     font-size: 0.95rem;
     font-style: italic;
 }
+.profile-rail__username {
+    margin: 0;
+    font-size: 0.82rem;
+    color: rgba(113, 196, 255, 0.75);
+    font-family: 'JetBrains Mono', monospace, ui-monospace;
+    letter-spacing: 0.01em;
+}
+
 
 .profile-rail__id {
     align-self: stretch;

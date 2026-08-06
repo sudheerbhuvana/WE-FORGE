@@ -166,29 +166,29 @@ export default async function HomePage() {
         <div>
             <HeroSection />
             <div className="hero-spacer" />
+            <ClubIntro>
+                <section className="bento-wrapper">
+                    <MagicBento
+                        textAutoHide={true}
+                        enableStars={false}
+                        enableSpotlight={false}
+                        enableBorderGlow={false}
+                        enableTilt={false}
+                        enableMagnetism={false}
+                        clickEffect={false}
+                        spotlightRadius={400}
+                        particleCount={12}
+                        glowColor="255, 255, 255"
+                        disableAnimations={true}
+                    />
+                </section>
+            </ClubIntro>
             <AppleCardsCarousel
                 items={carouselItems}
                 eyebrow="Spotlight"
                 title="What we build"
                 sub="A glimpse of the work, moments, and ideas that move KLForge forward."
             />
-            <ClubIntro>
-                <section className="bento-wrapper">
-                    <MagicBento
-                        textAutoHide={true}
-                        enableStars
-                        enableSpotlight={false}
-                        enableBorderGlow={false}
-                        enableTilt={false}
-                        enableMagnetism={false}
-                        clickEffect
-                        spotlightRadius={400}
-                        particleCount={12}
-                        glowColor="255, 255, 255"
-                        disableAnimations={false}
-                    />
-                </section>
-            </ClubIntro>
             <FeaturedGallery items={featured} />
             <div className="footer-separator" />
             <Footer />

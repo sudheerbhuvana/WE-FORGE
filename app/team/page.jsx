@@ -38,16 +38,47 @@ export default async function TeamPage() {
   await connectDB();
   const membersData = await Member.find({}).lean();
   
+  const DOMAIN_MAP = {
+    'Tech': 'Tech & Innovation',
+    'Tech & Innovation': 'Tech & Innovation',
+    'Creative': 'Creative & Content',
+    'Creative & Content': 'Creative & Content',
+    'Media': 'Media & Broadcasting',
+    'Media & Broadcasting': 'Media & Broadcasting',
+    'Protocols': 'Protocol & Operations',
+    'Protocol & Operations': 'Protocol & Operations',
+    'Public Speaking': 'Public Speaking',
+    'Advisor': 'Advisor',
+    'Zero Order': 'Zero Order'
+  };
+
   // Transform to plain objects and map to TeamCards format
-  const members = membersData.map(m => ({
-    name: m.name,
-    role: `${m.role}  •  ${m.rollNumber}`,
-    description: m.bio || m.description || 'No description provided.',
-    profileLink: `/${m.id}`,
-    color: m.color || '#71C4FF',
-    domain: m.domain || 'General',
-    rawRole: m.role
-  }));
+  const members = [];
+  for (const m of membersData) {
+    if (Array.isArray(m.roles) && m.roles.length > 0) {
+      for (const r of m.roles) {
+        members.push({
+          name: m.name,
+          role: `${r.role}  •  ${m.rollNumber}`,
+          description: m.bio || m.description || 'No description provided.',
+          profileLink: `/profile/${m.username || m.id}`,
+          color: m.color || '#71C4FF',
+          domain: DOMAIN_MAP[r.domain] || r.domain || 'General',
+          rawRole: r.role
+        });
+      }
+    } else {
+      members.push({
+        name: m.name,
+        role: `${m.role}  •  ${m.rollNumber}`,
+        description: m.bio || m.description || 'No description provided.',
+        profileLink: `/profile/${m.username || m.id}`,
+        color: m.color || '#71C4FF',
+        domain: DOMAIN_MAP[m.domain] || m.domain || 'General',
+        rawRole: m.role
+      });
+    }
+  }
 
   // Group and Sort natively by Domain
   const grouped = members.sort((a, b) => {

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Navbar from '@/src/components/Navbar';
 import Footer from '@/src/components/Footer';
 import { 
   Sparkles, 
@@ -108,7 +107,6 @@ export default function WallOfKLPage() {
 
   return (
     <div className="wallkl-page">
-      <Navbar />
 
       {/* Ambient background glows */}
       <div className="wallkl-bg-glow-1" />

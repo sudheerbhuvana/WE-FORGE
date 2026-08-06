@@ -1,6 +1,5 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
-import PixelSnow from './PixelSnow';
 import './ClubIntro.css';
 
 const stats = [
@@ -67,18 +66,6 @@ const ClubIntro = ({ children }) => {
 
   return (
     <section className="club-intro" id="what-is-forge">
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none', opacity: 0.7 }}>
-        <PixelSnow 
-          variant="round"
-          color="#71C4FF"
-          flakeSize={0.004}
-          minFlakeSize={0.9}
-          pixelResolution={800}
-          speed={0.25}
-          density={0.04}
-          brightness={0.5}
-        />
-      </div>
       <div className="club-intro__container" style={{ position: 'relative', zIndex: 1 }}>
         <span className="club-intro__eyebrow">WHAT IS FORGE?</span>
         <h2 className="club-intro__heading">

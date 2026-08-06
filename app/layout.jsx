@@ -14,11 +14,19 @@ gsap.registerPlugin(ScrollTrigger);
 
 export default function RootLayout({ children }) {
   useEffect(() => {
+    const isMobile = window.innerWidth < 768;
+
+    // Skip Lenis on mobile — native scroll is faster and lighter
+    if (isMobile) return;
+
     const lenis = new Lenis({
       duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
     });
+
+    // Expose globally so pages can call scrollTo
+    window.__lenis = lenis;
 
     lenis.on('scroll', ScrollTrigger.update);
     gsap.ticker.add((time) => lenis.raf(time * 1000));
@@ -27,6 +35,7 @@ export default function RootLayout({ children }) {
     return () => {
       gsap.ticker.remove(lenis.raf);
       lenis.destroy();
+      window.__lenis = null;
     };
   }, []);
 

@@ -29,6 +29,7 @@ export async function GET(_request, { params }) {
         const needle = String(slug).trim();
 
         const found =
+            (await Member.findOne({ username: needle }).lean()) ||
             (await Member.findOne({ id: needle }).lean()) ||
             (await Member.findOne({ rollNumber: needle }).lean()) ||
             (await Member.findOne({ email: `${needle}@kluniversity.in` }).lean());

@@ -385,7 +385,7 @@ const EventDetailPage = () => {
                   if (!canRegister) return;
                   handleOneClick();
                 } else {
-                  signIn('microsoft'); // Or just signIn() to show options
+                  signIn('azure-ad');
                 }
               }}
               disabled={(submitting) || (session && !canRegister)}

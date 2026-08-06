@@ -280,12 +280,16 @@ body {
     display: flex;
     gap: 16px;
     overflow-x: auto;
-    overflow-y: visible;
+    overflow-y: hidden;
     scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
     padding: 12px 4px 24px;
     margin: 0 -4px;
     scrollbar-width: thin;
     scrollbar-color: rgba(125, 190, 255, 0.3) transparent;
+    /* Prevent parent clip from killing scroll */
+    position: relative;
+    z-index: 1;
 }
 .apple-cards__scroller::-webkit-scrollbar { height: 8px; }
 .apple-cards__scroller::-webkit-scrollbar-track { background: transparent; }
