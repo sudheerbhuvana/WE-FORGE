@@ -32,7 +32,7 @@ export async function GET(req, { params }) {
         else if (cert.eventRole === 'runner_up' || cert.eventRole === 'third_place') templatePath = event.certificateTemplateWinner || '/templates/certificates/winner.pdf';
         else templatePath = event.certificateTemplateParticipant || '/templates/certificates/participant.pdf';
 
-        const absTemplate = path.join(process.cwd(), 'public', (templatePath || '').replace(/^\//, ''));
+        const absTemplate = path.join(/*turbopackIgnore: true*/ process.cwd(), 'public', (templatePath || '').replace(/^\//, ''));
         if (!templatePath || !fs.existsSync(absTemplate)) {
             return NextResponse.json({ error: 'Template PDF missing on server' }, { status: 500 });
         }
