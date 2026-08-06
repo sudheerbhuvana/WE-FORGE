@@ -226,9 +226,6 @@ export default function JoinPage() {
                 <div className="join-app-status" style={{ marginTop: 24, width: '100%', maxWidth: 440, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.08)', padding: 20, borderRadius: 16 }}>
                   <h3 style={{ fontSize: '0.95rem', fontWeight: 700, margin: '0 0 10px', color: '#fff' }}>Your Submission</h3>
                   <div className="join-app-status__badge-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
-                    <span className={`join-status-pill join-status-pill--${existingApp.status}`}>
-                      {existingApp.status.toUpperCase()}
-                    </span>
                     <span className="join-app-status__meta" style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.45)' }}>Submitted: {new Date(existingApp.submittedAt).toLocaleDateString()}</span>
                   </div>
                   <div className="join-app-status__details" style={{ fontSize: '0.88rem', color: 'rgba(255,255,255,0.7)' }}>
@@ -278,15 +275,8 @@ export default function JoinPage() {
 
                 <h3 style={{ fontSize: '1.6rem', fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>Application Submitted!</h3>
                 <p style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.95rem', maxWidth: 480, margin: '0 auto 24px' }}>
-                  Your recruitment application for <strong>KLFORGE</strong> has been received on {new Date(existingApp.submittedAt).toLocaleDateString()}.
+                  Your recruitment application for <strong>KLFORGE</strong> was received on {new Date(existingApp.submittedAt).toLocaleDateString()}.
                 </p>
-
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 20px', borderRadius: 20, background: 'rgba(255, 255, 255, 0.05)', border: '1px solid rgba(255, 255, 255, 0.1)', marginBottom: 28 }}>
-                  <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.4)', fontWeight: 600 }}>STATUS:</span>
-                  <span className={`join-status-pill join-status-pill--${existingApp.status}`}>
-                    {existingApp.status === 'pending' ? 'UNDER REVIEW' : existingApp.status.toUpperCase()}
-                  </span>
-                </div>
 
                 <div className="join-meta-summary" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16, textAlign: 'left', background: 'rgba(0,0,0,0.3)', padding: 20, borderRadius: 14, border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div>
