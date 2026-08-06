@@ -276,14 +276,9 @@ export default function RecruitmentsSection({
               filtered.map(app => (
                 <tr key={app._id}>
                   <td>
-                    <div className="admin-dash__user-cell">
-                      <div className="admin-dash__avatar admin-dash__avatar--fallback">
-                        {app.name?.[0] || 'U'}
-                      </div>
-                      <div>
-                        <div className="admin-dash__name">{app.name}</div>
-                        <div className="admin-dash__email">{app.rollNumber} • {app.email}</div>
-                      </div>
+                    <div>
+                      <div className="admin-dash__name" style={{ fontWeight: 700, color: '#fff', fontSize: '0.92rem' }}>{app.name}</div>
+                      <div className="admin-dash__email" style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.45)', marginTop: 2 }}>{app.rollNumber} • {app.email}</div>
                     </div>
                   </td>
                   <td>
