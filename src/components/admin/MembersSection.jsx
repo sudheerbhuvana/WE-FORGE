@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, Download, Search, Edit3, Trash2 } from 'lucide-react';
 import memberService, { getAvatarUrl } from '../../../src/services/memberService';
