@@ -255,65 +255,67 @@ export default function AdminDashboard() {
       </header>
 
       {/* Mobile Left Navigation Drawer */}
-      <div 
-        className={`admin-mob-drawer-overlay ${mobileMenuOpen ? 'admin-mob-drawer-overlay--open' : ''}`}
-        onClick={() => setMobileMenuOpen(false)}
-      >
-        <aside 
-          className={`admin-mob-drawer ${mobileMenuOpen ? 'admin-mob-drawer--open' : ''}`}
-          onClick={(e) => e.stopPropagation()}
+      {mobileMenuOpen && (
+        <div 
+          className="admin-mob-drawer-overlay admin-mob-drawer-overlay--open"
+          onClick={() => setMobileMenuOpen(false)}
         >
-          <div className="admin-mob-drawer__header">
-            <div className="admin-mob-drawer__brand">
-              <img src="/images/favicon.png?v=2" alt="KLFORGE" className="admin-mob-drawer__logo" />
-              <span>ADMIN PANEL</span>
-            </div>
-            <button className="admin-mob-drawer__close" onClick={() => setMobileMenuOpen(false)}>
-              <X size={20} />
-            </button>
-          </div>
-
-          <nav className="admin-mob-drawer__nav">
-            <div className="admin-mob-drawer__group-label">MANAGEMENT</div>
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.id}
-                className={`admin-mob-drawer__item ${activeSection === item.id ? 'admin-mob-drawer__item--active' : ''}`}
-                onClick={() => {
-                  handleTabChange(item.id);
-                  setMobileMenuOpen(false);
-                }}
-              >
-                <span className="admin-mob-drawer__item-icon">{item.icon}</span>
-                <span className="admin-mob-drawer__item-label">{item.label}</span>
-                {item.count !== undefined && item.count !== null && (
-                  <span className="admin-mob-drawer__badge">{item.count}</span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          <div className="admin-mob-drawer__bottom">
-            {adminInfo && (
-              <div className="admin-mob-drawer__user">
-                <div className="admin-mob-drawer__avatar">
-                  {(adminInfo.name || adminInfo.email || '?').slice(0, 1).toUpperCase()}
-                </div>
-                <div className="admin-mob-drawer__user-meta">
-                  <span className="admin-mob-drawer__user-name">{adminInfo.name || 'Admin'}</span>
-                  <span className="admin-mob-drawer__user-role">
-                    {adminInfo.isElite ? 'Elite' : adminInfo.role || adminInfo.domain || 'Member'}
-                  </span>
-                </div>
+          <aside 
+            className="admin-mob-drawer admin-mob-drawer--open"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="admin-mob-drawer__header">
+              <div className="admin-mob-drawer__brand">
+                <img src="/images/favicon.png?v=2" alt="KLFORGE" className="admin-mob-drawer__logo" />
+                <span>ADMIN PANEL</span>
               </div>
-            )}
-            <button className="admin-mob-drawer__logout" onClick={handleLogout}>
-              <LogOut size={16} />
-              <span>Logout</span>
-            </button>
-          </div>
-        </aside>
-      </div>
+              <button className="admin-mob-drawer__close" onClick={() => setMobileMenuOpen(false)}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <nav className="admin-mob-drawer__nav">
+              <div className="admin-mob-drawer__group-label">MANAGEMENT</div>
+              {NAV_ITEMS.map((item) => (
+                <button
+                  key={item.id}
+                  className={`admin-mob-drawer__item ${activeSection === item.id ? 'admin-mob-drawer__item--active' : ''}`}
+                  onClick={() => {
+                    handleTabChange(item.id);
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <span className="admin-mob-drawer__item-icon">{item.icon}</span>
+                  <span className="admin-mob-drawer__item-label">{item.label}</span>
+                  {item.count !== undefined && item.count !== null && (
+                    <span className="admin-mob-drawer__badge">{item.count}</span>
+                  )}
+                </button>
+              ))}
+            </nav>
+
+            <div className="admin-mob-drawer__bottom">
+              {adminInfo && (
+                <div className="admin-mob-drawer__user">
+                  <div className="admin-mob-drawer__avatar">
+                    {(adminInfo.name || adminInfo.email || '?').slice(0, 1).toUpperCase()}
+                  </div>
+                  <div className="admin-mob-drawer__user-meta">
+                    <span className="admin-mob-drawer__user-name">{adminInfo.name || 'Admin'}</span>
+                    <span className="admin-mob-drawer__user-role">
+                      {adminInfo.isElite ? 'Elite' : adminInfo.role || adminInfo.domain || 'Member'}
+                    </span>
+                  </div>
+                </div>
+              )}
+              <button className="admin-mob-drawer__logout" onClick={handleLogout}>
+                <LogOut size={16} />
+                <span>Logout</span>
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
 
       {/* Desktop Sidebar */}
       <aside className="admin-sidebar">
