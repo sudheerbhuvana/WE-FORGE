@@ -192,9 +192,9 @@ export default function AdminDashboard() {
   const hasModulePerm = (prefix) => userPerms.some(p => p.startsWith(prefix));
 
   const NAV_ITEMS = [
-    { id: 'members',      label: 'Members',      icon: <Users size={18} />,        count: members.length,          visible: true },
-    { id: 'events',       label: 'Events',       icon: <Calendar size={18} />,      count: events.length,           visible: true },
-    { id: 'contests',     label: 'Contests',     icon: <Trophy size={18} />,        count: contestsList.length,     visible: true },
+    { id: 'members',      label: 'Members',      icon: <Users size={18} />,        count: members.length,          visible: adminInfo.isElite || adminInfo.isDomainHead || hasModulePerm('members.') },
+    { id: 'events',       label: 'Events',       icon: <Calendar size={18} />,      count: events.length,           visible: adminInfo.isElite || adminInfo.isDomainHead || hasModulePerm('events.') },
+    { id: 'contests',     label: 'Contests',     icon: <Trophy size={18} />,        count: contestsList.length,     visible: adminInfo.isElite || adminInfo.isDomainHead || hasModulePerm('contests.') },
     { id: 'projects',     label: 'Projects',     icon: <FolderKanban size={18} />,  count: projects.length,         visible: adminInfo.isElite || hasModulePerm('projects.') },
     { id: 'notices',      label: 'Notices',      icon: <Bell size={18} />,          count: notices.length,          visible: adminInfo.isElite || hasModulePerm('notices.') },
     { id: 'media',        label: 'Media',        icon: <ImageIcon size={18} />,     count: media.length,            visible: adminInfo.isElite || hasModulePerm('media.') },
@@ -205,8 +205,18 @@ export default function AdminDashboard() {
     { id: 'forms',        label: 'Forms',        icon: <FileText size={18} />,      count: null,                    visible: adminInfo.isElite || hasModulePerm('forms.') },
   ].filter(i => i.visible);
 
+  // Auto-switch to first available tab if current activeSection is not visible to this user
+  useEffect(() => {
+    if (!isAdminAuthed || NAV_ITEMS.length === 0) return;
+    const isCurrentActiveValid = NAV_ITEMS.some(n => n.id === activeSection);
+    if (!isCurrentActiveValid) {
+      setActiveSection(NAV_ITEMS[0].id);
+    }
+  }, [isAdminAuthed, NAV_ITEMS.length, activeSection]);
+
   const renderActiveSection = () => {
-    switch (activeSection) {
+    const targetSection = NAV_ITEMS.some(n => n.id === activeSection) ? activeSection : NAV_ITEMS[0]?.id;
+    switch (targetSection) {
       case 'members':
         return <MembersSection members={members} adminInfo={adminInfo} refreshData={fetchMembersData} />;
       case 'events':
@@ -230,7 +240,7 @@ export default function AdminDashboard() {
       case 'forms':
         return <FormsSection />;
       default:
-        return <MembersSection members={members} adminInfo={adminInfo} refreshData={fetchMembersData} />;
+        return <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>No modules accessible for your role.</div>;
     }
   };
 

@@ -25,6 +25,7 @@ const ROLE_WEIGHTS = {
 const canManageMemberClient = (actor, member) => {
   if (!actor) return false;
   if (actor.isElite) return true;
+  if (Array.isArray(actor.permissions) && actor.permissions.some(p => p.startsWith('members.'))) return true;
   if (actor.memberId === member.id) return true;
   if (member.roles && member.roles.some(r => r.domain === actor.domain)) return true;
   return false;
