@@ -344,6 +344,83 @@ export default function RecruitmentsSection({
         </table>
       </div>
 
+      {/* Mobile Card List */}
+      <div className="admin-mob-cards">
+        {filtered.length === 0 ? (
+          <div className="admin-dash__empty" style={{ padding: 24, textAlign: 'center', color: 'rgba(255,255,255,0.4)' }}>
+            No recruitment applications match your criteria.
+          </div>
+        ) : (
+          filtered.map(app => (
+            <div key={app._id} className="admin-mob-card" style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 14, padding: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
+                <div>
+                  <div style={{ fontSize: '1rem', fontWeight: 700, color: '#fff' }}>{app.name}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: 2 }}>{app.rollNumber} • {app.email}</div>
+                </div>
+                <span className="admin-rec-year-badge">{app.year}</span>
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center', marginBottom: 12 }}>
+                <span className="admin-rec-domain-tag">{app.primaryDomain}</span>
+                {app.secondaryDomain && (
+                  <span className="admin-rec-domain-tag admin-rec-domain-tag--sec">{app.secondaryDomain}</span>
+                )}
+                <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginLeft: 'auto' }}>
+                  {new Date(app.submittedAt).toLocaleDateString()}
+                </span>
+              </div>
+
+              {Array.isArray(app.workLinks) && app.workLinks.length > 0 && (
+                <div className="admin-rec-links-row" style={{ marginBottom: 12 }}>
+                  {app.workLinks.map((l, i) => (
+                    <a key={i} href={l.url} target="_blank" rel="noreferrer" className="admin-rec-link-pill" title={l.url}>
+                      <ExternalLink size={12} /> {l.title || 'Link'}
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12, marginTop: 4 }}>
+                <select
+                  value={app.status || 'pending'}
+                  onChange={e => updateAppStatus(app._id, e.target.value, app.adminNotes)}
+                  className={`admin-rec-status-select admin-rec-status-select--${app.status}`}
+                  style={{ flex: 1 }}
+                >
+                  <option value="pending">Pending</option>
+                  <option value="shortlisted">Shortlisted</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+
+                <button
+                  type="button"
+                  className="admin-mob-btn admin-mob-btn--edit"
+                  onClick={() => {
+                    setViewingRecApp(app);
+                    setRecAppNotesInput(app.adminNotes || '');
+                  }}
+                  style={{ padding: '8px 14px', fontSize: '0.82rem' }}
+                >
+                  <Eye size={14} /> Details
+                </button>
+
+                <button
+                  type="button"
+                  className="admin-mob-btn admin-mob-btn--delete"
+                  onClick={() => deleteApp(app._id, app.name)}
+                  style={{ padding: '8px 12px' }}
+                  title="Remove Application"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Application Detail Modal */}
       {viewingRecApp && (
         <div className="admin-dash__overlay" onClick={() => setViewingRecApp(null)}>
