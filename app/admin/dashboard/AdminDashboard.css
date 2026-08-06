@@ -1130,65 +1130,6 @@ select option {
 
 /* Responsive */
 @media (max-width: 900px) {
-  .admin-dash {
-    flex-direction: column;
-  }
-
-  .admin-sidebar {
-    width: 100%;
-    min-height: auto;
-    flex-direction: row;
-    align-items: center;
-    border-right: none;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    position: static;
-  }
-
-  .admin-sidebar__brand {
-    padding: 12px 16px;
-    border-bottom: none;
-  }
-
-  .admin-sidebar__nav {
-    flex-direction: row;
-    flex: 1;
-    overflow-x: auto;
-    padding: 8px 4px;
-    gap: 4px;
-  }
-
-  .admin-sidebar__group {
-    flex-direction: row;
-    gap: 2px;
-  }
-
-  .admin-sidebar__group-label {
-    display: none;
-  }
-
-  .admin-sidebar__item {
-    padding: 8px 12px;
-    white-space: nowrap;
-    font-size: 0.8rem;
-  }
-
-  .admin-sidebar__bottom {
-    border-top: none;
-    border-left: 1px solid rgba(255, 255, 255, 0.06);
-    padding: 8px 12px;
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .admin-sidebar__user-text { display: none; }
-  .admin-sidebar__user { padding: 0; border: none; background: transparent; }
-  .admin-sidebar__user-avatar { width: 30px; height: 30px; }
-
-  .admin-sidebar__logout { padding: 8px 10px; }
-  .admin-sidebar__logout span {
-    display: none;
-  }
-
   .admin-main__content {
     padding: 16px 12px;
   }
