@@ -27,12 +27,15 @@ export async function GET(request, { params }) {
 }
 
 export async function PUT(request, { params }) {
-    try {
-        await connectDB();
-        const { id } = await params;
-        const event = await Event.findOne({ id });
-        if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    const { id } = await params;
+    await connectDB();
+    const event = await Event.findOne({ id });
+    if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
 
+    const { response } = await requirePermission(actor => canManageEvent(actor, event));
+    if (response) return response;
+
+    try {
         const formData = await request.formData();
 
         if (formData.has('title')) event.title = formData.get('title').trim();
@@ -94,12 +97,16 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-    try {
-        await connectDB();
-        const { id } = await params;
-        const event = await Event.findOneAndDelete({ id });
-        if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+    const { id } = await params;
+    await connectDB();
+    const event = await Event.findOne({ id });
+    if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
 
+    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'events.delete'));
+    if (response) return response;
+
+    try {
+        await Event.deleteOne({ id });
         await deleteFile(event.posterUrl, UPLOAD_DIR);
         return NextResponse.json({ success: true });
     } catch (err) {

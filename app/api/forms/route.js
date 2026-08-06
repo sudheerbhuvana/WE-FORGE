@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 
 // GET /api/forms — list all forms (admin)
 export async function GET() {
-  const { response } = await requirePermission(canManageEvent);
+  const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'forms.view'));
   if (response) return response;
 
   try {
@@ -21,7 +21,7 @@ export async function GET() {
 
 // POST /api/forms — create a new form
 export async function POST(req) {
-  const { response, actor } = await requirePermission(canManageEvent);
+  const { response, actor } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'forms.create'));
   if (response) return response;
 
   try {

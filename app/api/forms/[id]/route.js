@@ -23,7 +23,7 @@ export async function GET(req, { params }) {
 
 // PATCH /api/forms/[id] — update form
 export async function PATCH(req, { params }) {
-  const { response } = await requirePermission(canManageEvent);
+  const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'forms.edit'));
   if (response) return response;
 
   const { id } = await params;
@@ -48,7 +48,7 @@ export async function PATCH(req, { params }) {
 
 // DELETE /api/forms/[id] — delete form and all its responses
 export async function DELETE(req, { params }) {
-  const { response } = await requirePermission(canManageEvent);
+  const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'forms.delete'));
   if (response) return response;
 
   const { id } = await params;

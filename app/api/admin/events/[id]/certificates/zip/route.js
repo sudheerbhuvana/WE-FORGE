@@ -13,7 +13,7 @@ const BASE = process.env.CERT_BASE_URL || 'http://localhost:3000';
  * Streams a ZIP of all PDFs for this event.
  */
 export async function GET(req, { params }) {
-    const { response } = await requirePermission(canManageEvent);
+    const { response } = await requirePermission(actor => isElite(actor) || isDomainHead(actor) || hasPermission(actor, 'events.certificates_download_zip'));
     if (response) return response;
 
     try {

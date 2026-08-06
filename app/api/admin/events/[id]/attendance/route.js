@@ -18,7 +18,7 @@ const isObjectId = (val) => {
  * Updates attendance + event role for many registrations at once.
  */
 export async function POST(req, { params }) {
-    const { response } = await requirePermission(canManageEvent);
+    const { response } = await requirePermission(actor => isElite(actor) || isDomainHead(actor) || hasPermission(actor, 'events.registrations_edit'));
     if (response) return response;
 
     try {
@@ -67,7 +67,7 @@ export async function POST(req, { params }) {
  * Returns all registrations with attendance + eventRole populated.
  */
 export async function GET(req, { params }) {
-    const { response } = await requirePermission(canManageEvent);
+    const { response } = await requirePermission(actor => isElite(actor) || isDomainHead(actor) || hasPermission(actor, 'events.registrations_view'));
     if (response) return response;
 
     try {

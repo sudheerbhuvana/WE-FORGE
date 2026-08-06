@@ -43,7 +43,7 @@ function pickTemplatePath(event, eventRole) {
  * reflecting the current role/position.
  */
 export async function POST(req, { params }) {
-    const { response } = await requirePermission(canManageEvent);
+    const { response } = await requirePermission(actor => isElite(actor) || isDomainHead(actor) || hasPermission(actor, 'events.certificates_issue'));
     if (response) return response;
 
     try {

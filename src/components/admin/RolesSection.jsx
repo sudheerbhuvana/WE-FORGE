@@ -16,7 +16,14 @@ const COLOR_PALETTE = [
   '#14b8a6', // Teal
 ];
 
-export default function RolesSection() {
+export default function RolesSection({ adminInfo }) {
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canCreateRole = isElite || userPerms.includes('roles.create');
+  const canEditPermissions = isElite || userPerms.includes('roles.edit_permissions');
+  const canDeleteRole = isElite || userPerms.includes('roles.delete');
+
   const [roles, setRoles] = useState([]);
   const [permissionGroups, setPermissionGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -211,12 +218,14 @@ export default function RolesSection() {
           >
             <RefreshCw size={15} /> Refresh
           </button>
-          <button
-            onClick={openCreateModal}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#38bdf8', color: '#000', fontWeight: 800, border: 'none', padding: '10px 20px', borderRadius: 10, cursor: 'pointer', boxShadow: '0 4px 16px rgba(56,189,248,0.3)' }}
-          >
-            <Plus size={18} /> Create Custom Role
-          </button>
+          {canCreateRole && (
+            <button
+              onClick={openCreateModal}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#38bdf8', color: '#000', fontWeight: 800, border: 'none', padding: '10px 20px', borderRadius: 10, cursor: 'pointer', boxShadow: '0 4px 16px rgba(56,189,248,0.3)' }}
+            >
+              <Plus size={18} /> Create Custom Role
+            </button>
+          )}
         </div>
       </div>
 
@@ -303,14 +312,16 @@ export default function RolesSection() {
               </div>
 
               <div style={{ display: 'flex', gap: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <button
-                  onClick={() => openEditModal(role)}
-                  style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', padding: '8px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
-                >
-                  <Edit3 size={14} /> Edit Permissions
-                </button>
+                {canEditPermissions && (
+                  <button
+                    onClick={() => openEditModal(role)}
+                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: '#fff', padding: '8px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
+                  >
+                    <Edit3 size={14} /> Edit Permissions
+                  </button>
+                )}
 
-                {!role.isSystem && (
+                {canDeleteRole && !role.isSystem && (
                   <button
                     onClick={() => handleDeleteRole(role)}
                     style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}

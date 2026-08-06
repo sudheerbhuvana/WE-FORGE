@@ -47,6 +47,9 @@ async function ensureDefaultRoles() {
 
 export async function GET() {
   try {
+    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'roles.view'));
+    if (response) return response;
+
     await connectDB();
     await ensureDefaultRoles();
 
@@ -76,7 +79,7 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const { response } = await requirePermission(isElite);
+    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'roles.create'));
     if (response) return response;
 
     await connectDB();

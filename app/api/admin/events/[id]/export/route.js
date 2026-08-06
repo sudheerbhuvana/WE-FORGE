@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  * Returns CSV file containing all registrations & custom field answers for the event.
  */
 export async function GET(req, { params }) {
-    const { response } = await requirePermission(canManageEvent);
+    const { response } = await requirePermission(actor => isElite(actor) || isDomainHead(actor) || hasPermission(actor, 'events.registrations_export'));
     if (response) return response;
 
     try {

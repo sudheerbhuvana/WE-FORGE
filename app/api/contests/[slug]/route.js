@@ -52,7 +52,7 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
-  const { response } = await requirePermission(canManageEvent);
+  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.edit'));
   if (response) return response;
 
   try {
@@ -102,7 +102,7 @@ export async function PUT(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
-  const { response } = await requirePermission(canManageEvent);
+  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.delete'));
   if (response) return response;
 
   try {

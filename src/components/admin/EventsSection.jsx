@@ -70,34 +70,39 @@ async function croppedBlobFromImage(image, crop) {
 
 export default function EventsSection({ events, adminInfo, refreshData }) {
   const router = useRouter();
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canCreateEvent = isElite || userPerms.includes('events.create');
+  const canDeleteEvent = isElite || userPerms.includes('events.delete');
+  const canEditEvent = (ev) => isElite || userPerms.includes('events.edit_info') || userPerms.includes('events.edit_dates') || userPerms.includes('events.publish') || (adminInfo?.domain && ev?.domain === adminInfo.domain);
+  const canViewRegistrations = isElite || userPerms.includes('events.registrations_view');
+  const canManageCertificates = isElite || userPerms.includes('events.certificates_issue') || userPerms.includes('events.certificates_view');
 
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventEditing, setEventEditing] = useState(null);
   const [eventForm, setEventForm] = useState(EMPTY_EVENT_FORM);
+  const [posterFile, setPosterFile] = useState(null);
+  const [posterPreview, setPosterPreview] = useState('');
+  const [crop, setCrop] = useState(undefined);
+  const [completedCrop, setCompletedCrop] = useState(null);
+  const imgRef = useRef(null);
+  const [removePoster, setRemovePoster] = useState(false);
   const [eventSaving, setEventSaving] = useState(false);
   const [eventDeleteConfirm, setEventDeleteConfirm] = useState(null);
   const [error, setError] = useState('');
 
-  // Poster & Crop
-  const [posterFile, setPosterFile] = useState(null);
-  const [posterPreview, setPosterPreview] = useState(null);
-  const [crop, setCrop] = useState(undefined);
-  const [completedCrop, setCompletedCrop] = useState(null);
-  const [removePoster, setRemovePoster] = useState(false);
-  const imgRef = React.useRef(null);
-
-  // Regs Modal
   const [showRegsModal, setShowRegsModal] = useState(false);
   const [selectedEventForRegs, setSelectedEventForRegs] = useState(null);
   const [eventRegs, setEventRegs] = useState([]);
   const [regsLoading, setRegsLoading] = useState(false);
-  const [expandedRegId, setExpandedRegId] = useState(null);
 
   const openAddEvent = () => {
+    if (!canCreateEvent) return;
     setEventEditing(null);
-    setEventForm({ ...EMPTY_EVENT_FORM, customFields: [] });
+    setEventForm(EMPTY_EVENT_FORM);
     setPosterFile(null);
-    setPosterPreview(null);
+    setPosterPreview('');
     setCrop(undefined);
     setCompletedCrop(null);
     setRemovePoster(false);
@@ -105,6 +110,7 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
   };
 
   const openEditEvent = (ev) => {
+    if (!canEditEvent(ev)) return;
     setEventEditing(ev);
     setEventForm({
       title: ev.title || '',
@@ -121,27 +127,14 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
       allowedMembers: ev.allowedMembers || [],
       roles: ev.roles || ['Participant', 'Volunteer', 'Organizer'],
       isRegistrationOpen: ev.isRegistrationOpen !== false,
-      customFields: Array.isArray(ev.customFields) ? ev.customFields.map((f) => ({ ...f })) : [],
+      customFields: ev.customFields || [],
     });
     setPosterFile(null);
-    setPosterPreview(ev.posterUrl || null);
+    setPosterPreview(ev.posterUrl || '');
     setCrop(undefined);
     setCompletedCrop(null);
     setRemovePoster(false);
     setShowEventForm(true);
-  };
-
-  const onImageLoad = (e) => {
-    imgRef.current = e.currentTarget;
-    const { width, height } = e.currentTarget;
-    setCrop({
-      unit: '%',
-      x: 5,
-      y: 5,
-      width: 90,
-      height: 90,
-      aspect: 16 / 9,
-    });
   };
 
   const handlePosterChange = (e) => {
@@ -155,6 +148,7 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
   };
 
   const handleEventDelete = async (id) => {
+    if (!canDeleteEvent) return;
     try {
       await eventService.delete(id);
       setEventDeleteConfirm(null);
@@ -168,7 +162,6 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
     e.preventDefault();
     setEventSaving(true);
     setError('');
-
     try {
       const formData = new FormData();
       Object.keys(eventForm).forEach(key => {
@@ -180,22 +173,17 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
           formData.append(key, eventForm[key]);
         }
       });
-
       if (posterPreview && completedCrop && imgRef.current) {
         const croppedBlob = await croppedBlobFromImage(imgRef.current, completedCrop);
-        if (croppedBlob) {
-          formData.append('poster', croppedBlob, 'poster.png');
-        }
+        if (croppedBlob) formData.append('poster', croppedBlob, 'poster.png');
       } else if (posterFile) {
         formData.append('poster', posterFile);
       }
-
       if (eventEditing) {
         await eventService.update(eventEditing.id, formData);
       } else {
         await eventService.create(formData);
       }
-
       setShowEventForm(false);
       if (refreshData) refreshData();
     } catch (err) {
@@ -205,7 +193,6 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
     }
   };
 
-  // ---- Custom form field helpers ----
   const addCustomField = () => {
     setEventForm((prev) => ({
       ...prev,
@@ -218,9 +205,9 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
 
   const updateCustomField = (idx, patch) => {
     setEventForm((prev) => {
-      const next = [...(prev.customFields || [])];
-      next[idx] = { ...next[idx], ...patch };
-      return { ...prev, customFields: next };
+      const list = [...(prev.customFields || [])];
+      list[idx] = { ...list[idx], ...patch };
+      return { ...prev, customFields: list };
     });
   };
 
@@ -230,15 +217,16 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
 
   const moveCustomField = (idx, dir) => {
     setEventForm((prev) => {
-      const next = [...(prev.customFields || [])];
-      const j = idx + dir;
-      if (j < 0 || j >= next.length) return prev;
-      [next[idx], next[j]] = [next[j], next[idx]];
-      return { ...prev, customFields: next };
+      const list = [...(prev.customFields || [])];
+      const target = idx + dir;
+      if (target < 0 || target >= list.length) return prev;
+      [list[idx], list[target]] = [list[target], list[idx]];
+      return { ...prev, customFields: list };
     });
   };
 
   const viewRegistrations = async (ev) => {
+    if (!canViewRegistrations) return;
     setSelectedEventForRegs(ev);
     setShowRegsModal(true);
     setRegsLoading(true);
@@ -259,11 +247,10 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
           <h2 className="admin-section__title admin-section__title--large">Events</h2>
           <p className="admin-section__subtitle">{events.length} event{events.length !== 1 ? 's' : ''}</p>
         </div>
-        <button className="admin-dash__add-btn" onClick={openAddEvent}><Plus size={18} /> Add Event</button>
+        {canCreateEvent && <button className="admin-dash__add-btn" onClick={openAddEvent}><Plus size={18} /> Add Event</button>}
       </div>
       {error && !showEventForm && <div className="admin-dash__error">{error}</div>}
 
-      {/* Desktop table */}
       <div className="admin-dash__table-wrap" data-lenis-prevent="true">
         <table className="admin-dash__table">
           <thead><tr><th>Poster</th><th>Title</th><th>Type</th><th>Access</th><th>Event Date</th><th>Slots</th><th>Status</th><th>Actions</th></tr></thead>
@@ -283,20 +270,18 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
                 <td><span className={`admin-dash__status admin-dash__status--${ev.status}`}>{ev.status}</span></td>
                 <td className="admin-dash__actions-cell">
                   <button className="admin-dash__icon-btn" title="View Event Page" onClick={() => router.push(`/events/${ev.id}`)}><Eye size={15} /></button>
-                  {(adminInfo?.isElite || canManageEventClient(adminInfo, ev)) && (
-                    <>
-                      <button className="admin-dash__icon-btn" title="Manage Attendance & Certificates" onClick={() => router.push(`/admin/dashboard/events/${ev.id}`)}><ClipboardCheck size={15} /></button>
-                      <button className="admin-dash__icon-btn" title="View Registrations" onClick={() => viewRegistrations(ev)}><Users size={15} /></button>
-                      <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" onClick={() => openEditEvent(ev)}><Edit3 size={15} /></button>
-                    </>
-                  )}
-                  {eventDeleteConfirm === ev.id ? (
-                    <span className="admin-dash__delete-confirm">Sure?
-                      <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleEventDelete(ev.id)}>Yes</button>
-                      <button className="admin-dash__icon-btn" onClick={() => setEventDeleteConfirm(null)}>No</button>
-                    </span>
-                  ) : (
-                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => setEventDeleteConfirm(ev.id)}><Trash2 size={15} /></button>
+                  {canManageCertificates && <button className="admin-dash__icon-btn" title="Manage Attendance & Certificates" onClick={() => router.push(`/admin/dashboard/events/${ev.id}`)}><ClipboardCheck size={15} /></button>}
+                  {canViewRegistrations && <button className="admin-dash__icon-btn" title="View Registrations" onClick={() => viewRegistrations(ev)}><Users size={15} /></button>}
+                  {canEditEvent(ev) && <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" onClick={() => openEditEvent(ev)}><Edit3 size={15} /></button>}
+                  {canDeleteEvent && (
+                    eventDeleteConfirm === ev.id ? (
+                      <span className="admin-dash__delete-confirm">Sure?
+                        <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleEventDelete(ev.id)}>Yes</button>
+                        <button className="admin-dash__icon-btn" onClick={() => setEventDeleteConfirm(null)}>No</button>
+                      </span>
+                    ) : (
+                      <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => setEventDeleteConfirm(ev.id)}><Trash2 size={15} /></button>
+                    )
                   )}
                 </td>
               </tr>
@@ -306,7 +291,6 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
         {events.length === 0 && <div className="admin-dash__empty">No events yet. Click &ldquo;Add Event&rdquo; to create one.</div>}
       </div>
 
-      {/* Mobile cards */}
       <div className="admin-mob-cards">
         {events.length === 0 && <div className="admin-dash__empty">No events yet. Tap &ldquo;Add Event&rdquo; to create one.</div>}
         {events.map((ev) => (
@@ -325,7 +309,7 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
               <span className={`admin-dash__status admin-dash__status--${ev.status}`}>{ev.status}</span>
             </div>
             {ev.description && <div className="admin-mob-card__desc">{ev.description}</div>}
-            {eventDeleteConfirm === ev.id ? (
+            {canDeleteEvent && eventDeleteConfirm === ev.id ? (
               <div className="admin-mob-card__confirm">
                 <span className="admin-mob-card__confirm-label">Delete this event?</span>
                 <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => handleEventDelete(ev.id)}>Yes, Delete</button>
@@ -334,20 +318,15 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
             ) : (
               <div className="admin-mob-card__actions">
                 <button className="admin-mob-btn" onClick={() => router.push(`/events/${ev.id}`)}><Eye size={15} /> View</button>
-                {(adminInfo?.isElite || canManageEventClient(adminInfo, ev)) && (
-                  <>
-                    <button className="admin-mob-btn" onClick={() => viewRegistrations(ev)}><Users size={15} /> Regs</button>
-                    <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => openEditEvent(ev)}><Edit3 size={15} /> Edit</button>
-                    <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setEventDeleteConfirm(ev.id)}><Trash2 size={15} /></button>
-                  </>
-                )}
+                {canViewRegistrations && <button className="admin-mob-btn" onClick={() => viewRegistrations(ev)}><Users size={15} /> Regs</button>}
+                {canEditEvent(ev) && <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => openEditEvent(ev)}><Edit3 size={15} /> Edit</button>}
+                {canDeleteEvent && <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setEventDeleteConfirm(ev.id)}><Trash2 size={15} /></button>}
               </div>
             )}
           </div>
         ))}
       </div>
 
-      {/* Add / Edit Event Modal */}
       {showEventForm && (
         <div className="admin-dash__overlay" data-lenis-prevent="true" onClick={() => setShowEventForm(false)}>
           <form className="admin-dash__modal" style={{ maxWidth: '1200px', width: '95vw' }} onClick={e => e.stopPropagation()} onSubmit={handleEventSubmit}>

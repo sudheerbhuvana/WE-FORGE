@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  * Body: { ids: string[], action: 'favorite' | 'unfavorite' | 'move', folder?, favorite? }
  */
 export async function POST(req) {
-    const { response } = await requirePermission(canManageMedia);
+    const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'media.move') || hasPermission(a, 'media.star'));
     if (response) return response;
 
     try {
@@ -20,6 +20,13 @@ export async function POST(req) {
         const { ids, action, folder, favorite } = await req.json();
         if (!Array.isArray(ids) || ids.length === 0) {
             return NextResponse.json({ error: 'ids[] required' }, { status: 400 });
+        }
+
+        if (action === 'move' && !isElite(actor) && !hasPermission(actor, 'media.move')) {
+            return NextResponse.json({ error: 'Forbidden: Missing media.move permission' }, { status: 403 });
+        }
+        if ((action === 'favorite' || action === 'unfavorite') && !isElite(actor) && !hasPermission(actor, 'media.star')) {
+            return NextResponse.json({ error: 'Forbidden: Missing media.star permission' }, { status: 403 });
         }
 
         const set = {};

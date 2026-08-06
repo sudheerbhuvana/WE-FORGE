@@ -42,8 +42,15 @@ const EMPTY_CONTEST_FORM = {
 
 const DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-export default function ContestsSection({ contestsList = [], refreshData }) {
+export default function ContestsSection({ contestsList = [], adminInfo, refreshData }) {
   const router = useRouter();
+
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canCreateContest = isElite || userPerms.includes('contests.create');
+  const canEditContest = isElite || userPerms.includes('contests.edit');
+  const canDeleteContest = isElite || userPerms.includes('contests.delete');
 
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -291,9 +298,11 @@ export default function ContestsSection({ contestsList = [], refreshData }) {
           <h2 className="admin-section__title admin-section__title--large">Contest Management Studio</h2>
           <p className="admin-section__subtitle">{contestsList.length} contest template{contestsList.length !== 1 ? 's' : ''} &middot; Recurring schedules, judging & winner archives</p>
         </div>
-        <button className="admin-dash__save-btn" onClick={() => { setContestEditingSlug(null); setContestForm(EMPTY_CONTEST_FORM); setShowContestForm(true); }}>
-          <Plus size={15} /> Create Contest
-        </button>
+        {canCreateContest && (
+          <button className="admin-dash__save-btn" onClick={() => { setContestEditingSlug(null); setContestForm(EMPTY_CONTEST_FORM); setShowContestForm(true); }}>
+            <Plus size={15} /> Create Contest
+          </button>
+        )}
       </div>
 
       {/* Toolbar Filters */}
@@ -342,7 +351,7 @@ export default function ContestsSection({ contestsList = [], refreshData }) {
             {filteredList.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ textAlign: 'center', padding: 40, color: 'rgba(255,255,255,0.4)' }}>
-                  No contests found matching filters. Click "Create Contest" to get started.
+                  No contests found matching filters.
                 </td>
               </tr>
             ) : (
@@ -403,7 +412,9 @@ export default function ContestsSection({ contestsList = [], refreshData }) {
                         >
                           Manage →
                         </button>
-                        <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" title="Delete Contest" onClick={() => deleteContest(c.slug)}><Trash2 size={15} /></button>
+                        {canDeleteContest && (
+                          <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" title="Delete Contest" onClick={() => deleteContest(c.slug)}><Trash2 size={15} /></button>
+                        )}
                       </div>
                     </td>
                   </tr>

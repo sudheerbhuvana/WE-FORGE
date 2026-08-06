@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export async function PUT(req, { params }) {
   try {
-    const { response } = await requirePermission(isElite);
+    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'roles.edit_permissions'));
     if (response) return response;
 
     const { id } = await params;
@@ -43,7 +43,7 @@ export async function PUT(req, { params }) {
 
 export async function DELETE(req, { params }) {
   try {
-    const { response } = await requirePermission(isElite);
+    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'roles.delete'));
     if (response) return response;
 
     const { id } = await params;

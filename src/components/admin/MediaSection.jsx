@@ -22,8 +22,16 @@ export default function MediaSection({
   media = [],
   events = [],
   mediaFolders = [],
+  adminInfo,
   refreshData
 }) {
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canUploadMedia = isElite || userPerms.includes('media.upload_images') || userPerms.includes('media.upload_videos');
+  const canCreateFolder = isElite || userPerms.includes('media.create_folders');
+  const canMoveMedia = isElite || userPerms.includes('media.move');
+  const canDeleteMedia = isElite || userPerms.includes('media.delete');
   // Navigation & Filtering
   const [mediaFilterFolder, setMediaFilterFolder] = useState('all');
   const [mediaFilterType, setMediaFilterType] = useState('all'); // 'all' | 'image' | 'video'
@@ -437,11 +445,13 @@ export default function MediaSection({
             Manage photos, videos, event assets & CDN storage for KLFORGE
           </p>
         </div>
-        <div className="admin-dash__filters" style={{ marginTop: 0 }}>
-          <button className="admin-dash__save-btn" onClick={() => setShowMediaUpload(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <Upload size={16} /> Upload Media
-          </button>
-        </div>
+        {canUploadMedia && (
+          <div className="admin-dash__filters" style={{ marginTop: 0 }}>
+            <button className="admin-dash__save-btn" onClick={() => setShowMediaUpload(true)} style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <Upload size={16} /> Upload Media
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Media Stats Overview Grid */}
@@ -592,12 +602,14 @@ export default function MediaSection({
           ))}
         </div>
 
-        <button
-          className="admin-media__folder-chip admin-media__folder-chip--create"
-          onClick={() => { setNewFolderName(''); setShowFolderCreateModal(true); }}
-        >
-          <Plus size={13} /> New Folder
-        </button>
+        {canCreateFolder && (
+          <button
+            className="admin-media__folder-chip admin-media__folder-chip--create"
+            onClick={() => { setNewFolderName(''); setShowFolderCreateModal(true); }}
+          >
+            <Plus size={13} /> New Folder
+          </button>
+        )}
       </div>
 
       {/* Tags Chips Bar */}

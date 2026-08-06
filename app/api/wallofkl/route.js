@@ -84,7 +84,7 @@ export async function GET(req) {
 
 // POST endpoint for updating metadata or uploading a new image to contest-selected
 export async function POST(req) {
-  const { response } = await requirePermission(canManageWallOfKL);
+  const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'wallofkl.upload') || hasPermission(a, 'wallofkl.edit_title'));
   if (response) return response;
 
   try {
@@ -94,6 +94,9 @@ export async function POST(req) {
     const contentType = req.headers.get('content-type') || '';
 
     if (contentType.includes('multipart/form-data')) {
+      if (!isElite(actor) && !hasPermission(actor, 'wallofkl.upload')) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.upload permission' }, { status: 403 });
+      }
       // Handle Image Upload
       const formData = await req.formData();
       const file = formData.get('file');
@@ -176,7 +179,7 @@ export async function POST(req) {
 
 // DELETE endpoint for removing an image from contest-selected
 export async function DELETE(req) {
-  const { response } = await requirePermission(canManageWallOfKL);
+  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'wallofkl.delete'));
   if (response) return response;
 
   try {

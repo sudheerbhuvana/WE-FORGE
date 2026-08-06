@@ -222,23 +222,23 @@ export default function AdminDashboard() {
       case 'events':
         return <EventsSection events={events} adminInfo={adminInfo} refreshData={fetchEventsData} />;
       case 'contests':
-        return <ContestsSection contestsList={contestsList} refreshData={fetchContestsData} />;
+        return <ContestsSection contestsList={contestsList} adminInfo={adminInfo} refreshData={fetchContestsData} />;
       case 'projects':
-        return <ProjectsSection projects={projects} refreshData={fetchProjectsData} />;
+        return <ProjectsSection projects={projects} adminInfo={adminInfo} refreshData={fetchProjectsData} />;
       case 'notices':
-        return <NoticesSection notices={notices} refreshData={fetchNoticesData} />;
+        return <NoticesSection notices={notices} adminInfo={adminInfo} refreshData={fetchNoticesData} />;
       case 'media':
-        return <MediaSection media={media} events={events} mediaFolders={mediaFolders} refreshData={fetchMediaData} />;
+        return <MediaSection media={media} events={events} mediaFolders={mediaFolders} adminInfo={adminInfo} refreshData={fetchMediaData} />;
       case 'wallofkl':
-        return <WallOfKLSection />;
+        return <WallOfKLSection adminInfo={adminInfo} />;
       case 'roles':
-        return <RolesSection />;
+        return <RolesSection adminInfo={adminInfo} />;
       case 'settings':
-        return <SystemSettingsSection />;
+        return <SystemSettingsSection adminInfo={adminInfo} />;
       case 'recruitments':
         return <RecruitmentsSection recruitmentSettings={recruitmentSettings} recruitmentApps={recruitmentApps} adminInfo={adminInfo} refreshData={fetchRecruitmentsData} />;
       case 'forms':
-        return <FormsSection />;
+        return <FormsSection adminInfo={adminInfo} />;
       default:
         return <div style={{ padding: 40, textAlign: 'center', color: 'rgba(255,255,255,0.6)' }}>No modules accessible for your role.</div>;
     }

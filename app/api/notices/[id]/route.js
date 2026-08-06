@@ -4,7 +4,7 @@ import Notice from '@/lib/models/Notice';
 import { requirePermission, canManageNotices } from '@/lib/permissions';
 
 export async function PUT(request, { params }) {
-    const { response } = await requirePermission(canManageNotices);
+    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'notices.edit'));
     if (response) return response;
 
     try {
@@ -30,7 +30,7 @@ export async function PUT(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-    const { response } = await requirePermission(canManageNotices);
+    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'notices.delete'));
     if (response) return response;
 
     try {

@@ -55,7 +55,7 @@ export async function GET() {
 }
 
 export async function POST(req) {
-    const { response } = await requirePermission(canManageMedia);
+    const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'media.create_folders'));
     if (response) return response;
 
     try {

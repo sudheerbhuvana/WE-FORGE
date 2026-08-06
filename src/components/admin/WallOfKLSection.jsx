@@ -6,7 +6,14 @@ import {
 } from 'lucide-react';
 import '../../../app/admin/dashboard/AdminDashboard.css';
 
-export default function WallOfKLSection() {
+export default function WallOfKLSection({ adminInfo }) {
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canUploadWallOfKL = isElite || userPerms.includes('wallofkl.upload');
+  const canEditWallOfKL = isElite || userPerms.includes('wallofkl.edit_title') || userPerms.includes('wallofkl.edit_badge') || userPerms.includes('wallofkl.edit_author');
+  const canDeleteWallOfKL = isElite || userPerms.includes('wallofkl.delete');
+
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -57,17 +64,14 @@ export default function WallOfKLSection() {
 
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setUploadFile(file);
-      setUploadPreview(URL.createObjectURL(file));
-      if (!uploadTitle) {
-        setUploadTitle(file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '));
-      }
-    }
+    if (!file) return;
+    setUploadFile(file);
+    setUploadPreview(URL.createObjectURL(file));
   };
 
   const handleUploadSubmit = async (e) => {
     e.preventDefault();
+    if (!canUploadWallOfKL) return;
     if (!uploadFile) {
       setError('Please select an image file to upload.');
       return;
@@ -91,7 +95,7 @@ export default function WallOfKLSection() {
 
       const data = await res.json();
       if (data.success) {
-        showToast('Capture uploaded to Wall of KL successfully!');
+        showToast('Contest winner photo added to Wall of KL!');
         setShowUploadModal(false);
         setUploadFile(null);
         setUploadPreview(null);
@@ -109,15 +113,17 @@ export default function WallOfKLSection() {
   };
 
   const openEditModal = (img) => {
+    if (!canEditWallOfKL) return;
     setEditingImage(img);
     setEditTitle(img.title || '');
-    setEditBadge(img.badge || '🏆 CONTEST WINNER');
+    setEditBadge(img.badge || '');
     setEditAuthor(img.author || '');
-    setEditTag(img.tag || 'Official Winner');
+    setEditTag(img.tag || '');
   };
 
-  const handleEditSubmit = async (e) => {
+  const handleSaveEdit = async (e) => {
     e.preventDefault();
+    if (!canEditWallOfKL) return;
     if (!editingImage) return;
 
     try {
@@ -136,7 +142,7 @@ export default function WallOfKLSection() {
 
       const data = await res.json();
       if (data.success) {
-        showToast('Updated capture details!');
+        showToast('Media details updated successfully!');
         setEditingImage(null);
         fetchGallery();
       } else {
@@ -150,6 +156,7 @@ export default function WallOfKLSection() {
   };
 
   const handleDelete = async (filename) => {
+    if (!canDeleteWallOfKL) return;
     if (!confirm('Are you sure you want to remove this capture from Wall of KL?')) return;
 
     try {
@@ -200,12 +207,14 @@ export default function WallOfKLSection() {
           >
             <RefreshCw size={15} /> Refresh
           </button>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f59e0b', color: '#000', fontWeight: 700, border: 'none', padding: '10px 20px', borderRadius: 10, cursor: 'pointer', boxShadow: '0 4px 16px rgba(245,158,11,0.3)' }}
-          >
-            <Plus size={18} /> Add Contest Photo
-          </button>
+          {canUploadWallOfKL && (
+            <button
+              onClick={() => setShowUploadModal(true)}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#f59e0b', color: '#000', fontWeight: 700, border: 'none', padding: '10px 20px', borderRadius: 10, cursor: 'pointer', boxShadow: '0 4px 16px rgba(245,158,11,0.3)' }}
+            >
+              <Plus size={18} /> Add Contest Photo
+            </button>
+          )}
         </div>
       </div>
 
@@ -218,24 +227,21 @@ export default function WallOfKLSection() {
       {/* Media Showcase Grid */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '60px 0', color: 'rgba(255,255,255,0.4)' }}>
-          Loading Wall of KL captures...
+          Loading gallery...
         </div>
       ) : images.length === 0 ? (
-        <div style={{ textAlignment: 'center', padding: '60px 20px', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 16, textAlign: 'center' }}>
-          <ImageIcon size={44} style={{ color: 'rgba(245,158,11,0.4)', marginBottom: 12 }} />
-          <h3 style={{ margin: '0 0 6px', fontSize: '1.2rem' }}>No Captures Found</h3>
-          <p style={{ color: 'rgba(255,255,255,0.4)', margin: 0, fontSize: '0.9rem' }}>
-            Click "Add Contest Photo" above to upload photos to Wall of KL.
-          </p>
+        <div style={{ textAlign: 'center', padding: '60px 0', background: 'rgba(255,255,255,0.02)', borderRadius: 16, border: '1px dashed rgba(255,255,255,0.1)' }}>
+          <ImageIcon size={40} style={{ opacity: 0.3, marginBottom: 12 }} />
+          <p style={{ color: 'rgba(255,255,255,0.5)', margin: 0 }}>No contest photos found on Wall of KL.</p>
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
           {images.map((img) => (
-            <div key={img.id} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-              <div style={{ height: 200, width: '100%', position: 'relative', background: '#000' }}>
+            <div key={img.filename} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ position: 'relative', width: '100%', height: 200, background: '#000' }}>
                 <img src={img.url} alt={img.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                <span style={{ position: 'absolute', top: 10, left: 10, background: 'rgba(245,158,11,0.2)', border: '1px solid rgba(245,158,11,0.4)', color: '#fbbf24', fontSize: '0.68rem', fontWeight: 800, padding: '3px 10px', borderRadius: 20, backdropFilter: 'blur(8px)' }}>
-                  {img.badge || '🏆 WINNER'}
+                <span style={{ position: 'absolute', top: 12, left: 12, background: 'rgba(0,0,0,0.75)', color: '#fbbf24', fontSize: '0.72rem', fontWeight: 700, padding: '4px 8px', borderRadius: 6, backdropFilter: 'blur(4px)', border: '1px solid rgba(251,191,36,0.3)' }}>
+                  {img.badge}
                 </span>
               </div>
 
@@ -253,19 +259,23 @@ export default function WallOfKLSection() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 8, marginTop: 16 }}>
-                  <button
-                    onClick={() => openEditModal(img)}
-                    style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(113,196,255,0.12)', border: '1px solid rgba(113,196,255,0.3)', color: '#71C4FF', padding: '8px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
-                  >
-                    <Edit3 size={14} /> Edit Details
-                  </button>
-                  <button
-                    onClick={() => handleDelete(img.filename)}
-                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}
-                    title="Delete Image"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  {canEditWallOfKL && (
+                    <button
+                      onClick={() => openEditModal(img)}
+                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(113,196,255,0.12)', border: '1px solid rgba(113,196,255,0.3)', color: '#71C4FF', padding: '8px', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: '0.82rem' }}
+                    >
+                      <Edit3 size={14} /> Edit Details
+                    </button>
+                  )}
+                  {canDeleteWallOfKL && (
+                    <button
+                      onClick={() => handleDelete(img.filename)}
+                      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', padding: '8px 12px', borderRadius: 8, cursor: 'pointer' }}
+                      title="Delete Image"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

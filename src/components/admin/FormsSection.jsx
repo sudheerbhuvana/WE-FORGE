@@ -439,7 +439,15 @@ function ResponsesModal({ form, onClose }) {
   );
 }
 
-export default function FormsSection({ forms: initialForms = [], refreshData }) {
+export default function FormsSection({ forms: initialForms = [], adminInfo, refreshData }) {
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canCreateForm = isElite || userPerms.includes('forms.create');
+  const canEditForm = isElite || userPerms.includes('forms.edit');
+  const canViewSubmissions = isElite || userPerms.includes('forms.view_submissions');
+  const canDeleteForm = isElite || userPerms.includes('forms.delete');
+
   const [forms, setForms] = useState(initialForms);
   const [loadingForms, setLoadingForms] = useState(false);
   const [showBuilder, setShowBuilder] = useState(false);
@@ -468,6 +476,7 @@ export default function FormsSection({ forms: initialForms = [], refreshData }) 
   };
 
   const togglePublish = async (form) => {
+    if (!canEditForm) return;
     const res = await fetch(`/api/forms/${form._id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -477,6 +486,7 @@ export default function FormsSection({ forms: initialForms = [], refreshData }) 
   };
 
   const handleDelete = async (form) => {
+    if (!canDeleteForm) return;
     if (!confirm(`Delete form "${form.title}" and all ${form.responseCount} responses? This cannot be undone.`)) return;
     setDeletingId(form._id);
     await fetch(`/api/forms/${form._id}`, { method: 'DELETE' });
@@ -496,13 +506,15 @@ export default function FormsSection({ forms: initialForms = [], refreshData }) 
           <h2 className="admin-section__title admin-section__title--large">Forms</h2>
           <p className="admin-section__subtitle">Create and manage custom forms. Share at klforge.in/forms/[slug]</p>
         </div>
-        <button
-          type="button"
-          className="admin-dash__save-btn"
-          onClick={() => { setEditingForm(null); setShowBuilder(true); }}
-        >
-          <Plus size={16}/> New Form
-        </button>
+        {canCreateForm && (
+          <button
+            type="button"
+            className="admin-dash__save-btn"
+            onClick={() => { if (!canCreateForm) return; setEditingForm(null); setShowBuilder(true); }}
+          >
+            <Plus size={16}/> New Form
+          </button>
+        )}
       </div>
 
       {/* Forms Grid */}
@@ -513,9 +525,11 @@ export default function FormsSection({ forms: initialForms = [], refreshData }) 
           <FileText size={44} />
           <h3>No Forms Yet</h3>
           <p>Create your first form to collect structured responses from members or the public.</p>
-          <button className="admin-dash__save-btn" onClick={() => { setEditingForm(null); setShowBuilder(true); }}>
-            <Plus size={15}/> Create First Form
-          </button>
+          {canCreateForm && (
+            <button className="admin-dash__save-btn" onClick={() => { setEditingForm(null); setShowBuilder(true); }}>
+              <Plus size={15}/> Create First Form
+            </button>
+          )}
         </div>
       ) : (
         <div className="fm-forms-grid">
@@ -541,18 +555,26 @@ export default function FormsSection({ forms: initialForms = [], refreshData }) 
                 {form.isPublished && (
                   <a href={`/forms/${form.slug}`} target="_blank" rel="noreferrer" className="fm-action-btn" title="Open form"><ExternalLink size={14}/></a>
                 )}
-                <button type="button" className="fm-action-btn" onClick={() => setViewingResponses(form)} title="View responses">
-                  <List size={14}/> {form.responseCount > 0 && <span className="fm-resp-count">{form.responseCount}</span>}
-                </button>
-                <button type="button" className={`fm-action-btn ${form.isPublished ? 'fm-action-btn--yellow' : 'fm-action-btn--green'}`} onClick={() => togglePublish(form)} title={form.isPublished ? 'Unpublish' : 'Publish'}>
-                  {form.isPublished ? <EyeOff size={14}/> : <Eye size={14}/>}
-                </button>
-                <button type="button" className="fm-action-btn fm-action-btn--blue" onClick={() => { setEditingForm(form); setShowBuilder(true); }} title="Edit">
-                  <Edit3 size={14}/>
-                </button>
-                <button type="button" className="fm-action-btn fm-action-btn--red" onClick={() => handleDelete(form)} disabled={deletingId === form._id} title="Delete">
-                  <Trash2 size={14}/>
-                </button>
+                {canViewSubmissions && (
+                  <button type="button" className="fm-action-btn" onClick={() => setViewingResponses(form)} title="View responses">
+                    <List size={14}/> {form.responseCount > 0 && <span className="fm-resp-count">{form.responseCount}</span>}
+                  </button>
+                )}
+                {canEditForm && (
+                  <button type="button" className={`fm-action-btn ${form.isPublished ? 'fm-action-btn--yellow' : 'fm-action-btn--green'}`} onClick={() => togglePublish(form)} title={form.isPublished ? 'Unpublish' : 'Publish'}>
+                    {form.isPublished ? <EyeOff size={14}/> : <Eye size={14}/>}
+                  </button>
+                )}
+                {canEditForm && (
+                  <button type="button" className="fm-action-btn fm-action-btn--blue" onClick={() => { setEditingForm(form); setShowBuilder(true); }} title="Edit">
+                    <Edit3 size={14}/>
+                  </button>
+                )}
+                {canDeleteForm && (
+                  <button type="button" className="fm-action-btn fm-action-btn--red" onClick={() => handleDelete(form)} disabled={deletingId === form._id} title="Delete">
+                    <Trash2 size={14}/>
+                  </button>
+                )}
               </div>
             </div>
           ))}

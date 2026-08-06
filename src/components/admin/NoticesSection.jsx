@@ -9,7 +9,14 @@ const PRIORITY_COLORS = { low: '#64748b', medium: '#f59e0b', high: '#ef4444' };
 const fmtDate = (iso) => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
 const EMPTY_NOTICE_FORM = { title: '', message: '', priority: 'low' };
 
-export default function NoticesSection({ notices, refreshData }) {
+export default function NoticesSection({ notices, adminInfo, refreshData }) {
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canCreateNotice = isElite || userPerms.includes('notices.create');
+  const canEditNotice = isElite || userPerms.includes('notices.edit');
+  const canDeleteNotice = isElite || userPerms.includes('notices.delete');
+
   const [showNoticeForm, setShowNoticeForm] = useState(false);
   const [noticeEditing, setNoticeEditing] = useState(null);
   const [noticeForm, setNoticeForm] = useState(EMPTY_NOTICE_FORM);
@@ -18,12 +25,14 @@ export default function NoticesSection({ notices, refreshData }) {
   const [error, setError] = useState('');
 
   const openAddNotice = () => {
+    if (!canCreateNotice) return;
     setNoticeEditing(null);
     setNoticeForm(EMPTY_NOTICE_FORM);
     setShowNoticeForm(true);
   };
 
   const openEditNotice = (n) => {
+    if (!canEditNotice) return;
     setNoticeEditing(n);
     setNoticeForm({
       title: n.title || '',
@@ -34,6 +43,7 @@ export default function NoticesSection({ notices, refreshData }) {
   };
 
   const handleNoticeDelete = async (id) => {
+    if (!canDeleteNotice) return;
     try {
       await noticeService.delete(id);
       setNoticeDeleteConfirm(null);
@@ -69,7 +79,9 @@ export default function NoticesSection({ notices, refreshData }) {
           <h2 className="admin-section__title admin-section__title--large">Notices</h2>
           <p className="admin-section__subtitle">{notices.length} notice{notices.length !== 1 ? 's' : ''}</p>
         </div>
-        <button className="admin-dash__add-btn" onClick={openAddNotice}><Plus size={18} /> Add Notice</button>
+        {canCreateNotice && (
+          <button className="admin-dash__add-btn" onClick={openAddNotice}><Plus size={18} /> Add Notice</button>
+        )}
       </div>
       {error && !showNoticeForm && <div className="admin-dash__error">{error}</div>}
 
@@ -85,26 +97,30 @@ export default function NoticesSection({ notices, refreshData }) {
                 <td><span className="admin-dash__priority-badge" style={{ background: PRIORITY_COLORS[n.priority] || '#555' }}>{n.priority}</span></td>
                 <td className="admin-dash__mono">{fmtDate(n.createdAt)}</td>
                 <td className="admin-dash__actions-cell">
-                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" aria-label={`Edit notice ${n.title}`} onClick={() => openEditNotice(n)}><Edit3 size={15} aria-hidden="true" /></button>
-                  {noticeDeleteConfirm === n.id ? (
-                    <span className="admin-dash__delete-confirm">Sure?
-                      <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleNoticeDelete(n.id)}>Yes</button>
-                      <button className="admin-dash__icon-btn" onClick={() => setNoticeDeleteConfirm(null)}>No</button>
-                    </span>
-                  ) : (
-                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" aria-label={`Delete notice ${n.title}`} onClick={() => setNoticeDeleteConfirm(n.id)}><Trash2 size={15} aria-hidden="true" /></button>
+                  {canEditNotice && (
+                    <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" aria-label={`Edit notice ${n.title}`} onClick={() => openEditNotice(n)}><Edit3 size={15} aria-hidden="true" /></button>
+                  )}
+                  {canDeleteNotice && (
+                    noticeDeleteConfirm === n.id ? (
+                      <span className="admin-dash__delete-confirm">Sure?
+                        <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleNoticeDelete(n.id)}>Yes</button>
+                        <button className="admin-dash__icon-btn" onClick={() => setNoticeDeleteConfirm(null)}>No</button>
+                      </span>
+                    ) : (
+                      <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" aria-label={`Delete notice ${n.title}`} onClick={() => setNoticeDeleteConfirm(n.id)}><Trash2 size={15} aria-hidden="true" /></button>
+                    )
                   )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {notices.length === 0 && <div className="admin-dash__empty">No notices yet. Click &ldquo;Add Notice&rdquo; to post one.</div>}
+        {notices.length === 0 && <div className="admin-dash__empty">No notices yet.</div>}
       </div>
 
       {/* Mobile cards */}
       <div className="admin-mob-cards">
-        {notices.length === 0 && <div className="admin-dash__empty">No notices yet. Tap &ldquo;Add Notice&rdquo; to post one.</div>}
+        {notices.length === 0 && <div className="admin-dash__empty">No notices yet.</div>}
         {notices.map((n) => (
           <div key={n.id} className="admin-mob-card">
             <div className="admin-mob-card__top">
@@ -116,7 +132,7 @@ export default function NoticesSection({ notices, refreshData }) {
               <span className="admin-dash__priority-badge" style={{ background: PRIORITY_COLORS[n.priority] || '#555', flexShrink:0 }}>{n.priority}</span>
             </div>
             <div className="admin-mob-card__desc">{n.message}</div>
-            {noticeDeleteConfirm === n.id ? (
+            {canDeleteNotice && noticeDeleteConfirm === n.id ? (
               <div className="admin-mob-card__confirm">
                 <span className="admin-mob-card__confirm-label">Delete this notice?</span>
                 <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => handleNoticeDelete(n.id)}>Yes, Delete</button>
@@ -124,8 +140,8 @@ export default function NoticesSection({ notices, refreshData }) {
               </div>
             ) : (
               <div className="admin-mob-card__actions">
-                <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => openEditNotice(n)}><Edit3 size={15} /> Edit</button>
-                <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setNoticeDeleteConfirm(n.id)}><Trash2 size={15} /> Delete</button>
+                {canEditNotice && <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => openEditNotice(n)}><Edit3 size={15} /> Edit</button>}
+                {canDeleteNotice && <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setNoticeDeleteConfirm(n.id)}><Trash2 size={15} /> Delete</button>}
               </div>
             )}
           </div>

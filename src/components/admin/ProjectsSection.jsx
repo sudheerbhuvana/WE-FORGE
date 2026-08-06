@@ -7,7 +7,14 @@ import '../../../app/admin/dashboard/AdminDashboard.css';
 
 const EMPTY_PROJECT_FORM = { name: '', description: '', github: '', demo: '', technologies: '' };
 
-export default function ProjectsSection({ projects, refreshData }) {
+export default function ProjectsSection({ projects, adminInfo, refreshData }) {
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canCreateProject = isElite || userPerms.includes('projects.create');
+  const canEditProject = isElite || userPerms.includes('projects.edit');
+  const canDeleteProject = isElite || userPerms.includes('projects.delete');
+
   const [showProjectForm, setShowProjectForm] = useState(false);
   const [projectEditing, setProjectEditing] = useState(null);
   const [projectForm, setProjectForm] = useState(EMPTY_PROJECT_FORM);
@@ -16,12 +23,14 @@ export default function ProjectsSection({ projects, refreshData }) {
   const [error, setError] = useState('');
 
   const openAddProject = () => {
+    if (!canCreateProject) return;
     setProjectEditing(null);
     setProjectForm(EMPTY_PROJECT_FORM);
     setShowProjectForm(true);
   };
 
   const openEditProject = (p) => {
+    if (!canEditProject) return;
     setProjectEditing(p);
     setProjectForm({
       name: p.name || '',
@@ -34,6 +43,7 @@ export default function ProjectsSection({ projects, refreshData }) {
   };
 
   const handleProjectDelete = async (id) => {
+    if (!canDeleteProject) return;
     try {
       await projectService.delete(id);
       setProjectDeleteConfirm(null);
@@ -47,12 +57,13 @@ export default function ProjectsSection({ projects, refreshData }) {
     e.preventDefault();
     setProjectSaving(true);
     setError('');
-    try {
-      const payload = {
-        ...projectForm,
-        technologies: projectForm.technologies.split(',').map(t => t.trim()).filter(Boolean),
-      };
 
+    const payload = {
+      ...projectForm,
+      technologies: projectForm.technologies ? projectForm.technologies.split(',').map((t) => t.trim()).filter(Boolean) : [],
+    };
+
+    try {
       if (projectEditing) {
         await projectService.update(projectEditing.id, payload);
       } else {
@@ -72,10 +83,12 @@ export default function ProjectsSection({ projects, refreshData }) {
     <>
       <div className="admin-section__header">
         <div>
-          <h2 className="admin-section__title admin-section__title--large">Projects</h2>
+          <h2 className="admin-section__title admin-section__title--large">Projects Showcase</h2>
           <p className="admin-section__subtitle">{projects.length} project{projects.length !== 1 ? 's' : ''}</p>
         </div>
-        <button className="admin-dash__add-btn" onClick={openAddProject}><Plus size={18} /> Add Project</button>
+        {canCreateProject && (
+          <button className="admin-dash__add-btn" onClick={openAddProject}><Plus size={18} /> Add Project</button>
+        )}
       </div>
       {error && !showProjectForm && <div className="admin-dash__error">{error}</div>}
 
@@ -99,26 +112,30 @@ export default function ProjectsSection({ projects, refreshData }) {
                   {p.github ? <a href={p.github} target="_blank" rel="noopener noreferrer" className="admin-dash__link">GitHub ↗</a> : '—'}
                 </td>
                 <td className="admin-dash__actions-cell">
-                  <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" aria-label={`Edit project ${p.name}`} onClick={() => openEditProject(p)}><Edit3 size={15} aria-hidden="true" /></button>
-                  {projectDeleteConfirm === p.id ? (
-                    <span className="admin-dash__delete-confirm">Sure?
-                      <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleProjectDelete(p.id)}>Yes</button>
-                      <button className="admin-dash__icon-btn" onClick={() => setProjectDeleteConfirm(null)}>No</button>
-                    </span>
-                  ) : (
-                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" aria-label={`Delete project ${p.name}`} onClick={() => setProjectDeleteConfirm(p.id)}><Trash2 size={15} aria-hidden="true" /></button>
+                  {canEditProject && (
+                    <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" aria-label={`Edit project ${p.name}`} onClick={() => openEditProject(p)}><Edit3 size={15} aria-hidden="true" /></button>
+                  )}
+                  {canDeleteProject && (
+                    projectDeleteConfirm === p.id ? (
+                      <span className="admin-dash__delete-confirm">Sure?
+                        <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleProjectDelete(p.id)}>Yes</button>
+                        <button className="admin-dash__icon-btn" onClick={() => setProjectDeleteConfirm(null)}>No</button>
+                      </span>
+                    ) : (
+                      <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" aria-label={`Delete project ${p.name}`} onClick={() => setProjectDeleteConfirm(p.id)}><Trash2 size={15} aria-hidden="true" /></button>
+                    )
                   )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {projects.length === 0 && <div className="admin-dash__empty">No projects yet. Click &ldquo;Add Project&rdquo; to showcase one.</div>}
+        {projects.length === 0 && <div className="admin-dash__empty">No projects yet.</div>}
       </div>
 
       {/* Mobile cards */}
       <div className="admin-mob-cards">
-        {projects.length === 0 && <div className="admin-dash__empty">No projects yet. Tap &ldquo;Add Project&rdquo; to showcase one.</div>}
+        {projects.length === 0 && <div className="admin-dash__empty">No projects yet.</div>}
         {projects.map((p) => (
           <div key={p.id} className="admin-mob-card">
             <div className="admin-mob-card__top">
@@ -136,7 +153,7 @@ export default function ProjectsSection({ projects, refreshData }) {
                 {p.technologies.map(t => <span key={t} className="admin-dash__tech-tag">{t}</span>)}
               </div>
             )}
-            {projectDeleteConfirm === p.id ? (
+            {canDeleteProject && projectDeleteConfirm === p.id ? (
               <div className="admin-mob-card__confirm">
                 <span className="admin-mob-card__confirm-label">Delete this project?</span>
                 <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => handleProjectDelete(p.id)}>Yes, Delete</button>
@@ -144,8 +161,8 @@ export default function ProjectsSection({ projects, refreshData }) {
               </div>
             ) : (
               <div className="admin-mob-card__actions">
-                <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => openEditProject(p)}><Edit3 size={15} /> Edit</button>
-                <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setProjectDeleteConfirm(p.id)}><Trash2 size={15} /> Delete</button>
+                {canEditProject && <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => openEditProject(p)}><Edit3 size={15} /> Edit</button>}
+                {canDeleteProject && <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setProjectDeleteConfirm(p.id)}><Trash2 size={15} /> Delete</button>}
               </div>
             )}
           </div>

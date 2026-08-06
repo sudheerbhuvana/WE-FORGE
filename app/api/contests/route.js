@@ -54,7 +54,7 @@ export async function GET(req) {
 }
 
 export async function POST(req) {
-  const { actor, response } = await requirePermission(canManageEvent);
+  const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.create'));
   if (response) return response;
 
   try {

@@ -71,7 +71,7 @@ export async function PATCH(req, { params }) {
  * Removes the media doc and its R2 object.
  */
 export async function DELETE(req, { params }) {
-    const { response } = await requirePermission(canManageMedia);
+    const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'media.delete'));
     if (response) return response;
 
     try {
