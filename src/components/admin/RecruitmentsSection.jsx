@@ -208,8 +208,8 @@ export default function RecruitmentsSection({
       </div>
 
       {/* Filters & Table */}
-      <div className="admin-dash__controls-row">
-        <div className="admin-dash__search">
+      <div className="admin-dash__filter-row" style={{ marginTop: 24, marginBottom: 20 }}>
+        <div className="admin-dash__search-bar">
           <Search size={16} />
           <input
             type="text"
@@ -219,37 +219,35 @@ export default function RecruitmentsSection({
           />
         </div>
 
-        <div className="admin-dash__filter-group">
-          <select
-            value={recruitmentFilterDomain}
-            onChange={e => setRecruitmentFilterDomain(e.target.value)}
-            className="admin-dash__select"
-          >
-            <option value="all">All Domains</option>
-            {uniqueDomains.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
+        <select
+          value={recruitmentFilterDomain}
+          onChange={e => setRecruitmentFilterDomain(e.target.value)}
+          className="admin-dash__select"
+        >
+          <option value="all">All Domains</option>
+          {uniqueDomains.map(d => <option key={d} value={d}>{d}</option>)}
+        </select>
 
-          <select
-            value={recruitmentFilterYear}
-            onChange={e => setRecruitmentFilterYear(e.target.value)}
-            className="admin-dash__select"
-          >
-            <option value="all">All Years</option>
-            {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
-          </select>
+        <select
+          value={recruitmentFilterYear}
+          onChange={e => setRecruitmentFilterYear(e.target.value)}
+          className="admin-dash__select"
+        >
+          <option value="all">All Years</option>
+          {uniqueYears.map(y => <option key={y} value={y}>{y}</option>)}
+        </select>
 
-          <select
-            value={recruitmentFilterStatus}
-            onChange={e => setRecruitmentFilterStatus(e.target.value)}
-            className="admin-dash__select"
-          >
-            <option value="all">All Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="shortlisted">Shortlisted</option>
-            <option value="accepted">Accepted</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
+        <select
+          value={recruitmentFilterStatus}
+          onChange={e => setRecruitmentFilterStatus(e.target.value)}
+          className="admin-dash__select"
+        >
+          <option value="all">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="shortlisted">Shortlisted</option>
+          <option value="accepted">Accepted</option>
+          <option value="rejected">Rejected</option>
+        </select>
       </div>
 
       {/* Table View */}
