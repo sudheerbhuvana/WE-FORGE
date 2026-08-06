@@ -117,13 +117,7 @@ export default function WallOfKLPage() {
       <main className="wallkl-container">
         {/* Header Section */}
         <header className="wallkl-header">
-          <div className="wallkl-badge">
-            <Trophy size={15} /> Weekly Contest Winners
-          </div>
           <h1 className="wallkl-title">Wall of KL</h1>
-          <p className="wallkl-subtitle">
-            Celebrating the winning captures and extraordinary creative entries submitted by weekly KL FORGE contest champions.
-          </p>
         </header>
 
         {/* Toolbar & Controls */}
