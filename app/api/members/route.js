@@ -77,10 +77,13 @@ export async function POST(request) {
             } catch {}
         }
 
+        const customRoleId = formData.get('customRoleId') || '';
+
         const newMember = new Member({
             id, name, role,
             domain: targetDomain,
             roles: parsedRoles,
+            customRoleId,
             rollNumber,
             department: department || '',
             email: email || '',

@@ -36,6 +36,7 @@ export async function PUT(request, { params }) {
         if (formData.has('linkedin')) target.linkedin = formData.get('linkedin');
         if (formData.has('status')) target.status = formData.get('status');
         if (formData.has('isSuspended')) target.isSuspended = formData.get('isSuspended') === 'true';
+        if (formData.has('customRoleId')) target.customRoleId = formData.get('customRoleId');
 
         // roles: JSON-encoded array of {domain, role}
         if (formData.has('roles')) {
