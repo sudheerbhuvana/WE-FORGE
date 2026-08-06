@@ -79,10 +79,11 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
     setMemberSaving(true);
     setError('');
     try {
-      if (memberId) {
-        await memberService.update(memberId, payload);
+      const targetId = memberId || memberEditing?.id || memberEditing?._id;
+      if (targetId) {
+        await memberService.update(targetId, payload);
       } else {
-        await memberService.create(payload);
+        await memberService.add(payload);
       }
       setShowMemberForm(false);
       setMemberEditing(null);
@@ -270,7 +271,7 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
         actor={adminInfo}
         saving={memberSaving}
         onClose={() => setShowMemberForm(false)}
-        onSubmit={handleMemberSubmit}
+        onSubmit={(fd, id) => handleMemberSubmit(fd, id || memberEditing?.id || memberEditing?._id)}
       />
     </>
   );

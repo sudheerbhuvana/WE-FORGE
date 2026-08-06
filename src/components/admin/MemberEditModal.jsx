@@ -341,7 +341,7 @@ export default function MemberEditModal({
             fd.append('photo', '');
         }
 
-        await onSubmit(fd);
+        await onSubmit(fd, member?.id || member?._id);
     };
 
     // Keep hooks unconditional: derive `displayed` from `open` without early return.
