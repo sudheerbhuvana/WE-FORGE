@@ -162,7 +162,9 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
           <select value={memberFilter} onChange={e => setMemberFilter(e.target.value)} className="admin-dash__select">
             <option value="all">All Domains</option>
             <option value="student">Just Students (No Domain)</option>
-            {domainsList.map(d => <option key={d} value={d}>{d}</option>)}
+            {activeDomainsList.map(d => (
+              <option key={d.name} value={d.name}>{d.name}</option>
+            ))}
           </select>
         </div>
       </div>
