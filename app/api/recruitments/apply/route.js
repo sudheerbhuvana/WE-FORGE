@@ -6,6 +6,21 @@ import { getActor } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
+function extractRollNumber(actor) {
+  if (!actor) return '';
+  if (actor.rollNumber && /^\d{6,}$/.test(String(actor.rollNumber).trim())) {
+    return String(actor.rollNumber).trim();
+  }
+  if (actor.email) {
+    const match = actor.email.match(/^(\d{6,})@/);
+    if (match) return match[1];
+  }
+  if (actor.id && /^\d{6,}$/.test(String(actor.id).trim())) {
+    return String(actor.id).trim();
+  }
+  return '';
+}
+
 function extractYearFromRoll(rollNumber) {
   if (!rollNumber) return 'Y24';
   const clean = rollNumber.toString().trim();
@@ -27,13 +42,16 @@ export async function GET() {
     const application = await RecruitmentApplication.findOne({ memberId: actor.id }).lean();
     const settings = await RecruitmentSettings.findOne().lean();
 
+    const rollNumber = extractRollNumber(actor) || actor.rollNumber || actor.id;
+    const year = extractYearFromRoll(rollNumber);
+
     return NextResponse.json({
       actor: {
         id: actor.id,
         name: actor.name,
         email: actor.email,
-        rollNumber: actor.rollNumber || actor.id,
-        year: extractYearFromRoll(actor.rollNumber || actor.id),
+        rollNumber: rollNumber,
+        year: year,
       },
       application: application || null,
       settings: settings || { isOpen: true },
@@ -83,7 +101,7 @@ export async function POST(req) {
       }))
       .slice(0, 10);
 
-    const rollNumber = actor.rollNumber || actor.id;
+    const rollNumber = extractRollNumber(actor) || actor.rollNumber || actor.id;
     const year = extractYearFromRoll(rollNumber);
 
     const applicationData = {
