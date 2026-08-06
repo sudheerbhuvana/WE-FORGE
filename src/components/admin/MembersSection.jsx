@@ -38,7 +38,19 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
   const [memberEditing, setMemberEditing] = useState(null);
   const [memberSaving, setMemberSaving] = useState(false);
   const [memberDeleteConfirm, setMemberDeleteConfirm] = useState(null);
+  const [domainsList, setDomainsList] = useState([]);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/domains')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setDomainsList(data);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const downloadCSV = () => {
     const headers = ['Name', 'Email', 'Role', 'Domain', 'Roll Number'];
@@ -111,7 +123,13 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
     return (a.name || '').localeCompare(b.name || '');
   });
 
-  const domainsList = Array.from(new Set(members.map(m => m.domain))).filter(Boolean);
+  const activeDomainsList = Array.from(
+    new Set([
+      ...domainsList.map(d => (typeof d === 'string' ? d : d?.name)),
+      ...members.map(m => m.domain),
+      'Zero Order', 'Technical', 'Media & Broadcasting', 'Operations & Protocol', 'Creative & Content', 'Advisors', 'Public Speaking'
+    ].filter(Boolean))
+  ).map(name => ({ name }));
 
   return (
     <>
@@ -246,7 +264,7 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
       <MemberEditModal
         open={showMemberForm}
         member={memberEditing}
-        domainsList={domainsList}
+        domainsList={activeDomainsList}
         actor={adminInfo}
         saving={memberSaving}
         onClose={() => setShowMemberForm(false)}

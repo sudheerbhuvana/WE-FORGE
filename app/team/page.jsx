@@ -26,45 +26,79 @@ const ROLE_WEIGHTS = {
 // Only these domains are shown on the team page — no General
 const DOMAIN_ORDER = [
   'Zero Order',
-  'Advisor',
-  'Protocol & Operations',
-  'Tech & Innovation',
-  'Creative & Content',
-  'Public Speaking',
+  'Technical',
   'Media & Broadcasting',
+  'Operations & Protocol',
+  'Creative & Content',
+  'Advisors',
+  'Public Speaking',
+  'Tech & Innovation',
+  'Protocol & Operations',
+  'Advisor',
+  'General',
 ];
 
 export default async function TeamPage() {
   await connectDB();
-  const membersData = await Member.find({}).lean();
-  
-  // Transform to plain objects and map to TeamCards format
-  const members = membersData.map(m => ({
-    name: m.name,
-    role: `${m.role}  •  ${m.rollNumber}`,
-    description: m.bio || m.description || 'No description provided.',
-    profileLink: `/${m.id}`,
-    color: m.color || '#71C4FF',
-    domain: m.domain || 'General',
-    rawRole: m.role
-  }));
+  const membersData = await Member.find({ isSuspended: { $ne: true } }).lean();
 
-  // Group and Sort natively by Domain
-  const grouped = members.sort((a, b) => {
-    const wA = ROLE_WEIGHTS[a.rawRole] || 1000;
-    const wB = ROLE_WEIGHTS[b.rawRole] || 1000;
-    return wA - wB;
-  }).reduce((acc, m) => {
-    const domain = m.domain;
-    if (!acc[domain]) acc[domain] = [];
-    acc[domain].push(m);
-    return acc;
-  }, {});
+  // Group members into domain buckets (supporting primary domain + additional roles array)
+  const grouped = {};
 
-  // Only show domains in DOMAIN_ORDER — General and unassigned are excluded
+  for (const m of membersData) {
+    const memberObj = {
+      name: m.name,
+      description: m.bio || m.description || 'No description provided.',
+      profileLink: `/${m.id}`,
+      color: m.color || '#71C4FF',
+      rawRole: m.role || 'Student',
+      role: `${m.role || 'Member'}  •  ${m.rollNumber || ''}`,
+    };
+
+    // Primary domain assignment
+    const primaryDomain = m.domain || 'General';
+    if (!grouped[primaryDomain]) grouped[primaryDomain] = [];
+    grouped[primaryDomain].push(memberObj);
+
+    // Additional domain roles if present
+    if (Array.isArray(m.roles)) {
+      for (const r of m.roles) {
+        if (r.domain && r.domain !== primaryDomain) {
+          if (!grouped[r.domain]) grouped[r.domain] = [];
+          grouped[r.domain].push({
+            ...memberObj,
+            rawRole: r.role || m.role,
+            role: `${r.role || m.role}  •  ${m.rollNumber || ''}`,
+          });
+        }
+      }
+    }
+  }
+
+  // Sort members within each domain by hierarchy role weight
+  for (const domain in grouped) {
+    grouped[domain].sort((a, b) => {
+      const wA = ROLE_WEIGHTS[a.rawRole] ?? 1000;
+      const wB = ROLE_WEIGHTS[b.rawRole] ?? 1000;
+      if (wA !== wB) return wA - wB;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }
+
+  // Build ordered list of domain sections
   const orderedEntries = [];
+  const processedDomains = new Set();
+
   for (const domain of DOMAIN_ORDER) {
-    if (grouped[domain]) {
+    if (grouped[domain] && grouped[domain].length > 0) {
+      orderedEntries.push([domain, grouped[domain]]);
+      processedDomains.add(domain);
+    }
+  }
+
+  // Include any remaining custom domains dynamically
+  for (const domain of Object.keys(grouped)) {
+    if (!processedDomains.has(domain) && grouped[domain].length > 0) {
       orderedEntries.push([domain, grouped[domain]]);
     }
   }

@@ -164,10 +164,17 @@ export default function MemberEditModal({
     const [customRoleOptions, setCustomRoleOptions] = useState([]);
     const [errors, setErrors] = useState({});
 
+    const [fetchedDomains, setFetchedDomains] = useState([]);
+
     useEffect(() => {
         fetch('/api/roles')
             .then(r => r.json())
             .then(d => { if (d.success) setCustomRoleOptions(d.roles || []); })
+            .catch(() => {});
+
+        fetch('/api/domains')
+            .then(r => r.json())
+            .then(d => { if (Array.isArray(d) && d.length > 0) setFetchedDomains(d); })
             .catch(() => {});
     }, []);
     const [touched, setTouched] = useState({});
@@ -339,9 +346,27 @@ export default function MemberEditModal({
 
     // Keep hooks unconditional: derive `displayed` from `open` without early return.
     // Render nothing while closed, but hooks always run.
-    const availableDomains = domainsList.length
+    const defaultDomainsFallback = useMemo(() => [
+        { name: 'Zero Order', adminRoles: ELITE_TIER_ROLES },
+        { name: 'Technical', adminRoles: DEFAULT_ROLE_OPTIONS },
+        { name: 'Media & Broadcasting', adminRoles: DEFAULT_ROLE_OPTIONS },
+        { name: 'Operations & Protocol', adminRoles: DEFAULT_ROLE_OPTIONS },
+        { name: 'Creative & Content', adminRoles: DEFAULT_ROLE_OPTIONS },
+        { name: 'Advisors', adminRoles: ['Advisor'] },
+        { name: 'Public Speaking', adminRoles: DEFAULT_ROLE_OPTIONS },
+    ], []);
+
+    const sourceDomains = domainsList.length
         ? domainsList
-        : [{ name: form.domain, adminRoles: DEFAULT_ROLE_OPTIONS }];
+        : (fetchedDomains.length ? fetchedDomains : defaultDomainsFallback);
+
+    const availableDomains = useMemo(() => {
+        const list = [...sourceDomains];
+        if (form.domain && !list.some(d => (typeof d === 'string' ? d : d?.name) === form.domain)) {
+            list.push({ name: form.domain, adminRoles: DEFAULT_ROLE_OPTIONS });
+        }
+        return list;
+    }, [sourceDomains, form.domain]);
 
     const primaryRoleOptions = useMemo(
         () => roleOptionsForDomain(form.domain, availableDomains),
