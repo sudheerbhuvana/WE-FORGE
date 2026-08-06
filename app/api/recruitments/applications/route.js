@@ -6,12 +6,8 @@ import { requirePermission, canAccessAdmin } from '@/lib/permissions';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req) {
-  const { actor, response } = await requirePermission(() => true);
+  const { actor, response } = await requirePermission(a => hasPermission(a, 'recruitments.view_applications'));
   if (response) return response;
-
-  if (!canAccessAdmin(actor)) {
-    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-  }
 
   try {
     await connectDB();
@@ -50,12 +46,8 @@ export async function GET(req) {
 }
 
 export async function PATCH(req) {
-  const { actor, response } = await requirePermission(() => true);
+  const { actor, response } = await requirePermission(a => hasPermission(a, 'recruitments.change_app_status'));
   if (response) return response;
-
-  if (!canAccessAdmin(actor)) {
-    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-  }
 
   try {
     await connectDB();
@@ -92,12 +84,8 @@ export async function PATCH(req) {
 }
 
 export async function DELETE(req) {
-  const { actor, response } = await requirePermission(() => true);
+  const { actor, response } = await requirePermission(a => hasPermission(a, 'recruitments.delete_applications'));
   if (response) return response;
-
-  if (!canAccessAdmin(actor)) {
-    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-  }
 
   try {
     await connectDB();

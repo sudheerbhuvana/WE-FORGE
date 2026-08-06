@@ -7,8 +7,19 @@ import '../../../app/admin/dashboard/AdminDashboard.css';
 export default function RecruitmentsSection({
   recruitmentSettings: initialSettings,
   recruitmentApps,
+  adminInfo,
   refreshData
 }) {
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canViewSettings = isElite || userPerms.includes('recruitments.view_settings') || userPerms.includes('recruitments.manage_settings');
+  const canManageSettings = isElite || userPerms.includes('recruitments.manage_settings');
+  const canViewApplications = isElite || userPerms.includes('recruitments.view_applications');
+  const canExport = isElite || userPerms.includes('recruitments.export_applications');
+  const canChangeStatus = isElite || userPerms.includes('recruitments.change_app_status');
+  const canDelete = isElite || userPerms.includes('recruitments.delete_applications');
+
   const [recruitmentSettings, setRecruitmentSettings] = useState(initialSettings || { isOpen: true, title: '', subtitle: '', description: '', heroImageUrl: '' });
   const [recruitmentSettingsSaving, setRecruitmentSettingsSaving] = useState(false);
   const [recruitmentFilterDomain, setRecruitmentFilterDomain] = useState('all');
@@ -20,6 +31,7 @@ export default function RecruitmentsSection({
   const [appDeleteConfirm, setAppDeleteConfirm] = useState(null);
 
   const deleteApp = async (id, name) => {
+    if (!canDelete) return;
     if (!confirm(`Delete recruitment application from "${name}"? This cannot be undone.`)) return;
     try {
       const res = await fetch(`/api/recruitments/applications?id=${id}`, { method: 'DELETE' });
@@ -31,6 +43,7 @@ export default function RecruitmentsSection({
   };
 
   const saveRecruitmentSettings = async () => {
+    if (!canManageSettings) return;
     setRecruitmentSettingsSaving(true);
     try {
       await fetch('/api/recruitments/config', {
@@ -45,6 +58,7 @@ export default function RecruitmentsSection({
   };
 
   const updateAppStatus = async (id, status, notes) => {
+    if (!canChangeStatus) return;
     const res = await fetch('/api/recruitments/applications', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -54,6 +68,7 @@ export default function RecruitmentsSection({
   };
 
   const exportRecruitmentsCSV = () => {
+    if (!canExport) return;
     const headers = ['Name', 'Email', 'Roll Number', 'Year', 'Primary Domain', 'Why Primary Domain', 'Secondary Domain', 'Why Secondary Domain', 'Status', 'Submitted At', 'Work Links'];
     const rows = recruitmentApps.map(app => [
       `"${(app.name || '').replace(/"/g, '""')}"`,
@@ -116,73 +131,84 @@ export default function RecruitmentsSection({
           <h2 className="admin-section__title admin-section__title--large">Recruitments Management</h2>
           <p className="admin-section__subtitle">Manage drive status, hero image, and applicant submissions.</p>
         </div>
-        <button className="admin-dash__save-btn" onClick={exportRecruitmentsCSV}>
-          <Download size={15} /> Export Applications CSV
-        </button>
+        {canExport && (
+          <button className="admin-dash__save-btn" onClick={exportRecruitmentsCSV}>
+            <Download size={15} /> Export Applications CSV
+          </button>
+        )}
       </div>
 
       {/* Settings Panel */}
-      <div className="admin-rec-settings-card">
-        <div className="admin-rec-settings-header">
-          <div className="admin-rec-status-badge-row">
-            <span className={`admin-rec-status-indicator admin-rec-status-indicator--${recruitmentSettings.isOpen ? 'open' : 'closed'}`}>
-              {recruitmentSettings.isOpen ? '● RECRUITMENTS OPEN' : '○ RECRUITMENTS CLOSED'}
-            </span>
-            <p>Controls candidate access on the <code>/join</code> page.</p>
+      {canViewSettings && (
+        <div className="admin-rec-settings-card">
+          <div className="admin-rec-settings-header">
+            <div className="admin-rec-status-badge-row">
+              <span className={`admin-rec-status-indicator admin-rec-status-indicator--${recruitmentSettings.isOpen ? 'open' : 'closed'}`}>
+                {recruitmentSettings.isOpen ? '● RECRUITMENTS OPEN' : '○ RECRUITMENTS CLOSED'}
+              </span>
+              <p>Controls candidate access on the <code>/join</code> page.</p>
+            </div>
+            {canManageSettings && (
+              <button
+                type="button"
+                className={`admin-rec-toggle-btn ${recruitmentSettings.isOpen ? 'admin-rec-toggle-btn--open' : ''}`}
+                onClick={() => setRecruitmentSettings(prev => ({ ...prev, isOpen: !prev.isOpen }))}
+              >
+                {recruitmentSettings.isOpen ? 'Switch to CLOSED' : 'Switch to OPEN'}
+              </button>
+            )}
           </div>
-          <button
-            type="button"
-            className={`admin-rec-toggle-btn ${recruitmentSettings.isOpen ? 'admin-rec-toggle-btn--open' : ''}`}
-            onClick={() => setRecruitmentSettings(prev => ({ ...prev, isOpen: !prev.isOpen }))}
-          >
-            {recruitmentSettings.isOpen ? 'Switch to CLOSED' : 'Switch to OPEN'}
-          </button>
-        </div>
 
-        <div className="admin-dash__form-grid admin-dash__form-grid--2col" style={{ marginTop: 16 }}>
-          <div className="admin-dash__field">
-            <label>Drive Title</label>
-            <input
-              type="text"
-              value={recruitmentSettings.title || ''}
-              onChange={e => setRecruitmentSettings({ ...recruitmentSettings, title: e.target.value })}
-              placeholder="e.g. KLFORGE Recruitment Drive 2026"
-              className="admin-dash__input"
-            />
+          <div className="admin-dash__form-grid admin-dash__form-grid--2col" style={{ marginTop: 16 }}>
+            <div className="admin-dash__field">
+              <label>Drive Title</label>
+              <input
+                type="text"
+                value={recruitmentSettings.title || ''}
+                onChange={e => setRecruitmentSettings({ ...recruitmentSettings, title: e.target.value })}
+                placeholder="e.g. KLFORGE Recruitment Drive 2026"
+                className="admin-dash__input"
+                disabled={!canManageSettings}
+              />
+            </div>
+            <div className="admin-dash__field">
+              <label>Hero Subtitle</label>
+              <input
+                type="text"
+                value={recruitmentSettings.subtitle || ''}
+                onChange={e => setRecruitmentSettings({ ...recruitmentSettings, subtitle: e.target.value })}
+                placeholder="Tagline displayed under hero title"
+                className="admin-dash__input"
+                disabled={!canManageSettings}
+              />
+            </div>
+            <div className="admin-dash__field admin-dash__field--full">
+              <label>Hero Image Banner URL</label>
+              <input
+                type="url"
+                value={recruitmentSettings.heroImageUrl || ''}
+                onChange={e => setRecruitmentSettings({ ...recruitmentSettings, heroImageUrl: e.target.value })}
+                placeholder="https://... (Image URL for /join hero banner)"
+                className="admin-dash__input"
+                disabled={!canManageSettings}
+              />
+            </div>
           </div>
-          <div className="admin-dash__field">
-            <label>Hero Subtitle</label>
-            <input
-              type="text"
-              value={recruitmentSettings.subtitle || ''}
-              onChange={e => setRecruitmentSettings({ ...recruitmentSettings, subtitle: e.target.value })}
-              placeholder="Tagline displayed under hero title"
-              className="admin-dash__input"
-            />
-          </div>
-          <div className="admin-dash__field admin-dash__field--full">
-            <label>Hero Image Banner URL</label>
-            <input
-              type="url"
-              value={recruitmentSettings.heroImageUrl || ''}
-              onChange={e => setRecruitmentSettings({ ...recruitmentSettings, heroImageUrl: e.target.value })}
-              placeholder="https://... (Image URL for /join hero banner)"
-              className="admin-dash__input"
-            />
-          </div>
-        </div>
 
-        <div className="admin-rec-settings-footer">
-          <button
-            type="button"
-            className="admin-dash__save-btn"
-            onClick={saveRecruitmentSettings}
-            disabled={recruitmentSettingsSaving}
-          >
-            {recruitmentSettingsSaving ? 'Saving Settings...' : 'Save Drive Settings'}
-          </button>
+          {canManageSettings && (
+            <div className="admin-rec-settings-footer">
+              <button
+                type="button"
+                className="admin-dash__save-btn"
+                onClick={saveRecruitmentSettings}
+                disabled={recruitmentSettingsSaving}
+              >
+                {recruitmentSettingsSaving ? 'Saving Settings...' : 'Save Drive Settings'}
+              </button>
+            </div>
+          )}
         </div>
-      </div>
+      )}
 
       {/* Stats Row */}
       <div className="admin-rec-stats-grid">
@@ -306,16 +332,22 @@ export default function RecruitmentsSection({
                     {new Date(app.submittedAt).toLocaleDateString()}
                   </td>
                   <td>
-                    <select
-                      value={app.status || 'pending'}
-                      onChange={e => updateAppStatus(app._id, e.target.value, app.adminNotes)}
-                      className={`admin-rec-status-select admin-rec-status-select--${app.status}`}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="shortlisted">Shortlisted</option>
-                      <option value="accepted">Accepted</option>
-                      <option value="rejected">Rejected</option>
-                    </select>
+                    {canChangeStatus ? (
+                      <select
+                        value={app.status || 'pending'}
+                        onChange={e => updateAppStatus(app._id, e.target.value, app.adminNotes)}
+                        className={`admin-rec-status-select admin-rec-status-select--${app.status}`}
+                      >
+                        <option value="pending">Pending</option>
+                        <option value="shortlisted">Shortlisted</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="rejected">Rejected</option>
+                      </select>
+                    ) : (
+                      <span className={`admin-rec-status-select admin-rec-status-select--${app.status}`} style={{ opacity: 0.85, cursor: 'default' }}>
+                        {(app.status || 'pending').toUpperCase()}
+                      </span>
+                    )}
                   </td>
                   <td>
                     <div className="admin-dash__title-actions">
@@ -329,13 +361,15 @@ export default function RecruitmentsSection({
                       >
                         <Eye size={15} />
                       </button>
-                      <button
-                        className="admin-dash__icon-btn admin-dash__icon-btn--danger"
-                        title="Remove Application"
-                        onClick={() => deleteApp(app._id, app.name)}
-                      >
-                        <Trash2 size={15} />
-                      </button>
+                      {canDelete && (
+                        <button
+                          className="admin-dash__icon-btn admin-dash__icon-btn--danger"
+                          title="Remove Application"
+                          onClick={() => deleteApp(app._id, app.name)}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -383,17 +417,23 @@ export default function RecruitmentsSection({
               )}
 
               <div style={{ display: 'flex', gap: 10, alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 12, marginTop: 4 }}>
-                <select
-                  value={app.status || 'pending'}
-                  onChange={e => updateAppStatus(app._id, e.target.value, app.adminNotes)}
-                  className={`admin-rec-status-select admin-rec-status-select--${app.status}`}
-                  style={{ flex: 1 }}
-                >
-                  <option value="pending">Pending</option>
-                  <option value="shortlisted">Shortlisted</option>
-                  <option value="accepted">Accepted</option>
-                  <option value="rejected">Rejected</option>
-                </select>
+                {canChangeStatus ? (
+                  <select
+                    value={app.status || 'pending'}
+                    onChange={e => updateAppStatus(app._id, e.target.value, app.adminNotes)}
+                    className={`admin-rec-status-select admin-rec-status-select--${app.status}`}
+                    style={{ flex: 1 }}
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="shortlisted">Shortlisted</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                ) : (
+                  <span className={`admin-rec-status-select admin-rec-status-select--${app.status}`} style={{ flex: 1, opacity: 0.85, cursor: 'default', textAlign: 'center' }}>
+                    {(app.status || 'pending').toUpperCase()}
+                  </span>
+                )}
 
                 <button
                   type="button"
@@ -407,15 +447,17 @@ export default function RecruitmentsSection({
                   <Eye size={14} /> Details
                 </button>
 
-                <button
-                  type="button"
-                  className="admin-mob-btn admin-mob-btn--delete"
-                  onClick={() => deleteApp(app._id, app.name)}
-                  style={{ padding: '8px 12px' }}
-                  title="Remove Application"
-                >
-                  <Trash2 size={14} />
-                </button>
+                {canDelete && (
+                  <button
+                    type="button"
+                    className="admin-mob-btn admin-mob-btn--delete"
+                    onClick={() => deleteApp(app._id, app.name)}
+                    style={{ padding: '8px 12px' }}
+                    title="Remove Application"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
               </div>
             </div>
           ))

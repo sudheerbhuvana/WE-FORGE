@@ -236,7 +236,7 @@ export default function AdminDashboard() {
       case 'settings':
         return <SystemSettingsSection />;
       case 'recruitments':
-        return <RecruitmentsSection recruitmentSettings={recruitmentSettings} recruitmentApps={recruitmentApps} refreshData={fetchRecruitmentsData} />;
+        return <RecruitmentsSection recruitmentSettings={recruitmentSettings} recruitmentApps={recruitmentApps} adminInfo={adminInfo} refreshData={fetchRecruitmentsData} />;
       case 'forms':
         return <FormsSection />;
       default:

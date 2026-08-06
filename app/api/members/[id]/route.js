@@ -76,7 +76,7 @@ export async function DELETE(request, { params }) {
     const target = await Member.findOne({ id });
     if (!target) return NextResponse.json({ error: 'Member not found' }, { status: 404 });
 
-    const { response } = await requirePermission(canManageMember, target);
+    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'members.delete'));
     if (response) return response;
 
     try {

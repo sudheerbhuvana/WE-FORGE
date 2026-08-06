@@ -20,12 +20,8 @@ export async function GET() {
 }
 
 export async function PUT(req) {
-  const { actor, response } = await requirePermission(() => true);
+  const { actor, response } = await requirePermission(a => hasPermission(a, 'recruitments.manage_settings'));
   if (response) return response;
-  
-  if (!isElite(actor)) {
-    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
-  }
 
   try {
     await connectDB();

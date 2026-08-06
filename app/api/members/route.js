@@ -21,7 +21,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-    const { actor, response } = await requirePermission(canManageDomain, undefined);
+    const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'members.create'));
     if (response) return response;
 
     try {

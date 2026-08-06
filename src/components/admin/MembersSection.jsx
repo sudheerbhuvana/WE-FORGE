@@ -32,6 +32,12 @@ const canManageMemberClient = (actor, member) => {
 };
 
 export default function MembersSection({ members, adminInfo, refreshData }) {
+  const userPerms = Array.isArray(adminInfo?.permissions) ? adminInfo.permissions : [];
+  const isElite = adminInfo?.isElite || false;
+
+  const canCreateMember = isElite || userPerms.includes('members.create');
+  const canDeleteMember = isElite || userPerms.includes('members.delete');
+
   const [searchTerm, setSearchTerm] = useState('');
   const [memberFilter, setMemberFilter] = useState('all');
   const [memberSort, setMemberSort] = useState('hierarchy');
@@ -60,17 +66,21 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.setAttribute('download', 'forge_members.csv');
-    document.body.appendChild(link);
+    link.setAttribute('download', 'members.csv');
     link.click();
-    document.body.removeChild(link);
   };
 
   const handleMemberDelete = async (id) => {
+    if (!canDeleteMember) return;
     try {
-      await memberService.delete(id);
-      setMemberDeleteConfirm(null);
-      if (refreshData) refreshData();
+      const res = await fetch(`/api/members/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setMemberDeleteConfirm(null);
+        if (refreshData) refreshData();
+      } else {
+        const data = await res.json();
+        setError(data.error || 'Failed to delete member');
+      }
     } catch (err) {
       setError(err.message);
     }
@@ -96,7 +106,7 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
     }
   };
 
-  let filteredMembers = adminInfo.isElite 
+  let filteredMembers = isElite || userPerms.includes('members.view_all')
     ? members 
     : members.filter(m => m.domain === adminInfo.domain);
 
@@ -139,7 +149,9 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
         <div className="admin-dash__title-row">
           <h2 className="admin-section__title admin-section__title--large">Team Members</h2>
           <div className="admin-dash__title-actions">
-            <button className="admin-dash__add-btn" onClick={() => { setMemberEditing(null); setShowMemberForm(true); }}><Plus size={18} /> Add Member</button>
+            {canCreateMember && (
+              <button className="admin-dash__add-btn" onClick={() => { setMemberEditing(null); setShowMemberForm(true); }}><Plus size={18} /> Add Member</button>
+            )}
             <button className="admin-dash__export-btn" onClick={downloadCSV}><Download size={16} /> Export CSV</button>
           </div>
         </div>
@@ -208,25 +220,27 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
                   {canManageMemberClient(adminInfo, m) && (
                     <button className="admin-dash__icon-btn admin-dash__icon-btn--edit" onClick={() => { setMemberEditing(m); setShowMemberForm(true); }} aria-label={`Edit ${m.name}`}><Edit3 size={15} aria-hidden="true" /></button>
                   )}
-                  {memberDeleteConfirm === m.id ? (
-                    <span className="admin-dash__delete-confirm">Sure?
-                      <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleMemberDelete(m.id)}>Yes</button>
-                      <button className="admin-dash__icon-btn" onClick={() => setMemberDeleteConfirm(null)}>No</button>
-                    </span>
-                  ) : (
-                    <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => setMemberDeleteConfirm(m.id)} aria-label={`Delete ${m.name}`}><Trash2 size={15} aria-hidden="true" /></button>
+                  {canDeleteMember && (
+                    memberDeleteConfirm === m.id ? (
+                      <span className="admin-dash__delete-confirm">Sure?
+                        <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => handleMemberDelete(m.id)}>Yes</button>
+                        <button className="admin-dash__icon-btn" onClick={() => setMemberDeleteConfirm(null)}>No</button>
+                      </span>
+                    ) : (
+                      <button className="admin-dash__icon-btn admin-dash__icon-btn--danger" onClick={() => setMemberDeleteConfirm(m.id)} aria-label={`Delete ${m.name}`}><Trash2 size={15} aria-hidden="true" /></button>
+                    )
                   )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {members.length === 0 && <div className="admin-dash__empty">No members yet. Click &ldquo;Add Member&rdquo; to get started.</div>}
+        {members.length === 0 && <div className="admin-dash__empty">No members yet.</div>}
       </div>
 
       {/* Mobile cards */}
       <div className="admin-mob-cards">
-        {members.length === 0 && <div className="admin-dash__empty">No members yet. Tap &ldquo;Add Member&rdquo; to get started.</div>}
+        {members.length === 0 && <div className="admin-dash__empty">No members yet.</div>}
         {members.map((m) => (
           <div key={m.id} className="admin-mob-card">
             <div className="admin-mob-card__top">
@@ -245,7 +259,7 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
               </div>
             </div>
             {m.description && <div className="admin-mob-card__desc">{m.description}</div>}
-            {memberDeleteConfirm === m.id ? (
+            {canDeleteMember && memberDeleteConfirm === m.id ? (
               <div className="admin-mob-card__confirm">
                 <span className="admin-mob-card__confirm-label">Delete this member?</span>
                 <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => handleMemberDelete(m.id)}>Yes, Delete</button>
@@ -254,10 +268,10 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
             ) : (
               <div className="admin-mob-card__actions">
                 {canManageMemberClient(adminInfo, m) && (
-                  <>
-                    <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => { setMemberEditing(m); setShowMemberForm(true); }}><Edit3 size={15} /> Edit</button>
-                    <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setMemberDeleteConfirm(m.id)}><Trash2 size={15} /></button>
-                  </>
+                  <button className="admin-mob-btn admin-mob-btn--edit" onClick={() => { setMemberEditing(m); setShowMemberForm(true); }}><Edit3 size={15} /> Edit</button>
+                )}
+                {canDeleteMember && (
+                  <button className="admin-mob-btn admin-mob-btn--delete" onClick={() => setMemberDeleteConfirm(m.id)}><Trash2 size={15} /></button>
                 )}
               </div>
             )}
