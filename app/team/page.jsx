@@ -35,7 +35,6 @@ const DOMAIN_ORDER = [
   'Tech & Innovation',
   'Protocol & Operations',
   'Advisor',
-  'General',
 ];
 
 export default async function TeamPage() {
@@ -55,15 +54,17 @@ export default async function TeamPage() {
       role: `${m.role || 'Member'}  •  ${m.rollNumber || ''}`,
     };
 
-    // Primary domain assignment
-    const primaryDomain = m.domain || 'General';
-    if (!grouped[primaryDomain]) grouped[primaryDomain] = [];
-    grouped[primaryDomain].push(memberObj);
+    // Primary domain assignment (skip General)
+    const primaryDomain = m.domain;
+    if (primaryDomain && primaryDomain !== 'General') {
+      if (!grouped[primaryDomain]) grouped[primaryDomain] = [];
+      grouped[primaryDomain].push(memberObj);
+    }
 
     // Additional domain roles if present
     if (Array.isArray(m.roles)) {
       for (const r of m.roles) {
-        if (r.domain && r.domain !== primaryDomain) {
+        if (r.domain && r.domain !== 'General' && r.domain !== primaryDomain) {
           if (!grouped[r.domain]) grouped[r.domain] = [];
           grouped[r.domain].push({
             ...memberObj,
@@ -87,18 +88,18 @@ export default async function TeamPage() {
 
   // Build ordered list of domain sections
   const orderedEntries = [];
-  const processedDomains = new Set();
+  const processedDomains = new Set(['General']);
 
   for (const domain of DOMAIN_ORDER) {
-    if (grouped[domain] && grouped[domain].length > 0) {
+    if (domain !== 'General' && grouped[domain] && grouped[domain].length > 0) {
       orderedEntries.push([domain, grouped[domain]]);
       processedDomains.add(domain);
     }
   }
 
-  // Include any remaining custom domains dynamically
+  // Include any remaining custom domains dynamically (excluding General)
   for (const domain of Object.keys(grouped)) {
-    if (!processedDomains.has(domain) && grouped[domain].length > 0) {
+    if (domain !== 'General' && !processedDomains.has(domain) && grouped[domain].length > 0) {
       orderedEntries.push([domain, grouped[domain]]);
     }
   }
