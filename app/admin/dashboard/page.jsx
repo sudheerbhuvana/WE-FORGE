@@ -244,7 +244,11 @@ export default function AdminDashboard() {
     }
   };
 
-  const currentNav = NAV_ITEMS.find(n => n.id === activeSection) || NAV_ITEMS[0];
+  const currentNav = NAV_ITEMS.find(n => n.id === activeSection) || NAV_ITEMS[0] || {
+    id: 'admin',
+    label: 'Admin Panel',
+    icon: <Users size={18} />
+  };
 
   return (
     <div className="admin-dash">
@@ -258,8 +262,8 @@ export default function AdminDashboard() {
           <Menu size={22} />
         </button>
         <div className="admin-mob-header__title-wrap">
-          <span className="admin-mob-header__icon">{currentNav.icon}</span>
-          <h1 className="admin-mob-header__title">{currentNav.label}</h1>
+          <span className="admin-mob-header__icon">{currentNav?.icon}</span>
+          <h1 className="admin-mob-header__title">{currentNav?.label || 'Admin Panel'}</h1>
         </div>
         <img src="/images/favicon.png?v=2" alt="KLFORGE" className="admin-mob-header__logo-img" />
       </header>
