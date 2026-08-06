@@ -102,15 +102,24 @@ export default function JoinPage() {
     setSuccessMsg('');
 
     if (!primaryDomain) {
-      setError('Please select a primary domain.');
+      setError('Please select a primary domain above.');
+      setTimeout(() => {
+        document.getElementById('join-error-banner')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
     if (!whyDomain.trim() || whyDomain.trim().length < 10) {
-      setError('Please explain why you chose your primary domain (min 10 characters).');
+      setError('Please explain why you chose your primary domain (at least 10 characters).');
+      setTimeout(() => {
+        document.getElementById('join-error-banner')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
     if (secondaryDomain && (!whySecondaryDomain.trim() || whySecondaryDomain.trim().length < 10)) {
-      setError('Please explain why you chose your secondary domain (min 10 characters).');
+      setError('Please explain why you chose your secondary domain (at least 10 characters).');
+      setTimeout(() => {
+        document.getElementById('join-error-banner')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 50);
       return;
     }
 
@@ -298,6 +307,20 @@ export default function JoinPage() {
             ) : (
               <form onSubmit={handleSubmit} className="join-form">
 
+                {error && (
+                  <div className="join-alert join-alert--error" id="join-error-banner" style={{ background: 'rgba(255, 77, 77, 0.12)', border: '1px solid rgba(255, 77, 77, 0.3)', color: '#ff7070', padding: '14px 18px', borderRadius: 12, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.9rem', fontWeight: 600 }}>
+                    <AlertCircle size={20} style={{ flexShrink: 0 }} />
+                    <span>{error}</span>
+                  </div>
+                )}
+
+                {successMsg && (
+                  <div className="join-alert join-alert--success" style={{ background: 'rgba(92, 219, 149, 0.12)', border: '1px solid rgba(92, 219, 149, 0.3)', color: '#5cdb95', padding: '14px 18px', borderRadius: 12, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.9rem', fontWeight: 600 }}>
+                    <CheckCircle2 size={20} style={{ flexShrink: 0 }} />
+                    <span>{successMsg}</span>
+                  </div>
+                )}
+
               {/* Domain Selection */}
               <div className="join-form-section">
                 <div className="join-section-header">
@@ -321,6 +344,7 @@ export default function JoinPage() {
                             setPrimaryDomain(dom.title);
                           }
                         }}
+                        style={{ cursor: 'pointer', touchAction: 'manipulation', WebkitTapHighlightColor: 'transparent' }}
                       >
                         <div className="join-domain-card__header">
                           <h3>{dom.title}</h3>
@@ -328,16 +352,12 @@ export default function JoinPage() {
                           {isSecSelected && <span className="join-tag join-tag--secondary">SECONDARY</span>}
                         </div>
                         <p>{dom.desc}</p>
-                        <button
-                          type="button"
+                        <div
                           className="join-domain-card__select-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setPrimaryDomain(dom.title);
-                          }}
+                          style={{ textAlign: 'center', pointerEvents: 'none' }}
                         >
                           {isSelected ? '✓ Selected as Primary' : 'Select Primary'}
-                        </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -374,7 +394,6 @@ export default function JoinPage() {
                   value={whyDomain}
                   onChange={(e) => setWhyDomain(e.target.value)}
                   placeholder={`Share your story, skills, and why you are excited to join ${primaryDomain || 'this domain'}...`}
-                  required
                 />
               </div>
 
@@ -391,7 +410,6 @@ export default function JoinPage() {
                     value={whySecondaryDomain}
                     onChange={(e) => setWhySecondaryDomain(e.target.value)}
                     placeholder={`Why do you want to contribute to ${secondaryDomain}? What skills do you bring?`}
-                    required
                   />
                 </div>
               )}
@@ -445,12 +463,19 @@ export default function JoinPage() {
                 )}
               </div>
 
+              {error && (
+                <div className="join-alert join-alert--error" style={{ background: 'rgba(255, 77, 77, 0.12)', border: '1px solid rgba(255, 77, 77, 0.3)', color: '#ff7070', padding: '14px 18px', borderRadius: 12, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, fontSize: '0.9rem', fontWeight: 600 }}>
+                  <AlertCircle size={20} style={{ flexShrink: 0 }} />
+                  <span>{error}</span>
+                </div>
+              )}
+
               {/* Submit Button */}
               <div className="join-form-actions">
                 <button
                   type="submit"
                   className="join-btn join-btn--submit"
-                  disabled={submitting || !primaryDomain || !whyDomain.trim() || (!!secondaryDomain && !whySecondaryDomain.trim())}
+                  disabled={submitting}
                 >
                   {submitting ? (
                     <span>Submitting Application...</span>
