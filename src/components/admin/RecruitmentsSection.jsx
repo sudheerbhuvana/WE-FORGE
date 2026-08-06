@@ -54,18 +54,19 @@ export default function RecruitmentsSection({
   };
 
   const exportRecruitmentsCSV = () => {
-    const headers = ['Name', 'Email', 'Roll Number', 'Year', 'Primary Domain', 'Secondary Domain', 'Status', 'Submitted At', 'Why Domain', 'Work Links'];
+    const headers = ['Name', 'Email', 'Roll Number', 'Year', 'Primary Domain', 'Why Primary Domain', 'Secondary Domain', 'Why Secondary Domain', 'Status', 'Submitted At', 'Work Links'];
     const rows = recruitmentApps.map(app => [
-      `"${app.name || ''}"`,
-      `"${app.email || ''}"`,
-      `"${app.rollNumber || ''}"`,
-      `"${app.year || ''}"`,
-      `"${app.primaryDomain || ''}"`,
-      `"${app.secondaryDomain || ''}"`,
-      `"${app.status || ''}"`,
-      `"${new Date(app.submittedAt).toLocaleDateString()}"`,
+      `"${(app.name || '').replace(/"/g, '""')}"`,
+      `"${(app.email || '').replace(/"/g, '""')}"`,
+      `"${(app.rollNumber || '').replace(/"/g, '""')}"`,
+      `"${(app.year || '').replace(/"/g, '""')}"`,
+      `"${(app.primaryDomain || '').replace(/"/g, '""')}"`,
       `"${(app.whyDomain || '').replace(/"/g, '""')}"`,
-      `"${(app.workLinks || []).map(l => l.url).join(' | ')}"`
+      `"${(app.secondaryDomain || '').replace(/"/g, '""')}"`,
+      `"${(app.whySecondaryDomain || '').replace(/"/g, '""')}"`,
+      `"${(app.status || '').replace(/"/g, '""')}"`,
+      `"${new Date(app.submittedAt).toLocaleDateString()}"`,
+      `"${(app.workLinks || []).map(l => l.url).join(' | ').replace(/"/g, '""')}"`
     ].join(','));
     const csvContent = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
