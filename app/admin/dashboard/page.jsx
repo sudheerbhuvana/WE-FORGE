@@ -179,15 +179,6 @@ export default function AdminDashboard() {
     await signOut({ callbackUrl: '/login' });
   };
 
-  if (loading) {
-    return (
-      <div className="admin-dash__loading">
-        <div className="admin-dash__spinner" />
-        <p>Loading Dashboard...</p>
-      </div>
-    );
-  }
-
   const userPerms = Array.isArray(adminInfo.permissions) ? adminInfo.permissions : [];
   const hasModulePerm = (prefix) => userPerms.some(p => p.startsWith(prefix));
 
@@ -213,6 +204,15 @@ export default function AdminDashboard() {
       setActiveSection(NAV_ITEMS[0].id);
     }
   }, [isAdminAuthed, NAV_ITEMS.length, activeSection]);
+
+  if (loading) {
+    return (
+      <div className="admin-dash__loading">
+        <div className="admin-dash__spinner" />
+        <p>Loading Dashboard...</p>
+      </div>
+    );
+  }
 
   const renderActiveSection = () => {
     const targetSection = NAV_ITEMS.some(n => n.id === activeSection) ? activeSection : NAV_ITEMS[0]?.id;
