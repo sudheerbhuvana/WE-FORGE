@@ -103,14 +103,14 @@ async function croppedBlobFromImage(image, crop) {
     return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
 }
 
-function validate(form, actorIsElite, actorDomain) {
+function validate(form, canEditAnyDomain, actorDomain) {
     const errors = {};
     if (!form.name?.trim()) errors.name = 'Required';
     if (!form.rollNumber?.trim()) errors.rollNumber = 'Required';
     else if (!/^\d{6,}$/.test(form.rollNumber.trim())) errors.rollNumber = 'Use a numeric roll number';
 
-    if (!actorIsElite) {
-        // head of a domain can edit members in their own domain — role/domain not freely changeable
+    if (!canEditAnyDomain) {
+        // Only restricted non-admin domain heads are scoped to their domain
         if (form.domain !== actorDomain && actorDomain) {
             errors.domain = `You can only edit members in ${actorDomain}`;
         }
@@ -187,12 +187,14 @@ export default function MemberEditModal({
     const imgRef = useRef(null);
 
     const isEdit = Boolean(member);
-    const isElite = !!actor?.isElite;
-    const userPerms = Array.isArray(actor?.permissions) ? actor.permissions : [];
-    const actorDomain = actor?.domain || '';
-    const canEditRoles = isElite || userPerms.includes('members.edit_domain_role');
-    const canAssignSecurityRole = isElite || userPerms.includes('members.assign_security_role');
-    const canSuspend = isElite || userPerms.includes('members.suspend');
+    const userPerms = Array.isArray(actor?.permissions)
+        ? actor.permissions
+        : (Array.isArray(actor?.customPermissions) ? actor.customPermissions : []);
+    const isElite = !!actor?.isElite || userPerms.includes('*') || userPerms.includes('all') || userPerms.includes('super_admin');
+    const canEditAnyDomain = isElite || userPerms.includes('members.edit_domain_role') || userPerms.includes('members.create') || userPerms.includes('members.view_all') || userPerms.some(p => p.startsWith('members.'));
+    const canEditRoles = canEditAnyDomain || userPerms.includes('members.edit_domain_role');
+    const canAssignSecurityRole = isElite || userPerms.includes('members.assign_security_role') || userPerms.includes('roles.assign') || userPerms.includes('super_admin');
+    const canSuspend = isElite || userPerms.includes('members.suspend') || userPerms.includes('super_admin');
 
     // Re-sync state whenever the modal target changes.
     // We track the *identity* of `member` (not just the object) so reopening with
@@ -301,7 +303,7 @@ export default function MemberEditModal({
         e.preventDefault();
         setSubmitError('');
 
-        const validationErrors = validate(form, isElite, actorDomain);
+        const validationErrors = validate(form, canEditAnyDomain, actorDomain);
         setErrors(validationErrors);
         setTouched({ name: true, rollNumber: true, domain: true });
         if (Object.keys(validationErrors).length > 0) return;
@@ -511,7 +513,7 @@ export default function MemberEditModal({
 
                             <Field
                                 label="Primary Role *"
-                                error={!canEditRoles ? 'Only Zero Order / Advisor can change roles' : undefined}
+                                error={!canEditRoles ? 'Insufficient permissions to change roles' : undefined}
                             >
                                 <select
                                     value={form.role || ''}
