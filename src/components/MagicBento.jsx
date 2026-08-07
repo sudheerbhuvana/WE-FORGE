@@ -16,7 +16,7 @@ const cardData = [
     description: 'Guidance from mentors shaping strong technical foundations.',
     label: 'Faculties',
     route: '/faculties',
-    image: 'https://r2.klforge.in/manual-uploads/hero-children.jpg',
+    image: 'https://r2.klforge.in/manual-uploads/team.jpg',
     noLift: true
   },
   {

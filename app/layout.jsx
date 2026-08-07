@@ -8,6 +8,7 @@ import { HelmetProvider } from 'react-helmet-async';
 import Navbar from '../src/components/Navbar';
 import PixelSnow from '../src/components/PixelSnow';
 import AuthProvider from '../src/components/AuthProvider';
+import { ToastProvider } from '../src/components/ui/Toast';
 import './globals.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -51,10 +52,12 @@ export default function RootLayout({ children }) {
           />
         </div>
         <AuthProvider>
-          <HelmetProvider>
-            <Navbar />
-            {children}
-          </HelmetProvider>
+          <ToastProvider>
+            <HelmetProvider>
+              <Navbar />
+              {children}
+            </HelmetProvider>
+          </ToastProvider>
         </AuthProvider>
       </body>
     </html>

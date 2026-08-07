@@ -35,3 +35,51 @@ export async function DELETE(_request, { params }) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
 }
+
+/**
+ * PUT /api/members/me/achievements/[itemId]
+ * Updates an achievement.
+ */
+export async function PUT(request, { params }) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { itemId } = await params;
+    if (!itemId) {
+        return NextResponse.json({ error: 'itemId required' }, { status: 400 });
+    }
+
+    try {
+        await connectDB();
+        const body = await request.json();
+        const { title, issuer, date, link } = body;
+
+        if (!title?.trim()) {
+            return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+        }
+
+        const updated = await Member.findOneAndUpdate(
+            { email: session.user.email, "achievements._id": itemId },
+            {
+                $set: {
+                    "achievements.$.title": title.trim(),
+                    "achievements.$.issuer": (issuer || '').trim(),
+                    "achievements.$.date": (date || '').trim(),
+                    "achievements.$.link": (link || '').trim(),
+                }
+            },
+            { new: true, projection: { achievements: 1 } }
+        ).lean();
+
+        if (!updated) {
+            return NextResponse.json({ error: 'Achievement or Member not found' }, { status: 404 });
+        }
+
+        const item = updated.achievements.find(a => String(a._id) === String(itemId));
+        return NextResponse.json(item);
+    } catch (err) {
+        return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+}

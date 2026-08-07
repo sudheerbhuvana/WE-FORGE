@@ -68,8 +68,8 @@ const HeroSection = () => {
         <div className="hero__image-wrapper">
           <img
             className="hero__image"
-            src="https://r2.klforge.in/manual-uploads/team.jpg"
-            alt="KLForge Team"
+            src="https://r2.klforge.in/manual-uploads/hero-children.jpg"
+            alt="KLForge Students & Faculties"
           />
           <div className="hero__overlay" />
 

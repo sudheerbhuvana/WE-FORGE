@@ -3,11 +3,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { User, Mail, Hash, Calendar, Edit3, Save, X, LogOut, ChevronRight, Camera, Shield, Code, Search, ExternalLink, Package, Github, Linkedin, Send, FolderGit2, Plus, Trash2, ImagePlus, Link2, GraduationCap, School, Award, BadgeCheck, Trophy, Download } from 'lucide-react';
+import { useToast } from '@/src/components/ui/Toast';
+import ConfirmDialog from '@/src/components/ui/ConfirmDialog';
 import './page.css';
 
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const { showToast } = useToast();
 
   const [member, setMember] = useState(null);
   const [events, setEvents] = useState([]);
@@ -83,17 +86,17 @@ export default function ProfilePage() {
       if (res.ok) {
         const updated = await res.json();
         console.log('[Profile] Update response:', updated);
-        alert("Profile saved successfully!");
+        showToast("Profile saved successfully!");
         setMember(updated);
         setIsEditing(false);
       } else {
         const errData = await res.json();
         console.error('[Profile] Update error data:', errData);
-        alert("Server error: " + (errData.error || 'Unknown error'));
+        showToast("Server error: " + (errData.error || 'Unknown error'), 'error');
       }
     } catch (err) {
       console.error('Save error:', err);
-      alert("Failed to save profile: " + err.message);
+      showToast("Failed to save profile: " + err.message, 'error');
     } finally {
       setSaving(false);
     }
@@ -104,7 +107,7 @@ export default function ProfilePage() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      alert('Please select a valid image file (PNG, JPG, WEBP).');
+      showToast('Please select a valid image file (PNG, JPG, WEBP).', 'warning');
       return;
     }
 
@@ -121,14 +124,14 @@ export default function ProfilePage() {
       if (res.ok) {
         const updated = await res.json();
         setMember(prev => ({ ...prev, photoUrl: updated.photoUrl }));
-        alert('Profile picture updated successfully!');
+        showToast('Profile picture updated successfully!');
       } else {
         const err = await res.json();
-        alert('Failed to upload picture: ' + (err.error || 'Server error'));
+        showToast('Failed to upload picture: ' + (err.error || 'Server error'), 'error');
       }
     } catch (err) {
       console.error(err);
-      alert('Upload failed: ' + err.message);
+      showToast('Upload failed: ' + err.message, 'error');
     } finally {
       setUploadingPhoto(false);
     }
