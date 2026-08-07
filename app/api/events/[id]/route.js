@@ -3,7 +3,7 @@ import connectDB from '@/lib/db';
 import Event from '@/lib/models/Event';
 import { saveFile, deleteFile } from '@/lib/uploadHelper';
 import path from 'path';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, hasPermission } from '@/lib/permissions';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/events');
 const toSlug = (str) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');

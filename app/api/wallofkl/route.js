@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
-import { requirePermission, canManageWallOfKL } from '@/lib/permissions';
+import { requirePermission, canManageWallOfKL, isElite, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 

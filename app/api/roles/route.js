@@ -4,7 +4,7 @@ import Role from '@/lib/models/Role';
 import Member from '@/lib/models/Member';
 import { PERMISSION_GROUPS } from '@/lib/permissionsCatalog';
 
-import { requirePermission, isElite } from '@/lib/permissions';
+import { requirePermission, isElite, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 

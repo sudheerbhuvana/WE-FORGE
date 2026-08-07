@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import ContestTemplate from '@/lib/models/ContestTemplate';
 import ContestSubmission from '@/lib/models/ContestSubmission';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
  * Optional ?limit=N caps the result count (default 200).
  */
 export async function GET(req, { params }) {
-  const { response } = await requirePermission(canManageEvent);
+  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.submissions_view'));
   if (response) return response;
 
   try {

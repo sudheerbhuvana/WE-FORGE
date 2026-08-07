@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Form from '@/lib/models/Form';
 import FormResponse from '@/lib/models/FormResponse';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 

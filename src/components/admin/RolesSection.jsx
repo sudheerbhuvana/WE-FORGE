@@ -204,9 +204,12 @@ export default function RolesSection({ adminInfo }) {
         <div>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: 10 }}>
             <ShieldCheck color="#38bdf8" size={26} /> Roles & Permissions Manager
+            <span style={{ fontSize: '0.75rem', fontWeight: 800, padding: '4px 10px', borderRadius: 20, background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.4)', color: '#38bdf8' }}>
+              {totalPermsCount} Micro Permissions
+            </span>
           </h2>
           <p style={{ color: 'rgba(255,255,255,0.5)', margin: '4px 0 0', fontSize: '0.9rem' }}>
-            Define custom roles with super-granular micro-permissions and assign them to user profiles.
+            Define custom roles with ultra-granular micro-permissions and assign them to user profiles.
           </p>
         </div>
 

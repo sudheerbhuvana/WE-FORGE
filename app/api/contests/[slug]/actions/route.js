@@ -3,12 +3,12 @@ import connectDB from '@/lib/db';
 import ContestTemplate from '@/lib/models/ContestTemplate';
 import ContestCycle from '@/lib/models/ContestCycle';
 import { ensureActiveCycle } from '@/lib/contestEngine';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(req, { params }) {
-  const { response } = await requirePermission(canManageEvent);
+  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.edit') || hasPermission(a, 'contests.publish') || hasPermission(a, 'contests.create'));
   if (response) return response;
 
   try {

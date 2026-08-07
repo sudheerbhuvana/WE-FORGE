@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Media from '@/lib/models/Media';
 import Folder from '@/lib/models/Folder';
-import { requirePermission, canManageMedia } from '@/lib/permissions';
+import { requirePermission, canManageMedia, isElite, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 

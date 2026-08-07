@@ -4,7 +4,7 @@ import path from 'path';
 import connectDB from '@/lib/db';
 import Form from '@/lib/models/Form';
 import FormResponse from '@/lib/models/FormResponse';
-import { requirePermission, canManageEvent, getActor } from '@/lib/permissions';
+import { requirePermission, canManageEvent, getActor, isElite, hasPermission } from '@/lib/permissions';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { uploadToR2, isR2Configured } from '@/lib/r2';

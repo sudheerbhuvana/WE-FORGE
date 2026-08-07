@@ -4,7 +4,7 @@ import connectDB from '@/lib/db';
 import Member from '@/lib/models/Member';
 import { saveFile, deleteFile } from '@/lib/uploadHelper';
 import path from 'path';
-import { requirePermission, canManageMember } from '@/lib/permissions';
+import { requirePermission, canManageMember, isElite, hasPermission } from '@/lib/permissions';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/members');
 const nameToSlug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');

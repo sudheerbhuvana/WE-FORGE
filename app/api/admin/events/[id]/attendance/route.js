@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import mongoose from 'mongoose';
 import connectDB from '@/lib/db';
 import Registration from '@/lib/models/Registration';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, isDomainHead, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ const isObjectId = (val) => {
  * Updates attendance + event role for many registrations at once.
  */
 export async function POST(req, { params }) {
-    const { response } = await requirePermission(actor => isElite(actor) || isDomainHead(actor) || hasPermission(actor, 'events.registrations_edit'));
+    const { response } = await requirePermission(actor => isElite(actor) || isDomainHead(actor) || hasPermission(actor, 'events.attendance_mark') || hasPermission(actor, 'events.registrations_edit'));
     if (response) return response;
 
     try {

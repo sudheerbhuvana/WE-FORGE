@@ -3,7 +3,7 @@ import { revalidatePath } from 'next/cache';
 import connectDB from "@/lib/db";
 import Media from "@/lib/models/Media";
 import { uploadToR2 } from "@/lib/r2";
-import { requirePermission, canManageMedia } from "@/lib/permissions";
+import { requirePermission, canManageMedia, isElite, hasPermission } from "@/lib/permissions";
 import { checkRateLimit } from "@/lib/rateLimiter";
 
 export async function POST(req) {

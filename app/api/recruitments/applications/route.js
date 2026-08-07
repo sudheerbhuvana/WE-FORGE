@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import RecruitmentApplication from '@/lib/models/RecruitmentApplication';
-import { requirePermission, canAccessAdmin } from '@/lib/permissions';
+import { requirePermission, canAccessAdmin, isElite, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 

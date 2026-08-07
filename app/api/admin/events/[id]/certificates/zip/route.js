@@ -2,7 +2,7 @@ import path from 'path';
 import connectDB from '@/lib/db';
 import Certificate from '@/lib/models/Certificate';
 import Event from '@/lib/models/Event';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, isDomainHead, hasPermission } from '@/lib/permissions';
 import { generateCertificate } from '@/lib/certificateGenerator';
 export const dynamic = 'force-dynamic';
 

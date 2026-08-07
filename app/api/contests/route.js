@@ -3,7 +3,7 @@ import connectDB from '@/lib/db';
 import ContestTemplate from '@/lib/models/ContestTemplate';
 import ContestCycle from '@/lib/models/ContestCycle';
 import { ensureActiveCycle } from '@/lib/contestEngine';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, hasPermission } from '@/lib/permissions';
 import { memberSlug } from '@/lib/slug';
 
 export const dynamic = 'force-dynamic';

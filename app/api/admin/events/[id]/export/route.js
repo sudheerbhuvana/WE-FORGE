@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Registration from '@/lib/models/Registration';
 import Event from '@/lib/models/Event';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, isDomainHead, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 

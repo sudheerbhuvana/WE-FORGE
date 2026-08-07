@@ -6,7 +6,7 @@ import connectDB from '@/lib/db';
 import Registration from '@/lib/models/Registration';
 import Event from '@/lib/models/Event';
 import Certificate from '@/lib/models/Certificate';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, isDomainHead, hasPermission } from '@/lib/permissions';
 import { generateCertificateId } from '@/lib/certId';
 import { generateCertificate } from '@/lib/certificateGenerator';
 

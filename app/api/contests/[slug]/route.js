@@ -4,7 +4,7 @@ import ContestTemplate from '@/lib/models/ContestTemplate';
 import ContestCycle from '@/lib/models/ContestCycle';
 import ContestSubmission from '@/lib/models/ContestSubmission';
 import { ensureActiveCycle } from '@/lib/contestEngine';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 

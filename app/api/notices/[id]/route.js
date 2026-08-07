@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/db';
 import Notice from '@/lib/models/Notice';
-import { requirePermission, canManageNotices } from '@/lib/permissions';
+import { requirePermission, canManageNotices, isElite, hasPermission } from '@/lib/permissions';
 
 export async function PUT(request, { params }) {
     const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'notices.edit'));

@@ -4,7 +4,7 @@ import connectDB from '../../../lib/db';
 import Member from '../../../lib/models/Member';
 import { saveFile } from '@/lib/uploadHelper';
 import path from 'path';
-import { requirePermission, canManageDomain } from '@/lib/permissions';
+import { requirePermission, canManageDomain, isElite, hasPermission } from '@/lib/permissions';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/members');
 

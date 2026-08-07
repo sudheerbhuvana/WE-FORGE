@@ -3,7 +3,7 @@ import connectDB from '@/lib/db';
 import Project from '@/lib/models/Project';
 import { saveFile } from '@/lib/uploadHelper';
 import path from 'path';
-import { requirePermission, canManageProjects } from '@/lib/permissions';
+import { requirePermission, canManageProjects, isElite, hasPermission } from '@/lib/permissions';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/projects');
 const toSlug = (str) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
