@@ -37,6 +37,22 @@ const DOMAIN_ORDER = [
   'Advisor',
 ];
 
+const DOMAIN_MAP = {
+  'Tech': 'Tech & Innovation',
+  'Tech & Innovation': 'Tech & Innovation',
+  'Creative': 'Creative & Content',
+  'Creative & Content': 'Creative & Content',
+  'Media': 'Media & Broadcasting',
+  'Media & Broadcasting': 'Media & Broadcasting',
+  'Protocols': 'Protocol & Operations',
+  'Protocol & Operations': 'Protocol & Operations',
+  'Operations & Protocol': 'Protocol & Operations',
+  'Public Speaking': 'Public Speaking',
+  'Advisor': 'Advisors',
+  'Advisors': 'Advisors',
+  'Zero Order': 'Zero Order'
+};
+
 export default async function TeamPage() {
   let membersData = [];
   try {
@@ -60,7 +76,8 @@ export default async function TeamPage() {
     };
 
     // Primary domain assignment (skip General)
-    const primaryDomain = m.domain;
+    const rawPrimary = m.domain;
+    const primaryDomain = DOMAIN_MAP[rawPrimary] || rawPrimary;
     if (primaryDomain && primaryDomain !== 'General') {
       if (!grouped[primaryDomain]) grouped[primaryDomain] = [];
       grouped[primaryDomain].push(memberObj);
@@ -69,9 +86,10 @@ export default async function TeamPage() {
     // Additional domain roles if present
     if (Array.isArray(m.roles)) {
       for (const r of m.roles) {
-        if (r.domain && r.domain !== 'General' && r.domain !== primaryDomain) {
-          if (!grouped[r.domain]) grouped[r.domain] = [];
-          grouped[r.domain].push({
+        const mappedRoleDomain = DOMAIN_MAP[r.domain] || r.domain;
+        if (mappedRoleDomain && mappedRoleDomain !== 'General' && mappedRoleDomain !== primaryDomain) {
+          if (!grouped[mappedRoleDomain]) grouped[mappedRoleDomain] = [];
+          grouped[mappedRoleDomain].push({
             ...memberObj,
             rawRole: r.role || m.role,
             role: `${r.role || m.role}  •  ${m.rollNumber || ''}`,

@@ -28,7 +28,7 @@ export default function AppleCardsCarousel({
     sub = 'A glimpse of the work, moments, and ideas that move KLForge forward.',
 }) {
     const [openIdx, setOpenIdx] = useState(null);
-    const [scrollerEl, setScrollerEl] = useState(null);
+    const scrollerRef = useRef(null);
     const modalRef = useRef(null);
 
     // ── Close modal on outside click / Escape ──────────────
@@ -50,12 +50,13 @@ export default function AppleCardsCarousel({
     }, [openIdx]);
 
     // ── Scroll helpers ─────────────────────────────────────
-    const scrollByCards = useCallback((dir) => {
-        if (!scrollerEl) return;
-        const cardWidth = scrollerEl.querySelector('.apple-card')?.offsetWidth || 320;
+    const scrollByCards = (dir) => {
+        const el = scrollerRef.current;
+        if (!el) return;
+        const cardWidth = el.querySelector('.apple-card')?.offsetWidth || 320;
         const gap = 16;
-        scrollerEl.scrollBy({ left: dir * (cardWidth + gap), behavior: 'smooth' });
-    }, [scrollerEl]);
+        el.scrollBy({ left: dir * (cardWidth + gap), behavior: 'smooth' });
+    };
 
     if (!items || items.length === 0) return null;
 
@@ -93,7 +94,7 @@ export default function AppleCardsCarousel({
 
                 <div
                     className="apple-cards__scroller"
-                    ref={setScrollerEl}
+                    ref={scrollerRef}
                     role="region"
                     aria-label="Featured carousel"
                 >
