@@ -193,6 +193,7 @@ export default function MemberEditModal({
     const isElite = !!actor?.isElite || userPerms.includes('*') || userPerms.includes('all') || userPerms.includes('super_admin');
     const canEditAnyDomain = isElite || userPerms.includes('members.edit_domain_role') || userPerms.includes('members.create') || userPerms.includes('members.view_all') || userPerms.some(p => p.startsWith('members.'));
     const canEditRoles = canEditAnyDomain || userPerms.includes('members.edit_domain_role');
+    const actorDomain = actor?.domain || '';
     const canAssignSecurityRole = isElite || userPerms.includes('members.assign_security_role') || userPerms.includes('roles.assign') || userPerms.includes('super_admin');
     const canSuspend = isElite || userPerms.includes('members.suspend') || userPerms.includes('super_admin');
 
