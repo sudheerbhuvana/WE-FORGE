@@ -32,7 +32,7 @@ const cardData = [
     description: 'Meet the builders organizing workshops, sprints, and launches.',
     label: 'Team',
     route: '/team',
-    image: 'https://r2.klforge.in/manual-uploads/testimg1.jpg',
+    image: 'https://r2.klforge.in/manual-uploads/forge.png',
     noLift: true
   },
   {
@@ -41,7 +41,7 @@ const cardData = [
     description: 'Explore focused tracks across design, development, and systems.',
     label: 'Domains',
     route: '/domains',
-    image: 'https://r2.klforge.in/manual-uploads/forge.png',
+    image: 'https://r2.klforge.in/manual-uploads/testimg1.jpg',
     noLift: true
   },
   {
