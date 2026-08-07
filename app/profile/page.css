@@ -22,12 +22,43 @@
   gap: 24px;
 }
 
+.profile-avatar {
+  position: relative;
+  cursor: pointer;
+  border-radius: 20px;
+  display: inline-block;
+  overflow: hidden;
+}
+
 .profile-avatar img {
   width: 80px;
   height: 80px;
   border-radius: 20px;
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.1);
+  display: block;
+  transition: filter 0.2s ease;
+}
+
+.profile-avatar:hover img {
+  filter: brightness(0.65);
+}
+
+.profile-avatar-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 20px;
+}
+
+.profile-avatar:hover .profile-avatar-overlay,
+.profile-avatar--uploading .profile-avatar-overlay {
+  opacity: 1;
 }
 
 .profile-role {

@@ -15,6 +15,8 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({ bio: '', skills: '', telegram: '', github: '', linkedin: '' });
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/login');
@@ -96,6 +98,41 @@ export default function ProfilePage() {
     }
   };
 
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file (PNG, JPG, WEBP).');
+      return;
+    }
+
+    try {
+      setUploadingPhoto(true);
+      const formData = new FormData();
+      formData.append('photo', file);
+
+      const res = await fetch('/api/members/me', {
+        method: 'PUT',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const updated = await res.json();
+        setMember(prev => ({ ...prev, photoUrl: updated.photoUrl }));
+        alert('Profile picture updated successfully!');
+      } else {
+        const err = await res.json();
+        alert('Failed to upload picture: ' + (err.error || 'Server error'));
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Upload failed: ' + err.message);
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
   if (!member) return null;
 
   const domain = member.domain || 'General';
@@ -105,13 +142,31 @@ export default function ProfilePage() {
     <div className={`profile-container ${isElite ? 'profile-container--elite' : ''}`}>
       <div className="profile-header">
         <div className="profile-header__info">
-          <div className="profile-avatar">
+          <div
+            className={`profile-avatar ${uploadingPhoto ? 'profile-avatar--uploading' : ''}`}
+            onClick={() => fileInputRef.current?.click()}
+            title="Click to update profile picture"
+          >
             <img
-              src={member.photoUrl || `https://ui-avatars.com/api/?name=${member.name}&background=random`}
+              src={member.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=random`}
               alt={member.name}
               width={120}
               height={120}
               loading="lazy"
+            />
+            <div className="profile-avatar-overlay">
+              {uploadingPhoto ? (
+                <span style={{ fontSize: '0.75rem', color: '#fff', fontWeight: 700 }}>Uploading...</span>
+              ) : (
+                <Camera size={22} color="#fff" />
+              )}
+            </div>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handlePhotoSelect}
+              accept="image/*"
+              style={{ display: 'none' }}
             />
           </div>
           <div>
