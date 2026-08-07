@@ -12,7 +12,7 @@ const nameToSlug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').repl
 
 export async function GET() {
   const session = await getServerSession(authOptions);
-  if (!session) {
+  if (!session || !session.user || !session.user.email) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -22,6 +22,7 @@ export async function GET() {
     if (!member) return NextResponse.json({ error: "Member not found" }, { status: 404 });
     return NextResponse.json(member);
   } catch (err) {
+    console.error('Error in GET /api/members/me:', err);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

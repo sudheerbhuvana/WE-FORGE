@@ -166,12 +166,12 @@ export default async function HomePage() {
         <div>
             <HeroSection />
             <div className="hero-spacer" />
-            <AppleCardsCarousel
+            {/* <AppleCardsCarousel
                 items={carouselItems}
                 eyebrow="Spotlight"
                 title="What we build"
                 sub="A glimpse of the work, moments, and ideas that move KLForge forward."
-            />
+            /> */}
             <ClubIntro>
                 <section className="bento-wrapper">
                     <MagicBento

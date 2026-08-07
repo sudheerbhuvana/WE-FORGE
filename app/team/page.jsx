@@ -38,8 +38,13 @@ const DOMAIN_ORDER = [
 ];
 
 export default async function TeamPage() {
-  await connectDB();
-  const membersData = await Member.find({ isSuspended: { $ne: true } }).lean();
+  let membersData = [];
+  try {
+    await connectDB();
+    membersData = await Member.find({ isSuspended: { $ne: true } }).lean();
+  } catch (err) {
+    console.error('Error fetching team members for /team:', err);
+  }
 
   // Group members into domain buckets (supporting primary domain + additional roles array)
   const grouped = {};

@@ -31,31 +31,32 @@ export default function ProfilePage() {
         fetch('/api/members/me'),
         fetch('/api/members/me/registrations')
       ]);
-      const mData = await mRes.json();
-      const eData = await eRes.json();
+      const mData = mRes.ok ? await mRes.json() : null;
+      const eData = eRes.ok ? await eRes.json() : [];
       console.log('[Profile] Fetched member:', mData);
 
-      // Same default as the public API: KLEF B.Tech is auto-seeded until the
-      // member has added any school of their own.
-      const userSchools = Array.isArray(mData.schools) ? mData.schools : [];
-      const schools = userSchools.length > 0 ? userSchools : [{
-          _id: 'default-klef',
-          level: 'B.Tech',
-          name: 'KLEF',
-          boardOrUni: 'Koneru Lakshmaiah Education Foundation',
-          year: '',
-          readonly: true,
-      }];
+      if (mData && !mData.error) {
+        const userSchools = Array.isArray(mData.schools) ? mData.schools : [];
+        const schools = userSchools.length > 0 ? userSchools : [{
+            _id: 'default-klef',
+            level: 'B.Tech',
+            name: 'KLEF',
+            boardOrUni: 'Koneru Lakshmaiah Education Foundation',
+            year: '',
+            readonly: true,
+        }];
 
-      setMember({ ...mData, schools });
-      setEvents(eData);
-      setEditForm({
-        bio: mData.bio || '',
-        skills: (mData.skills || []).join(', '),
-        telegram: mData.telegram || '',
-        github: mData.github || '',
-        linkedin: mData.linkedin || '',
-      });
+        setMember({ ...mData, schools });
+        setEditForm({
+          bio: mData.bio || '',
+          skills: Array.isArray(mData.skills) ? mData.skills.join(', ') : (mData.skills || ''),
+          telegram: mData.telegram || '',
+          github: mData.github || '',
+          linkedin: mData.linkedin || '',
+        });
+      }
+
+      setEvents(Array.isArray(eData) ? eData : []);
     } catch (err) {
       console.error(err);
     } finally {
