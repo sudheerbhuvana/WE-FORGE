@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Download, Search, ExternalLink, Eye, X, Trash2 } from 'lucide-react';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import '../../../app/admin/dashboard/AdminDashboard.css';
 
 export default function RecruitmentsSection({
@@ -28,18 +29,28 @@ export default function RecruitmentsSection({
   const [recruitmentSearch, setRecruitmentSearch] = useState('');
   const [viewingRecApp, setViewingRecApp] = useState(null);
   const [recAppNotesInput, setRecAppNotesInput] = useState('');
-  const [appDeleteConfirm, setAppDeleteConfirm] = useState(null);
+  const [appDeleteTarget, setAppDeleteTarget] = useState(null);
+  const [deletingApp, setDeletingApp] = useState(false);
 
-  const deleteApp = async (id, name) => {
+  const handleDeleteClick = (id, name) => {
     if (!canDelete) return;
-    if (!confirm(`Delete recruitment application from "${name}"? This cannot be undone.`)) return;
+    setAppDeleteTarget({ id, name });
+  };
+
+  const confirmDeleteApp = async () => {
+    if (!appDeleteTarget) return;
+    setDeletingApp(true);
     try {
-      const res = await fetch(`/api/recruitments/applications?id=${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/recruitments/applications?id=${appDeleteTarget.id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete application');
-      setAppDeleteConfirm(null);
-      if (viewingRecApp && viewingRecApp._id === id) setViewingRecApp(null);
+      if (viewingRecApp && viewingRecApp._id === appDeleteTarget.id) setViewingRecApp(null);
+      setAppDeleteTarget(null);
       if (refreshData) refreshData();
-    } catch (err) { alert(err.message); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeletingApp(false);
+    }
   };
 
   const saveRecruitmentSettings = async () => {
@@ -365,7 +376,7 @@ export default function RecruitmentsSection({
                         <button
                           className="admin-dash__icon-btn admin-dash__icon-btn--danger"
                           title="Remove Application"
-                          onClick={() => deleteApp(app._id, app.name)}
+                          onClick={() => handleDeleteClick(app._id, app.name)}
                         >
                           <Trash2 size={15} />
                         </button>
@@ -451,7 +462,7 @@ export default function RecruitmentsSection({
                   <button
                     type="button"
                     className="admin-mob-btn admin-mob-btn--delete"
-                    onClick={() => deleteApp(app._id, app.name)}
+                    onClick={() => handleDeleteClick(app._id, app.name)}
                     style={{ padding: '8px 12px' }}
                     title="Remove Application"
                   >

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   ShieldCheck, Plus, Edit3, Trash2, Check, RefreshCw, X, Users, Lock, ChevronDown, ChevronUp, Sparkles, CheckSquare, Square
 } from 'lucide-react';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import '../../../app/admin/dashboard/AdminDashboard.css';
 
 const COLOR_PALETTE = [
@@ -162,25 +163,34 @@ export default function RolesSection({ adminInfo }) {
     }
   };
 
-  const handleDeleteRole = async (role) => {
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteRole = (role) => {
     if (role.isSystem) {
-      alert('Built-in system roles cannot be deleted.');
+      showToast('Built-in system roles cannot be deleted.');
       return;
     }
+    setDeleteTarget(role);
+  };
 
-    if (!confirm(`Are you sure you want to delete the role "${role.name}"?`)) return;
-
+  const confirmDeleteRole = async () => {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/roles/${role.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/roles/${deleteTarget.id}`, { method: 'DELETE' });
       const data = await res.json();
       if (data.success) {
-        showToast(`Role "${role.name}" deleted.`);
+        showToast(`Role "${deleteTarget.name}" deleted.`);
         fetchRoles();
+        setDeleteTarget(null);
       } else {
         setError(data.error || 'Failed to delete role');
       }
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -508,9 +518,19 @@ export default function RolesSection({ adminInfo }) {
                 </button>
               </div>
             </form>
-          </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTarget)}
+        title="Delete Role"
+        description={deleteTarget ? `Are you sure you want to delete the role "${deleteTarget.name}"? This cannot be undone.` : ''}
+        confirmText="Delete Role"
+        variant="destructive"
+        loading={deleting}
+        onConfirm={confirmDeleteRole}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
