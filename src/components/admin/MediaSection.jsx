@@ -7,6 +7,7 @@ import {
   Image as ImageIcon, HardDrive, CheckSquare, Square, RefreshCw, Sparkles, Filter,
   Info, ExternalLink, ArrowUpDown, Folder
 } from 'lucide-react';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import '../../../app/admin/dashboard/AdminDashboard.css';
 
 function formatBytes(bytes, decimals = 1) {
@@ -296,16 +297,30 @@ export default function MediaSection({
     } catch (err) { console.error(err); }
   };
 
-  const bulkDelete = async () => {
-    if (!confirm(`Delete ${selectedMedia.size} selected items permanently?`)) return;
+  const [confirmBulkDeleteOpen, setConfirmBulkDeleteOpen] = useState(false);
+  const [deletingBulk, setDeletingBulk] = useState(false);
+
+  const bulkDelete = () => {
+    if (selectedMedia.size === 0) return;
+    setConfirmBulkDeleteOpen(true);
+  };
+
+  const confirmBulkDeleteAction = async () => {
+    setDeletingBulk(true);
     try {
+      const count = selectedMedia.size;
       for (const id of Array.from(selectedMedia)) {
         await fetch(`/api/media/${id}`, { method: 'DELETE' });
       }
-      showToast(`Deleted ${selectedMedia.size} assets`);
+      showToast(`Deleted ${count} assets`);
       setSelectedMedia(new Set());
+      setConfirmBulkDeleteOpen(false);
       if (refreshData) refreshData();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeletingBulk(false);
+    }
   };
 
   const bulkMove = async (folder) => {
@@ -1129,6 +1144,17 @@ export default function MediaSection({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmBulkDeleteOpen}
+        title="Delete Selected Assets"
+        description={`Are you sure you want to delete ${selectedMedia.size} selected items permanently? This cannot be undone.`}
+        confirmText="Delete Selected"
+        variant="destructive"
+        loading={deletingBulk}
+        onConfirm={confirmBulkDeleteAction}
+        onCancel={() => setConfirmBulkDeleteOpen(false)}
+      />
     </div>
   );
 }

@@ -518,7 +518,7 @@ export default function RecruitmentsSection({
                   type="button"
                   className="admin-dash__cancel-btn"
                   style={{ color: '#ff6b6b', borderColor: 'rgba(255,107,107,0.3)' }}
-                  onClick={() => deleteApp(viewingRecApp._id, viewingRecApp.name)}
+                  onClick={() => handleDeleteClick(viewingRecApp._id, viewingRecApp.name)}
                 >
                   <Trash2 size={14} /> Remove Application
                 </button>
@@ -534,6 +534,17 @@ export default function RecruitmentsSection({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(appDeleteTarget)}
+        title="Delete Recruitment Application"
+        description={appDeleteTarget ? `Are you sure you want to delete the recruitment application from "${appDeleteTarget.name}"? This cannot be undone.` : ''}
+        confirmText="Delete Application"
+        variant="destructive"
+        loading={deletingApp}
+        onConfirm={confirmDeleteApp}
+        onCancel={() => setAppDeleteTarget(null)}
+      />
     </div>
   );
 }

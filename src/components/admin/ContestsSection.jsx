@@ -7,6 +7,7 @@ import {
   Copy, Archive, Play, Pause, Clock, Search, Tag, Sparkles, CheckCircle2, Shield, Calendar, AlertCircle
 } from 'lucide-react';
 import ModernDateTimePicker from '../../../src/components/ModernDateTimePicker';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import '../../../app/admin/dashboard/AdminDashboard.css';
 
 const EMPTY_CONTEST_FORM = {
@@ -228,12 +229,25 @@ export default function ContestsSection({ contestsList = [], adminInfo, refreshD
     } catch (err) { setError(err.message); }
   };
 
-  const deleteContest = async (slug) => {
-    if (!confirm(`Delete contest template "${slug}" and all associated cycles/submissions permanently?`)) return;
+  const [deleteSlugTarget, setDeleteSlugTarget] = useState(null);
+  const [deletingContest, setDeletingContest] = useState(false);
+
+  const deleteContest = (slug) => {
+    setDeleteSlugTarget(slug);
+  };
+
+  const confirmDeleteContest = async () => {
+    if (!deleteSlugTarget) return;
+    setDeletingContest(true);
     try {
-      await fetch(`/api/contests/${slug}`, { method: 'DELETE' });
+      await fetch(`/api/contests/${deleteSlugTarget}`, { method: 'DELETE' });
+      setDeleteSlugTarget(null);
       if (refreshData) refreshData();
-    } catch (err) { setError(err.message); }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setDeletingContest(false);
+    }
   };
 
   const openJudgingModal = async (slug, cycle) => {
@@ -897,6 +911,17 @@ export default function ContestsSection({ contestsList = [], adminInfo, refreshD
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteSlugTarget)}
+        title="Delete Contest Template"
+        description={deleteSlugTarget ? `Are you sure you want to delete contest "${deleteSlugTarget}" and all associated cycles/submissions permanently? This action cannot be undone.` : ''}
+        confirmText="Delete Contest"
+        variant="destructive"
+        loading={deletingContest}
+        onConfirm={confirmDeleteContest}
+        onCancel={() => setDeleteSlugTarget(null)}
+      />
     </div>
   );
 }

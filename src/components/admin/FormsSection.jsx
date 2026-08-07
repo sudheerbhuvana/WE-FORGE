@@ -7,6 +7,7 @@ import {
   FileText, Users, Calendar, Hash, Type, Mail, Phone,
   Link2, AlignLeft, ChevronRight, Download, X, Save
 } from 'lucide-react';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import '../../../app/admin/dashboard/AdminDashboard.css';
 
 const FIELD_TYPES = [
@@ -486,13 +487,20 @@ export default function FormsSection({ forms: initialForms = [], adminInfo, refr
     if (res.ok) { const updated = await res.json(); setForms(prev => prev.map(f => f._id === updated._id ? updated : f)); }
   };
 
-  const handleDelete = async (form) => {
+  const [deleteFormTarget, setDeleteFormTarget] = useState(null);
+
+  const handleDelete = (form) => {
     if (!canDeleteForm) return;
-    if (!confirm(`Delete form "${form.title}" and all ${form.responseCount} responses? This cannot be undone.`)) return;
-    setDeletingId(form._id);
-    await fetch(`/api/forms/${form._id}`, { method: 'DELETE' });
-    setForms(prev => prev.filter(f => f._id !== form._id));
+    setDeleteFormTarget(form);
+  };
+
+  const confirmDeleteForm = async () => {
+    if (!deleteFormTarget) return;
+    setDeletingId(deleteFormTarget._id);
+    await fetch(`/api/forms/${deleteFormTarget._id}`, { method: 'DELETE' });
+    setForms(prev => prev.filter(f => f._id !== deleteFormTarget._id));
     setDeletingId(null);
+    setDeleteFormTarget(null);
   };
 
   const copyLink = (slug) => {
@@ -593,6 +601,17 @@ export default function FormsSection({ forms: initialForms = [], adminInfo, refr
       {viewingResponses && (
         <ResponsesModal form={viewingResponses} canExport={canExportResponses} onClose={() => setViewingResponses(null)} />
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteFormTarget)}
+        title="Delete Form"
+        description={deleteFormTarget ? `Are you sure you want to delete form "${deleteFormTarget.title}" and all ${deleteFormTarget.responseCount || 0} responses? This cannot be undone.` : ''}
+        confirmText="Delete Form"
+        variant="destructive"
+        loading={Boolean(deletingId)}
+        onConfirm={confirmDeleteForm}
+        onCancel={() => setDeleteFormTarget(null)}
+      />
     </div>
   );
 }

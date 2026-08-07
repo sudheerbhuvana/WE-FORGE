@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Trophy, Upload, Trash2, Edit3, Sparkles, RefreshCw, X, Check, Image as ImageIcon, Plus, ExternalLink
 } from 'lucide-react';
+import ConfirmDialog from '../ui/ConfirmDialog';
 import '../../../app/admin/dashboard/AdminDashboard.css';
 
 export default function WallOfKLSection({ adminInfo }) {
@@ -155,23 +156,33 @@ export default function WallOfKLSection({ adminInfo }) {
     }
   };
 
-  const handleDelete = async (filename) => {
-    if (!canDeleteWallOfKL) return;
-    if (!confirm('Are you sure you want to remove this capture from Wall of KL?')) return;
+  const [deleteTargetFilename, setDeleteTargetFilename] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
+  const handleDelete = (filename) => {
+    if (!canDeleteWallOfKL) return;
+    setDeleteTargetFilename(filename);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTargetFilename) return;
+    setDeleting(true);
     try {
-      const res = await fetch(`/api/wallofkl?filename=${encodeURIComponent(filename)}`, {
+      const res = await fetch(`/api/wallofkl?filename=${encodeURIComponent(deleteTargetFilename)}`, {
         method: 'DELETE',
       });
       const data = await res.json();
       if (data.success) {
         showToast('Image removed from Wall of KL.');
+        setDeleteTargetFilename(null);
         fetchGallery();
       } else {
         setError(data.error || 'Failed to delete');
       }
     } catch (err) {
       setError(err.message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -360,6 +371,17 @@ export default function WallOfKLSection({ adminInfo }) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(deleteTargetFilename)}
+        title="Remove Wall of KL Capture"
+        description="Are you sure you want to remove this capture from Wall of KL? This cannot be undone."
+        confirmText="Remove Capture"
+        variant="destructive"
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTargetFilename(null)}
+      />
     </div>
   );
 }

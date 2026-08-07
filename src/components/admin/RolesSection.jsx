@@ -518,6 +518,7 @@ export default function RolesSection({ adminInfo }) {
                 </button>
               </div>
             </form>
+          </div>
         </div>
       )}
 
