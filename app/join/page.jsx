@@ -17,7 +17,6 @@ const RECRUITMENT_DOMAINS = [
   { id: 'Operations & Protocol', title: 'Operations & Protocol', desc: 'Event planning, logistics, ops coordination, and community management.' },
   { id: 'Creative & Content', title: 'Creative & Content', desc: 'Graphic design, UI/UX, branding, illustrations, and creative direction.' },
   { id: 'Public Speaking', title: 'Public Speaking', desc: 'Event anchoring, workshops, presentations, and stage presence.' },
-  { id: 'Advisors', title: 'Advisors', desc: 'Strategic guidance, mentoring, and advisory roles across club activities.' },
 ];
 
 export default function JoinPage() {

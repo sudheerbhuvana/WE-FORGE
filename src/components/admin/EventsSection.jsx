@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, Eye, Users, Edit3, Trash2, Calendar, CheckCircle, X, ListChecks, ChevronUp, ChevronDown, FileText, Image as ImageIcon, FileVideo, Link2, Hash, Plus as PlusIcon, ClipboardCheck } from 'lucide-react';
 import ReactCrop from 'react-image-crop';
