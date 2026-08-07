@@ -323,7 +323,7 @@ function FormBuilderModal({ form, onClose, onSave }) {
   );
 }
 
-function ResponsesModal({ form, onClose }) {
+function ResponsesModal({ form, canExport = true, onClose }) {
   const [responses, setResponses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedResp, setSelectedResp] = useState(null);
@@ -366,7 +366,7 @@ function ResponsesModal({ form, onClose }) {
             <p className="fm-modal-slug">{responses.length} total responses</p>
           </div>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button className="admin-dash__cancel-btn" onClick={exportCSV}><Download size={14}/> Export CSV</button>
+            {canExport && <button className="admin-dash__cancel-btn" onClick={exportCSV}><Download size={14}/> Export CSV</button>}
             <button className="admin-dash__cancel-btn" onClick={onClose}><X size={14}/> Close</button>
           </div>
         </div>
@@ -446,6 +446,7 @@ export default function FormsSection({ forms: initialForms = [], adminInfo, refr
   const canCreateForm = isElite || userPerms.includes('forms.create');
   const canEditForm = isElite || userPerms.includes('forms.edit');
   const canViewSubmissions = isElite || userPerms.includes('forms.view_submissions');
+  const canExportResponses = isElite || userPerms.includes('forms.export_responses');
   const canDeleteForm = isElite || userPerms.includes('forms.delete');
 
   const [forms, setForms] = useState(initialForms);
@@ -590,7 +591,7 @@ export default function FormsSection({ forms: initialForms = [], adminInfo, refr
         />
       )}
       {viewingResponses && (
-        <ResponsesModal form={viewingResponses} onClose={() => setViewingResponses(null)} />
+        <ResponsesModal form={viewingResponses} canExport={canExportResponses} onClose={() => setViewingResponses(null)} />
       )}
     </div>
   );

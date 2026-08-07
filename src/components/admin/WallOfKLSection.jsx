@@ -337,7 +337,7 @@ export default function WallOfKLSection({ adminInfo }) {
             <h3 style={{ margin: '0 0 6px', fontSize: '1.3rem', fontWeight: 800 }}>Edit Capture Details</h3>
             <p style={{ color: 'rgba(255,255,255,0.5)', margin: '0 0 18px', fontSize: '0.85rem' }}>Updating details for {editingImage.filename}</p>
 
-            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <form onSubmit={handleSaveEdit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Title</label>
                 <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }} />

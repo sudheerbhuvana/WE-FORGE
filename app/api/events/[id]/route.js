@@ -32,20 +32,62 @@ export async function PUT(request, { params }) {
     const event = await Event.findOne({ id });
     if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
 
-    const { response } = await requirePermission(actor => canManageEvent(actor, event));
+    const { actor, response } = await requirePermission(a => canManageEvent(a, event));
     if (response) return response;
 
     try {
         const formData = await request.formData();
 
-        if (formData.has('title')) event.title = formData.get('title').trim();
-        if (formData.has('description')) event.description = formData.get('description').trim();
-        if (formData.has('type')) event.type = formData.get('type').trim();
-        if (formData.has('points')) event.points = Number(formData.get('points'));
-        if (formData.has('startTime')) event.startTime = formData.get('startTime');
-        if (formData.has('isPublished')) event.isPublished = formData.get('isPublished') === 'true';
-        if (formData.has('status')) event.status = formData.get('status');
+        // 1. Info & Content fields -> events.edit_info
+        if (formData.has('title') || formData.has('description') || formData.has('type') || formData.has('venue') || formData.has('location') || formData.has('customFields') || formData.has('roles') || formData.has('slots') || formData.has('points')) {
+            if (!isElite(actor) && !isDomainHead(actor) && !hasPermission(actor, 'events.edit_info')) {
+                return NextResponse.json({ error: 'Forbidden: Missing events.edit_info permission' }, { status: 403 });
+            }
+            if (formData.has('title')) event.title = formData.get('title').trim();
+            if (formData.has('description')) event.description = formData.get('description').trim();
+            if (formData.has('type')) event.type = formData.get('type').trim();
+            if (formData.has('points')) event.points = Number(formData.get('points'));
+            if (formData.has('slots')) event.slots = Number(formData.get('slots'));
+            if (formData.has('venue')) event.venue = formData.get('venue').trim();
+            else if (formData.has('location')) event.venue = formData.get('location').trim();
+            if (formData.has('accessType')) event.accessType = formData.get('accessType');
+            if (formData.has('allowedDomains')) event.allowedDomains = parseArray(formData.get('allowedDomains'));
+            if (formData.has('allowedMembers')) event.allowedMembers = parseArray(formData.get('allowedMembers'));
+            if (formData.has('roles')) event.roles = parseArray(formData.get('roles'));
 
+            if (formData.has('customFields')) {
+                try {
+                    const parsed = JSON.parse(formData.get('customFields'));
+                    event.customFields = Array.isArray(parsed) ? parsed : [];
+                } catch {
+                    event.customFields = [];
+                }
+            }
+        }
+
+        // 2. Dates & Timing fields -> events.edit_dates
+        if (formData.has('startTime') || formData.has('endTime') || formData.has('registrationDeadline') || formData.has('eventDate')) {
+            if (!isElite(actor) && !isDomainHead(actor) && !hasPermission(actor, 'events.edit_dates')) {
+                return NextResponse.json({ error: 'Forbidden: Missing events.edit_dates permission' }, { status: 403 });
+            }
+            if (formData.has('startTime')) event.startTime = formData.get('startTime');
+            if (formData.has('endTime')) event.endTime = formData.get('endTime');
+            if (formData.has('registrationDeadline')) event.registrationDeadline = formData.get('registrationDeadline');
+            if (formData.has('eventDate')) event.eventDate = formData.get('eventDate');
+            if (!formData.has('eventDate') && formData.has('startTime')) event.eventDate = formData.get('startTime');
+        }
+
+        // 3. Publishing & Status -> events.publish
+        if (formData.has('isPublished') || formData.has('status') || formData.has('isRegistrationOpen')) {
+            if (!isElite(actor) && !isDomainHead(actor) && !hasPermission(actor, 'events.publish')) {
+                return NextResponse.json({ error: 'Forbidden: Missing events.publish permission' }, { status: 403 });
+            }
+            if (formData.has('isPublished')) event.isPublished = formData.get('isPublished') === 'true';
+            if (formData.has('status')) event.status = formData.get('status');
+            if (formData.has('isRegistrationOpen')) event.isRegistrationOpen = formData.get('isRegistrationOpen') !== 'false';
+        }
+
+        // 4. Certificate Templates -> events.certificates_design
         if (formData.has('certificateTemplateParticipant') || formData.has('certificateTemplateWinner')) {
             if (!isElite(actor) && !hasPermission(actor, 'events.certificates_design')) {
                 return NextResponse.json({ error: 'Forbidden: Missing events.certificates_design permission' }, { status: 403 });
@@ -53,30 +95,6 @@ export async function PUT(request, { params }) {
             if (formData.has('certificateTemplateParticipant')) event.certificateTemplateParticipant = formData.get('certificateTemplateParticipant');
             if (formData.has('certificateTemplateWinner')) event.certificateTemplateWinner = formData.get('certificateTemplateWinner');
         }
-
-        if (formData.has('endTime')) event.endTime = formData.get('endTime');
-        if (formData.has('slots')) event.slots = Number(formData.get('slots'));
-        if (formData.has('registrationDeadline')) event.registrationDeadline = formData.get('registrationDeadline');
-        if (formData.has('eventDate')) event.eventDate = formData.get('eventDate');
-        if (formData.has('venue')) event.venue = formData.get('venue').trim();
-        else if (formData.has('location')) event.venue = formData.get('location').trim();
-        if (formData.has('accessType')) event.accessType = formData.get('accessType');
-        if (formData.has('allowedDomains')) event.allowedDomains = parseArray(formData.get('allowedDomains'));
-        if (formData.has('allowedMembers')) event.allowedMembers = parseArray(formData.get('allowedMembers'));
-        if (formData.has('roles')) event.roles = parseArray(formData.get('roles'));
-        if (formData.has('isRegistrationOpen')) event.isRegistrationOpen = formData.get('isRegistrationOpen') !== 'false';
-
-        // Custom form fields (full replacement on edit).
-        if (formData.has('customFields')) {
-            try {
-                const parsed = JSON.parse(formData.get('customFields'));
-                event.customFields = Array.isArray(parsed) ? parsed : [];
-            } catch {
-                event.customFields = [];
-            }
-        }
-
-        if (!formData.has('eventDate') && formData.has('startTime')) event.eventDate = formData.get('startTime');
 
         // Recalculate status based on new dates
         const now = new Date();

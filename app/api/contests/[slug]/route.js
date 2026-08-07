@@ -52,7 +52,7 @@ export async function GET(req, { params }) {
 }
 
 export async function PUT(req, { params }) {
-  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.edit'));
+  const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.edit') || hasPermission(a, 'contests.publish'));
   if (response) return response;
 
   try {
@@ -77,7 +77,12 @@ export async function PUT(req, { params }) {
     if (typeof body.visibility === 'string') patch.visibility = body.visibility;
     if (typeof body.featured === 'boolean') patch.featured = body.featured;
     if (typeof body.isPaused === 'boolean') patch.isPaused = body.isPaused;
-    if (typeof body.isPublished === 'boolean') patch.isPublished = body.isPublished;
+    if (typeof body.isPublished === 'boolean') {
+      if (!isElite(actor) && !hasPermission(actor, 'contests.publish')) {
+        return NextResponse.json({ error: 'Forbidden: Missing contests.publish permission' }, { status: 403 });
+      }
+      patch.isPublished = body.isPublished;
+    }
     if (body.schedule) patch.schedule = body.schedule;
     if (Array.isArray(body.customFields)) patch.customFields = body.customFields;
     patch.updatedAt = new Date();

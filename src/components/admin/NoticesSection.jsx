@@ -16,6 +16,8 @@ export default function NoticesSection({ notices, adminInfo, refreshData }) {
   const canCreateNotice = isElite || userPerms.includes('notices.create');
   const canEditNotice = isElite || userPerms.includes('notices.edit');
   const canDeleteNotice = isElite || userPerms.includes('notices.delete');
+  const canNotifyMembers = isElite || userPerms.includes('notices.notify_members');
+  const canPinNotice = isElite || userPerms.includes('notices.pin');
 
   const [showNoticeForm, setShowNoticeForm] = useState(false);
   const [noticeEditing, setNoticeEditing] = useState(null);
@@ -161,6 +163,18 @@ export default function NoticesSection({ notices, adminInfo, refreshData }) {
               <div className="admin-dash__field admin-dash__field--full"><label>Title *</label><input required value={noticeForm.title} onChange={e => setNoticeForm({ ...noticeForm, title: e.target.value })} placeholder="Notice title" /></div>
               <div className="admin-dash__field admin-dash__field--full"><label>Message *</label><textarea required rows="4" value={noticeForm.message} onChange={e => setNoticeForm({ ...noticeForm, message: e.target.value })} placeholder="Notice details..." /></div>
               <div className="admin-dash__field"><label>Priority</label><select value={noticeForm.priority} onChange={e => setNoticeForm({ ...noticeForm, priority: e.target.value })}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></div>
+              {canPinNotice && (
+                <div className="admin-dash__field" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <input type="checkbox" id="isPinned" checked={!!noticeForm.isPinned} onChange={e => setNoticeForm({ ...noticeForm, isPinned: e.target.checked })} />
+                  <label htmlFor="isPinned" style={{ margin: 0 }}>Pin Notice to Top of Feed</label>
+                </div>
+              )}
+              {canNotifyMembers && !noticeEditing && (
+                <div className="admin-dash__field" style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <input type="checkbox" id="notifyMembers" checked={!!noticeForm.notifyMembers} onChange={e => setNoticeForm({ ...noticeForm, notifyMembers: e.target.checked })} />
+                  <label htmlFor="notifyMembers" style={{ margin: 0 }}>Broadcast Notification to All Members</label>
+                </div>
+              )}
             </div>
             <div className="admin-dash__modal-actions">
               <button type="button" className="admin-dash__cancel-btn" onClick={() => setShowNoticeForm(false)}>Cancel</button>

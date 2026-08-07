@@ -14,7 +14,7 @@ export async function GET() {
 }
 
 export async function POST(request) {
-    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'notices.create'));
+    const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'notices.create'));
     if (response) return response;
 
     try {

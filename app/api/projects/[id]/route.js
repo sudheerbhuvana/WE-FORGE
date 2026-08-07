@@ -9,7 +9,7 @@ const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/projects');
 const toSlug = (str) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
 export async function PUT(request, { params }) {
-    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'projects.edit'));
+    const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'projects.edit'));
     if (response) return response;
 
     try {

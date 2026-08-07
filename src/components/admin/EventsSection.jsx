@@ -96,6 +96,7 @@ export default function EventsSection({ events, adminInfo, refreshData }) {
   const [selectedEventForRegs, setSelectedEventForRegs] = useState(null);
   const [eventRegs, setEventRegs] = useState([]);
   const [regsLoading, setRegsLoading] = useState(false);
+  const [expandedRegId, setExpandedRegId] = useState(null);
 
   const openAddEvent = () => {
     if (!canCreateEvent) return;

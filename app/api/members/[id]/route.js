@@ -16,7 +16,7 @@ export async function PUT(request, { params }) {
     const target = await Member.findOne({ id });
     if (!target) return NextResponse.json({ error: 'Member not found' }, { status: 404 });
 
-    const { response } = await requirePermission(canManageMember, target);
+    const { actor, response } = await requirePermission(canManageMember, target);
     if (response) return response;
 
     try {
