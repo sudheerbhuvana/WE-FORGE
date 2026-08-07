@@ -46,13 +46,13 @@ export async function GET(req) {
 }
 
 export async function PATCH(req) {
-  const { actor, response } = await requirePermission(a => hasPermission(a, 'recruitments.change_app_status'));
+  const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'recruitments.change_app_status') || hasPermission(a, 'recruitments.edit_application') || hasPermission(a, 'recruitments.schedule_interview'));
   if (response) return response;
 
   try {
     await connectDB();
     const body = await req.json();
-    const { id, status, adminNotes } = body;
+    const { id, status, adminNotes, interviewSlot } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Application ID is required' }, { status: 400 });
@@ -60,10 +60,22 @@ export async function PATCH(req) {
 
     const patch = {};
     if (['pending', 'shortlisted', 'accepted', 'rejected'].includes(status)) {
+      if (!isElite(actor) && !hasPermission(actor, 'recruitments.change_app_status')) {
+        return NextResponse.json({ error: 'Forbidden: Missing recruitments.change_app_status permission' }, { status: 403 });
+      }
       patch.status = status;
     }
     if (typeof adminNotes === 'string') {
+      if (!isElite(actor) && !hasPermission(actor, 'recruitments.edit_application')) {
+        return NextResponse.json({ error: 'Forbidden: Missing recruitments.edit_application permission' }, { status: 403 });
+      }
       patch.adminNotes = adminNotes;
+    }
+    if (interviewSlot !== undefined) {
+      if (!isElite(actor) && !hasPermission(actor, 'recruitments.schedule_interview')) {
+        return NextResponse.json({ error: 'Forbidden: Missing recruitments.schedule_interview permission' }, { status: 403 });
+      }
+      patch.interviewSlot = interviewSlot;
     }
     patch.updatedAt = new Date();
 

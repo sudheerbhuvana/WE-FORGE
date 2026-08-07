@@ -10,10 +10,20 @@ const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/members');
 
 const nameToSlug = (name) => name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
-export async function GET() {
+export async function GET(request) {
     try {
         await connectDB();
-        const members = await Member.find().sort({ orderIndex: 1, createdAt: 1 });
+        const actor = await getActor();
+        const canViewSensitive = actor && (isElite(actor) || hasPermission(actor, 'members.view_sensitive'));
+        const members = await Member.find().sort({ orderIndex: 1, createdAt: 1 }).lean();
+        
+        if (!canViewSensitive) {
+            members.forEach(m => {
+                delete m.phone;
+                delete m.academicLogs;
+            });
+        }
+        
         return NextResponse.json(members);
     } catch (err) {
         return NextResponse.json({ error: err.message }, { status: 500 });
@@ -21,7 +31,11 @@ export async function GET() {
 }
 
 export async function POST(request) {
-    const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'members.create'));
+    const formData = await request.formData();
+    const isBulk = formData.get('isBulk') === 'true';
+    const permToCheck = isBulk ? 'members.bulk_import' : 'members.create';
+
+    const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, permToCheck));
     if (response) return response;
 
     try {

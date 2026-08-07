@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
  * Optional ?limit=N caps the result count (default 200).
  */
 export async function GET(req, { params }) {
-  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.submissions_view'));
+  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.submissions_view') || hasPermission(a, 'contests.submissions_download'));
   if (response) return response;
 
   try {

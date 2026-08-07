@@ -37,6 +37,7 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
 
   const canCreateMember = isElite || userPerms.includes('members.create');
   const canDeleteMember = isElite || userPerms.includes('members.delete');
+  const canExportCsv = isElite || userPerms.includes('members.export_csv');
 
   const [searchTerm, setSearchTerm] = useState('');
   const [memberFilter, setMemberFilter] = useState('all');
@@ -152,7 +153,9 @@ export default function MembersSection({ members, adminInfo, refreshData }) {
             {canCreateMember && (
               <button className="admin-dash__add-btn" onClick={() => { setMemberEditing(null); setShowMemberForm(true); }}><Plus size={18} /> Add Member</button>
             )}
-            <button className="admin-dash__export-btn" onClick={downloadCSV}><Download size={16} /> Export CSV</button>
+            {canExportCsv && (
+              <button className="admin-dash__export-btn" onClick={downloadCSV}><Download size={16} /> Export CSV</button>
+            )}
           </div>
         </div>
         

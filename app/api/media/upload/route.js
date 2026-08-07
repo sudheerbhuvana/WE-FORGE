@@ -10,7 +10,7 @@ export async function POST(req) {
   const rateLimit = await checkRateLimit(req, 'upload');
   if (!rateLimit.allowed) return rateLimit.response;
 
-  const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'media.upload_images') || hasPermission(a, 'media.upload_videos'));
+  const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'media.upload_images') || hasPermission(a, 'media.upload_videos') || hasPermission(a, 'media.upload_documents'));
   if (response) return response;
 
   try {

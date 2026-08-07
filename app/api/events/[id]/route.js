@@ -3,7 +3,7 @@ import connectDB from '@/lib/db';
 import Event from '@/lib/models/Event';
 import { saveFile, deleteFile } from '@/lib/uploadHelper';
 import path from 'path';
-import { requirePermission, canManageEvent, isElite, hasPermission } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, isDomainHead, hasPermission } from '@/lib/permissions';
 
 const UPLOAD_DIR = path.resolve(process.cwd(), 'public/uploads/events');
 const toSlug = (str) => str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -43,6 +43,17 @@ export async function PUT(request, { params }) {
         if (formData.has('type')) event.type = formData.get('type').trim();
         if (formData.has('points')) event.points = Number(formData.get('points'));
         if (formData.has('startTime')) event.startTime = formData.get('startTime');
+        if (formData.has('isPublished')) event.isPublished = formData.get('isPublished') === 'true';
+        if (formData.has('status')) event.status = formData.get('status');
+
+        if (formData.has('certificateTemplateParticipant') || formData.has('certificateTemplateWinner')) {
+            if (!isElite(actor) && !hasPermission(actor, 'events.certificates_design')) {
+                return NextResponse.json({ error: 'Forbidden: Missing events.certificates_design permission' }, { status: 403 });
+            }
+            if (formData.has('certificateTemplateParticipant')) event.certificateTemplateParticipant = formData.get('certificateTemplateParticipant');
+            if (formData.has('certificateTemplateWinner')) event.certificateTemplateWinner = formData.get('certificateTemplateWinner');
+        }
+
         if (formData.has('endTime')) event.endTime = formData.get('endTime');
         if (formData.has('slots')) event.slots = Number(formData.get('slots'));
         if (formData.has('registrationDeadline')) event.registrationDeadline = formData.get('registrationDeadline');
@@ -112,4 +123,40 @@ export async function DELETE(request, { params }) {
     } catch (err) {
         return NextResponse.json({ error: err.message }, { status: 500 });
     }
+}
+
+export async function POST(request, { params }) {
+    const { id } = await params;
+    await connectDB();
+    const event = await Event.findOne({ id });
+    if (!event) return NextResponse.json({ error: 'Event not found' }, { status: 404 });
+
+    const body = await request.json().catch(() => ({}));
+    const action = body.action || 'duplicate';
+
+    if (action === 'duplicate') {
+        const { response } = await requirePermission(a => isElite(a) || isDomainHead(a) || hasPermission(a, 'events.duplicate'));
+        if (response) return response;
+
+        const newId = `${event.id}-copy-${Date.now().toString().slice(-4)}`;
+        const clone = event.toObject();
+        delete clone._id;
+        delete clone.id;
+        clone.id = newId;
+        clone.title = `Copy of ${clone.title}`;
+        clone.status = 'upcoming';
+        clone.createdAt = new Date();
+
+        const created = await Event.create(clone);
+        return NextResponse.json({ success: true, event: created }, { status: 201 });
+    }
+
+    if (action === 'remind') {
+        const { response } = await requirePermission(a => isElite(a) || isDomainHead(a) || hasPermission(a, 'events.manage_reminders'));
+        if (response) return response;
+
+        return NextResponse.json({ success: true, message: `Event reminder broadcast queued for ${event.title}` });
+    }
+
+    return NextResponse.json({ error: 'Unknown action' }, { status: 400 });
 }

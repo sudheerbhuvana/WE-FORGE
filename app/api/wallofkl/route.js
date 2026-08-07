@@ -144,10 +144,26 @@ export async function POST(req) {
     } else {
       // Handle Metadata Update (JSON)
       const body = await req.json();
-      const { filename, title, badge, author, tag } = body;
+      const { filename, title, badge, author, tag, orderIndex, isFeatured } = body;
 
       if (!filename) {
         return NextResponse.json({ success: false, error: 'Filename is required' }, { status: 400 });
+      }
+
+      if (title !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.edit_title')) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_title permission' }, { status: 403 });
+      }
+      if (badge !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.edit_badge')) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_badge permission' }, { status: 403 });
+      }
+      if (author !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.edit_author')) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_author permission' }, { status: 403 });
+      }
+      if (orderIndex !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.reorder')) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.reorder permission' }, { status: 403 });
+      }
+      if (isFeatured !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.feature')) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.feature permission' }, { status: 403 });
       }
 
       const metadataPath = path.join(dirPath, 'metadata.json');
@@ -158,10 +174,12 @@ export async function POST(req) {
       } catch (e) {}
 
       metadata[filename] = {
-        title: title || metadata[filename]?.title || filename,
-        badge: badge || metadata[filename]?.badge || '🏆 CONTEST WINNER',
-        author: author || metadata[filename]?.author || '',
-        tag: tag || metadata[filename]?.tag || '',
+        title: title !== undefined ? title : metadata[filename]?.title || filename,
+        badge: badge !== undefined ? badge : metadata[filename]?.badge || '🏆 CONTEST WINNER',
+        author: author !== undefined ? author : metadata[filename]?.author || '',
+        tag: tag !== undefined ? tag : metadata[filename]?.tag || '',
+        orderIndex: orderIndex !== undefined ? orderIndex : metadata[filename]?.orderIndex || 0,
+        isFeatured: isFeatured !== undefined ? isFeatured : !!metadata[filename]?.isFeatured,
       };
 
       await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));

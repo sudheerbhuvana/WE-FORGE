@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 import connectDB from '@/lib/db';
 import Registration from '@/lib/models/Registration';
 import Certificate from '@/lib/models/Certificate';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, isDomainHead, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +24,7 @@ const buildIdCondition = (val) => {
  * Revokes issued certificates (single or bulk) and clears certificate links from registrations.
  */
 export async function POST(req, { params }) {
-    const { response } = await requirePermission(canManageEvent);
+    const { response } = await requirePermission(actor => isElite(actor) || isDomainHead(actor) || hasPermission(actor, 'events.certificates_revoke') || hasPermission(actor, 'events.certificates_issue'));
     if (response) return response;
 
     try {

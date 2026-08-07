@@ -26,6 +26,19 @@ export async function PUT(request, { params }) {
         if (formData.has('demo')) project.demo = formData.get('demo').trim();
         if (formData.has('technologies')) project.technologies = JSON.parse(formData.get('technologies'));
 
+        if (formData.has('isFeatured') || formData.has('featured')) {
+            if (!isElite(actor) && !hasPermission(actor, 'projects.feature')) {
+                return NextResponse.json({ error: 'Forbidden: Missing projects.feature permission' }, { status: 403 });
+            }
+            project.isFeatured = (formData.get('isFeatured') || formData.get('featured')) === 'true';
+        }
+        if (formData.has('orderIndex')) {
+            if (!isElite(actor) && !hasPermission(actor, 'projects.reorder')) {
+                return NextResponse.json({ error: 'Forbidden: Missing projects.reorder permission' }, { status: 403 });
+            }
+            project.orderIndex = Number(formData.get('orderIndex')) || 0;
+        }
+
         const photoFile = formData.get('image');
         if (photoFile && photoFile.size > 0) {
             await deleteFile(project.imageUrl, UPLOAD_DIR);

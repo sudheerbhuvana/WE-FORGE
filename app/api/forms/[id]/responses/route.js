@@ -21,7 +21,7 @@ async function getServerSessionSafe() {
 
 // GET /api/forms/[id]/responses — admin: get all responses for a form
 export async function GET(req, { params }) {
-  const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'forms.view_submissions'));
+  const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'forms.view_submissions') || hasPermission(actor, 'forms.export_responses'));
   if (response) return response;
 
   const { id } = await params;

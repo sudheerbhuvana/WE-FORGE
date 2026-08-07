@@ -79,11 +79,29 @@ export async function GET() {
 
 export async function POST(req) {
   try {
-    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'roles.create'));
-    if (response) return response;
-
     await connectDB();
     const body = await req.json();
+
+    if (body.action === 'duplicate' && body.roleId) {
+      const { response: dupResp } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'roles.duplicate'));
+      if (dupResp) return dupResp;
+
+      const sourceRole = await Role.findById(body.roleId);
+      if (!sourceRole) return NextResponse.json({ success: false, error: 'Source role not found' }, { status: 404 });
+
+      const newRole = await Role.create({
+        name: `Copy of ${sourceRole.name}`,
+        description: sourceRole.description || '',
+        permissions: sourceRole.permissions || [],
+        color: sourceRole.color || '#71C4FF',
+        isSystem: false,
+      });
+
+      return NextResponse.json({ success: true, role: { ...newRole.toObject(), id: newRole._id.toString() } }, { status: 201 });
+    }
+
+    const { response } = await requirePermission(actor => isElite(actor) || hasPermission(actor, 'roles.create'));
+    if (response) return response;
 
     const { name, description, permissions, color } = body;
 

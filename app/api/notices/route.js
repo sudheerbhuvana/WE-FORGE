@@ -19,10 +19,14 @@ export async function POST(request) {
 
     try {
         await connectDB();
-        const { title, message, priority } = await request.json();
+        const { title, message, priority, notifyMembers } = await request.json();
         
         if (!title || !message) {
             return NextResponse.json({ error: 'Title and message are required' }, { status: 400 });
+        }
+
+        if (notifyMembers && !isElite(actor) && !hasPermission(actor, 'notices.notify_members')) {
+            return NextResponse.json({ error: 'Forbidden: Missing notices.notify_members permission' }, { status: 403 });
         }
         
         const newNotice = new Notice({

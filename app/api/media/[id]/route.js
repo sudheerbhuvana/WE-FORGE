@@ -7,6 +7,18 @@ import { requirePermission, canManageMedia, isElite, hasPermission } from '@/lib
 
 export const dynamic = 'force-dynamic';
 
+export async function GET(req, { params }) {
+    const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'media.view') || hasPermission(a, 'media.download'));
+    if (response) return response;
+
+    const { id } = await params;
+    await connectDB();
+    const media = await Media.findById(id).lean();
+    if (!media) return NextResponse.json({ error: 'Media asset not found' }, { status: 404 });
+
+    return NextResponse.json(media);
+}
+
 /**
  * PATCH /api/media/[id]
  *
@@ -29,7 +41,12 @@ export async function PATCH(req, { params }) {
         console.log('[PATCH /api/media/:id] id:', id, 'body:', JSON.stringify(body));
 
         const patch = {};
-        if (typeof body.title === 'string') patch.title = body.title.slice(0, 200);
+        if (typeof body.title === 'string') {
+            if (!isElite(actor) && !hasPermission(actor, 'media.rename')) {
+                return NextResponse.json({ error: 'Forbidden: Missing media.rename permission' }, { status: 403 });
+            }
+            patch.title = body.title.slice(0, 200);
+        }
         if (typeof body.description === 'string') patch.description = body.description.slice(0, 1000);
         if (Array.isArray(body.tags)) {
             patch.tags = body.tags

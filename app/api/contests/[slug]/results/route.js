@@ -3,12 +3,12 @@ import connectDB from '@/lib/db';
 import ContestTemplate from '@/lib/models/ContestTemplate';
 import ContestCycle from '@/lib/models/ContestCycle';
 import ContestSubmission from '@/lib/models/ContestSubmission';
-import { requirePermission, canManageEvent } from '@/lib/permissions';
+import { requirePermission, canManageEvent, isElite, hasPermission } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req, { params }) {
-  const { response } = await requirePermission(canManageEvent);
+  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.submissions_view') || hasPermission(a, 'contests.submissions_grade') || hasPermission(a, 'contests.export_results'));
   if (response) return response;
 
   try {
@@ -47,7 +47,7 @@ export async function GET(req, { params }) {
 }
 
 export async function POST(req, { params }) {
-  const { response } = await requirePermission(canManageEvent);
+  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'contests.submissions_grade') || hasPermission(a, 'contests.announcement_winners'));
   if (response) return response;
 
   try {

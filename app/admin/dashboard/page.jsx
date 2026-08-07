@@ -181,19 +181,20 @@ export default function AdminDashboard() {
 
   const userPerms = Array.isArray(adminInfo.permissions) ? adminInfo.permissions : [];
   const hasModulePerm = (prefix) => userPerms.some(p => p.startsWith(prefix));
+  const hasSpecificPerm = (permId) => userPerms.includes(permId);
 
   const NAV_ITEMS = [
-    { id: 'members',      label: 'Members',      icon: <Users size={18} />,        count: members.length,          visible: adminInfo.isElite || adminInfo.isDomainHead || hasModulePerm('members.') },
-    { id: 'events',       label: 'Events',       icon: <Calendar size={18} />,      count: events.length,           visible: adminInfo.isElite || adminInfo.isDomainHead || hasModulePerm('events.') },
-    { id: 'contests',     label: 'Contests',     icon: <Trophy size={18} />,        count: contestsList.length,     visible: adminInfo.isElite || adminInfo.isDomainHead || hasModulePerm('contests.') },
-    { id: 'projects',     label: 'Projects',     icon: <FolderKanban size={18} />,  count: projects.length,         visible: adminInfo.isElite || hasModulePerm('projects.') },
-    { id: 'notices',      label: 'Notices',      icon: <Bell size={18} />,          count: notices.length,          visible: adminInfo.isElite || hasModulePerm('notices.') },
-    { id: 'media',        label: 'Media',        icon: <ImageIcon size={18} />,     count: media.length,            visible: adminInfo.isElite || hasModulePerm('media.') },
-    { id: 'wallofkl',     label: 'Wall of KL',   icon: <Sparkles size={18} />,      count: null,                    visible: adminInfo.isElite || hasModulePerm('wallofkl.') },
-    { id: 'roles',        label: 'Roles & Permissions', icon: <ShieldCheck size={18} />, count: null,            visible: adminInfo.isElite || hasModulePerm('roles.') },
+    { id: 'members',      label: 'Members',      icon: <Users size={18} />,        count: members.length,          visible: adminInfo.isElite || adminInfo.isDomainHead || hasSpecificPerm('members.view_all') || hasSpecificPerm('members.view_domain') || hasModulePerm('members.') },
+    { id: 'events',       label: 'Events',       icon: <Calendar size={18} />,      count: events.length,           visible: adminInfo.isElite || adminInfo.isDomainHead || hasSpecificPerm('events.view_public') || hasSpecificPerm('events.view_internal') || hasModulePerm('events.') },
+    { id: 'contests',     label: 'Contests',     icon: <Trophy size={18} />,        count: contestsList.length,     visible: adminInfo.isElite || adminInfo.isDomainHead || hasSpecificPerm('contests.view') || hasModulePerm('contests.') },
+    { id: 'projects',     label: 'Projects',     icon: <FolderKanban size={18} />,  count: projects.length,         visible: adminInfo.isElite || hasSpecificPerm('projects.view') || hasModulePerm('projects.') },
+    { id: 'notices',      label: 'Notices',      icon: <Bell size={18} />,          count: notices.length,          visible: adminInfo.isElite || hasSpecificPerm('notices.view') || hasModulePerm('notices.') },
+    { id: 'media',        label: 'Media',        icon: <ImageIcon size={18} />,     count: media.length,            visible: adminInfo.isElite || hasSpecificPerm('media.view') || hasModulePerm('media.') },
+    { id: 'wallofkl',     label: 'Wall of KL',   icon: <Sparkles size={18} />,      count: null,                    visible: adminInfo.isElite || hasSpecificPerm('wallofkl.view') || hasModulePerm('wallofkl.') },
+    { id: 'roles',        label: 'Roles & Permissions', icon: <ShieldCheck size={18} />, count: null,            visible: adminInfo.isElite || hasSpecificPerm('roles.view') || hasModulePerm('roles.') },
     { id: 'settings',     label: 'System & Security', icon: <Sliders size={18} />,     count: null,            visible: adminInfo.isElite },
-    { id: 'recruitments', label: 'Recruitments', icon: <UserPlus size={18} />,      count: recruitmentApps.length,  visible: adminInfo.isElite || hasModulePerm('recruitments.') },
-    { id: 'forms',        label: 'Forms',        icon: <FileText size={18} />,      count: null,                    visible: adminInfo.isElite || hasModulePerm('forms.') },
+    { id: 'recruitments', label: 'Recruitments', icon: <UserPlus size={18} />,      count: recruitmentApps.length,  visible: adminInfo.isElite || hasSpecificPerm('recruitments.view_settings') || hasSpecificPerm('recruitments.view_applications') || hasModulePerm('recruitments.') },
+    { id: 'forms',        label: 'Forms',        icon: <FileText size={18} />,      count: null,                    visible: adminInfo.isElite || hasSpecificPerm('forms.view') || hasModulePerm('forms.') },
   ].filter(i => i.visible);
 
   // Auto-switch to first available tab if current activeSection is not visible to this user
