@@ -15,7 +15,9 @@ const cardData = [
     title: 'Faculty Mentors',
     description: 'Guidance from mentors shaping strong technical foundations.',
     label: 'Faculties',
-    route: '/faculties'
+    route: '/faculties',
+    image: 'https://r2.klforge.in/manual-uploads/hero-children.jpg',
+    noLift: true
   },
   {
     color: '#0a0a0a',
@@ -30,7 +32,7 @@ const cardData = [
     description: 'Meet the builders organizing workshops, sprints, and launches.',
     label: 'Team',
     route: '/team',
-    image: '/images/team.jpg',
+    image: 'https://r2.klforge.in/manual-uploads/testimg1.jpg',
     noLift: true
   },
   {
@@ -38,7 +40,9 @@ const cardData = [
     title: 'Learning Domains',
     description: 'Explore focused tracks across design, development, and systems.',
     label: 'Domains',
-    route: '/domains'
+    route: '/domains',
+    image: 'https://r2.klforge.in/manual-uploads/forge.png',
+    noLift: true
   },
   {
     color: '#0a0a0a',
@@ -46,7 +50,7 @@ const cardData = [
     description: 'Join hackathons, sessions, demos, and collaborative build days.',
     label: 'Events',
     route: '/events',
-    image: '/images/events weforge.jpeg',
+    image: 'https://r2.klforge.in/manual-uploads/events%20weforge.jpeg',
     noLift: true
   },
   {
