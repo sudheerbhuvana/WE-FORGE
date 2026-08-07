@@ -16,12 +16,15 @@ const Footer = () => {
             alt="KLFORGE"
             className="site-footer__logo"
           />
-          <button
+          <a
             className="site-footer__cta"
-            onClick={() => router.push('/team')}
+            href="https://t.me/experiential_learning_hte"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
           >
             Join Forge
-          </button>
+          </a>
         </div>
 
         {/* Right — link columns in a card */}
@@ -58,6 +61,10 @@ const Footer = () => {
         </p>
         <div className="site-footer__socials">
           <span className="site-footer__follow">Follow us on:</span>
+          {/* Telegram */}
+          <a href="https://t.me/experiential_learning_hte" target="_blank" rel="noopener noreferrer" className="site-footer__icon" aria-label="Telegram">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </a>
           {/* Instagram */}
           <a href="https://www.instagram.com/kl_forge/" target="_blank" rel="noopener noreferrer" className="site-footer__icon" aria-label="Instagram">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" /><circle cx="12" cy="12" r="5" /><circle cx="17.5" cy="6.5" r="1.5" /></svg>
