@@ -73,11 +73,21 @@ const EMPTY = {
 
 // ── Helpers ────────────────────────────────────────────────
 
+function isAdvisorDomain(domain) {
+    if (!domain) return false;
+    const str = String(domain).trim().toLowerCase();
+    return str === 'advisor' || str === 'advisors' || str.includes('advisor');
+}
+
 function roleOptionsForDomain(domain, domainsList) {
     if (!domain) return DEFAULT_ROLE_OPTIONS;
     if (domain === 'Zero Order') return ELITE_TIER_ROLES;
-    if (domain === 'Advisor') return ['Advisor'];
-    const found = domainsList.find(d => d.name === domain);
+    if (isAdvisorDomain(domain)) return ['Advisor'];
+    const found = domainsList?.find(d => {
+        const name = typeof d === 'string' ? d : d?.name;
+        return name === domain;
+    });
+    if (found && isAdvisorDomain(found.name)) return ['Advisor'];
     if (!found) return DEFAULT_ROLE_OPTIONS;
 
     // merge admin roles (Chief/Lead/Co-Lead) + general tiers
@@ -123,13 +133,15 @@ function validate(form, canEditAnyDomain, actorDomain) {
 // Build the form state from a member doc (or empty for "add").
 function buildInitialForm(member) {
     if (!member) return EMPTY;
+    const initialDomain = member.domain || 'General';
+    const isAdvisor = isAdvisorDomain(initialDomain);
     return {
         ...EMPTY,
         ...member,
         // Defensive copies — fields that can be undefined/null in the doc.
         name: member.name || '',
-        role: member.role || 'Student',
-        domain: member.domain || 'General',
+        role: isAdvisor ? 'Advisor' : (member.role || 'Student'),
+        domain: initialDomain,
         rollNumber: member.rollNumber || '',
         email: member.email || (member.rollNumber ? `${member.rollNumber}@kluniversity.in` : ''),
         description: member.description || '',
@@ -144,7 +156,10 @@ function buildInitialForm(member) {
         photoUrl: member.photoUrl || '',
         isSuspended: !!member.isSuspended,
         skills: Array.isArray(member.skills) ? member.skills.join(', ') : (member.skills || ''),
-        roles: Array.isArray(member.roles) ? member.roles.map(r => ({ ...r })) : [],
+        roles: Array.isArray(member.roles) ? member.roles.map(r => ({
+            ...r,
+            role: isAdvisorDomain(r.domain) ? 'Advisor' : r.role
+        })) : [],
     };
 }
 
@@ -226,7 +241,7 @@ export default function MemberEditModal({
             // If we change domain, reset primary role to a sensible default for that domain
             if (name === 'domain') {
                 if (value === 'Zero Order') next.role = 'President';
-                else if (value === 'Advisor') next.role = 'Advisor';
+                else if (isAdvisorDomain(value)) next.role = 'Advisor';
                 else if (value === 'General') next.role = 'Student';
                 else next.role = 'Core Member';
             }
@@ -279,16 +294,24 @@ export default function MemberEditModal({
     };
 
     const addDomainRole = () => {
-        setForm(prev => ({
-            ...prev,
-            roles: [...(prev.roles || []), { domain: prev.domain || '', role: 'Core Member' }],
-        }));
+        setForm(prev => {
+            const dom = prev.domain || '';
+            const isAdvisor = isAdvisorDomain(dom);
+            return {
+                ...prev,
+                roles: [...(prev.roles || []), { domain: dom, role: isAdvisor ? 'Advisor' : 'Core Member' }],
+            };
+        });
     };
 
     const updateDomainRole = (i, field, value) => {
         setForm(prev => {
             const list = [...(prev.roles || [])];
-            list[i] = { ...list[i], [field]: value };
+            const updated = { ...list[i], [field]: value };
+            if (field === 'domain' && isAdvisorDomain(value)) {
+                updated.role = 'Advisor';
+            }
+            list[i] = updated;
             return { ...prev, roles: list };
         });
     };
@@ -314,8 +337,10 @@ export default function MemberEditModal({
         const skillsArray = String(form.skills || '')
             .split(',').map(s => s.trim()).filter(Boolean);
 
+        const finalRole = isAdvisorDomain(form.domain) ? 'Advisor' : (form.role || '').trim();
+
         fd.append('name', (form.name || '').trim());
-        fd.append('role', (form.role || '').trim());
+        fd.append('role', finalRole);
         fd.append('domain', (form.domain || '').trim());
         fd.append('rollNumber', (form.rollNumber || '').trim());
         fd.append('email', (form.email || '').trim());
@@ -334,7 +359,10 @@ export default function MemberEditModal({
         // RBAC: roles array (one entry per (domain, role) pair)
         const cleanedRoles = (form.roles || [])
             .filter(r => r && r.domain && r.role)
-            .map(r => ({ domain: String(r.domain), role: String(r.role) }));
+            .map(r => ({
+                domain: String(r.domain),
+                role: isAdvisorDomain(r.domain) ? 'Advisor' : String(r.role)
+            }));
         fd.append('roles', JSON.stringify(cleanedRoles));
 
         // Photo handling

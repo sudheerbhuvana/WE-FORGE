@@ -25,6 +25,12 @@ export async function PUT(request, { params }) {
         if (formData.has('name') && (isElite(actor) || hasPermission(actor, 'members.edit_name'))) target.name = formData.get('name');
         if (formData.has('role') && (isElite(actor) || hasPermission(actor, 'members.edit_domain_role'))) target.role = formData.get('role');
         if (formData.has('domain') && (isElite(actor) || hasPermission(actor, 'members.edit_domain_role'))) target.domain = formData.get('domain');
+
+        const isAdvisorDomain = (d) => d && (d === 'Advisor' || d === 'Advisors' || String(d).toLowerCase().includes('advisor'));
+        if (isAdvisorDomain(target.domain)) {
+            target.role = 'Advisor';
+        }
+
         if (formData.has('rollNumber') && (isElite(actor) || hasPermission(actor, 'members.edit_roll'))) target.rollNumber = formData.get('rollNumber');
         if (formData.has('department') && (isElite(actor) || hasPermission(actor, 'members.edit_dept'))) target.department = formData.get('department');
         if (formData.has('email') && (isElite(actor) || hasPermission(actor, 'members.edit_email'))) target.email = formData.get('email');
@@ -48,7 +54,10 @@ export async function PUT(request, { params }) {
                 if (Array.isArray(parsed)) {
                     target.roles = parsed
                         .filter(r => r && r.domain && r.role)
-                        .map(r => ({ domain: String(r.domain), role: String(r.role) }));
+                        .map(r => ({
+                            domain: String(r.domain),
+                            role: isAdvisorDomain(r.domain) ? 'Advisor' : String(r.role)
+                        }));
                 }
             } catch (e) {
                 return NextResponse.json({ error: 'Invalid roles JSON' }, { status: 400 });

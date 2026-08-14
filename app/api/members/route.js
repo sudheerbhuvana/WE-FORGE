@@ -63,6 +63,9 @@ export async function POST(request) {
         }
 
         const targetDomain = domain || 'General';
+        const isAdvisorDomain = targetDomain === 'Advisor' || targetDomain === 'Advisors' || String(targetDomain).toLowerCase().includes('advisor');
+        const finalRole = isAdvisorDomain ? 'Advisor' : role;
+
         const gate = await requirePermission(canManageDomain, targetDomain);
         if (gate.response) return gate.response;
 
@@ -86,7 +89,10 @@ export async function POST(request) {
             try {
                 const r = JSON.parse(rolesRaw);
                 if (Array.isArray(r)) {
-                    parsedRoles = r.filter(x => x && x.domain && x.role).map(x => ({ domain: String(x.domain), role: String(x.role) }));
+                    parsedRoles = r.filter(x => x && x.domain && x.role).map(x => {
+                        const isAdv = x.domain === 'Advisor' || x.domain === 'Advisors' || String(x.domain).toLowerCase().includes('advisor');
+                        return { domain: String(x.domain), role: isAdv ? 'Advisor' : String(x.role) };
+                    });
                 }
             } catch {}
         }
@@ -94,7 +100,7 @@ export async function POST(request) {
         const customRoleId = formData.get('customRoleId') || '';
 
         const newMember = new Member({
-            id, name, role,
+            id, name, role: finalRole,
             domain: targetDomain,
             roles: parsedRoles,
             customRoleId,
