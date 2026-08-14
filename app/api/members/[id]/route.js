@@ -19,7 +19,7 @@ export async function PUT(request, { params }) {
     const { actor, response } = await requirePermission(canManageMember, target);
     if (response) return response;
 
-    try {
+    try { 
         const formData = await request.formData();
 
         if (formData.has('name') && (isElite(actor) || hasPermission(actor, 'members.edit_name'))) target.name = formData.get('name');
