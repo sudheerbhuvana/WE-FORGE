@@ -10,7 +10,7 @@ import './page.css';
 export default function ProfilePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const { showToast } = useToast();
+  const { showToast } = useToast(); 
 
   const [member, setMember] = useState(null);
   const [events, setEvents] = useState([]);
