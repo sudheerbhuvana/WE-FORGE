@@ -603,3 +603,44 @@
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
 }
+
+
+.wallkl-card-instagram {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.18) 0%, rgba(193, 53, 132, 0.18) 100%);
+  border: 1px solid rgba(225, 48, 108, 0.4);
+  color: #ffd9e6;
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 120ms ease, background 120ms ease;
+}
+
+.wallkl-card-instagram:hover {
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.32) 0%, rgba(193, 53, 132, 0.32) 100%);
+  transform: translateY(-1px);
+}
+
+.wallkl-lightbox-instagram {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.2) 0%, rgba(193, 53, 132, 0.2) 100%);
+  border: 1px solid rgba(225, 48, 108, 0.4);
+  color: #ffd9e6;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.wallkl-lightbox-instagram:hover {
+  background: linear-gradient(135deg, rgba(225, 48, 108, 0.34) 0%, rgba(193, 53, 132, 0.34) 100%);
+}

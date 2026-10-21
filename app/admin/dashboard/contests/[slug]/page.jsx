@@ -7,6 +7,8 @@ import {
   Plus, ChevronUp, ChevronDown, FileText, FileVideo, ExternalLink, Download,
   Link2, Sparkles, Layers, Grid3x3, BarChart3, Settings as SettingsIcon,
   CalendarClock, Clock, Users, Globe, Lock, Star, AlertCircle, CheckCircle2,
+  ListChecks, Hash, Zap, Image as ImageIcon, Calendar, Megaphone, Crown,
+  Send, RefreshCw, Search, Filter, RotateCcw, Award,
 } from 'lucide-react';
 import '../../AdminDashboard.css';
 import './manage.css';
@@ -81,11 +83,27 @@ export default function ContestManagePage({ params }) {
   const [judgeForm, setJudgeForm] = useState({ score: 0, feedback: '' });
   const [judgeSaving, setJudgeSaving] = useState(false);
   const [viewingSub, setViewingSub] = useState(null);
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setTick((x) => x + 1), 1000);
     return () => clearInterval(t);
   }, []);
+
+  // Close the More menu when clicking outside it.
+  useEffect(() => {
+    if (!moreMenuOpen) return;
+    const onDocClick = (e) => {
+      if (!e.target.closest('.cm-more-wrap')) setMoreMenuOpen(false);
+    };
+    const onEsc = (e) => { if (e.key === 'Escape') setMoreMenuOpen(false); };
+    document.addEventListener('mousedown', onDocClick);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', onDocClick);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, [moreMenuOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -452,33 +470,93 @@ export default function ContestManagePage({ params }) {
 
             <div className="cm-page-header__actions">
               {activeCycle ? (
-                <button className="cm-btn cm-btn--accent" onClick={() => openWinners(activeCycle)} style={{ fontWeight: 600 }}>
+                <button
+                  className="cm-btn cm-btn--accent cm-btn--primary-action"
+                  onClick={() => openWinners(activeCycle)}
+                  title="Declare winners for the active cycle"
+                >
                   <Trophy size={14} /> Declare Winners
                 </button>
               ) : null}
-              <button className="cm-btn cm-btn--primary" onClick={openEdit}>
-                <Edit3 size={14} /> Edit Contest Setup
+              <button
+                className="cm-btn cm-btn--primary"
+                onClick={openEdit}
+                title="Edit contest metadata and form"
+              >
+                <Edit3 size={14} /> Edit
               </button>
-              <button className="cm-btn" onClick={() => window.open(`/contests/${slug}`, '_blank')}>
-                <Eye size={14} /> View Public Page
-              </button>
-              <button className="cm-btn" onClick={exportSubmissions}>
-                <Download size={14} /> Export CSV
-              </button>
-              <button className="cm-btn" disabled={actionBusy}
-                onClick={() => triggerAction(template?.isPublished ? 'unpublish' : 'publish')}>
-                {template?.isPublished ? 'Unpublish' : 'Publish'}
-              </button>
-              <button className="cm-btn" disabled={actionBusy}
-                onClick={() => triggerAction(template?.isPaused ? 'resume' : 'pause')}>
-                {template?.isPaused ? 'Resume' : 'Pause'}
-              </button>
-              <button className="cm-btn" disabled={actionBusy} onClick={duplicateContest}>
-                <Copy size={14} /> Duplicate
-              </button>
-              <button className="cm-btn cm-btn--danger" disabled={actionBusy} onClick={deleteContest} title="Delete contest">
-                <Trash2 size={14} />
-              </button>
+
+              <div className="cm-more-wrap">
+                <button
+                  className="cm-btn cm-btn--ghost cm-btn--more"
+                  onClick={() => setMoreMenuOpen((o) => !o)}
+                  aria-expanded={moreMenuOpen}
+                  aria-haspopup="menu"
+                  title="More actions"
+                >
+                  <ChevronDown size={14} /> More
+                </button>
+                {moreMenuOpen && (
+                  <div className="cm-more-menu" role="menu" onMouseLeave={() => setMoreMenuOpen(false)}>
+                    <button
+                      className="cm-more-menu__item"
+                      role="menuitem"
+                      onClick={() => { setMoreMenuOpen(false); window.open(`/contests/${slug}`, '_blank'); }}
+                    >
+                      <Eye size={14} /> View Public Page
+                    </button>
+                    <button
+                      className="cm-more-menu__item"
+                      role="menuitem"
+                      onClick={() => { setMoreMenuOpen(false); exportSubmissions(); }}
+                    >
+                      <Download size={14} /> Export Submissions (CSV)
+                    </button>
+                    <div className="cm-more-menu__divider" />
+                    <button
+                      className="cm-more-menu__item"
+                      role="menuitem"
+                      disabled={actionBusy}
+                      onClick={() => { setMoreMenuOpen(false); triggerAction(template?.isPublished ? 'unpublish' : 'publish'); }}
+                    >
+                      {template?.isPublished ? (
+                        <><Eye size={14} /> Unpublish</>
+                      ) : (
+                        <><Upload size={14} /> Publish</>
+                      )}
+                    </button>
+                    <button
+                      className="cm-more-menu__item"
+                      role="menuitem"
+                      disabled={actionBusy}
+                      onClick={() => { setMoreMenuOpen(false); triggerAction(template?.isPaused ? 'resume' : 'pause'); }}
+                    >
+                      {template?.isPaused ? (
+                        <><Play size={14} /> Resume</>
+                      ) : (
+                        <><Pause size={14} /> Pause</>
+                      )}
+                    </button>
+                    <button
+                      className="cm-more-menu__item"
+                      role="menuitem"
+                      disabled={actionBusy}
+                      onClick={() => { setMoreMenuOpen(false); duplicateContest(); }}
+                    >
+                      <Copy size={14} /> Duplicate Contest
+                    </button>
+                    <div className="cm-more-menu__divider" />
+                    <button
+                      className="cm-more-menu__item cm-more-menu__item--danger"
+                      role="menuitem"
+                      disabled={actionBusy}
+                      onClick={() => { setMoreMenuOpen(false); deleteContest(); }}
+                    >
+                      <Trash2 size={14} /> Delete Contest
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </header>
 

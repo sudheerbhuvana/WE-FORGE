@@ -28,6 +28,7 @@ export default function WallOfKLSection({ adminInfo }) {
   const [uploadBadge, setUploadBadge] = useState('🏆 CONTEST WINNING CAPTURE');
   const [uploadAuthor, setUploadAuthor] = useState('');
   const [uploadTag, setUploadTag] = useState('Official Winner');
+  const [uploadInstagram, setUploadInstagram] = useState('');
   const [uploading, setUploading] = useState(false);
 
   // Edit modal state
@@ -36,6 +37,7 @@ export default function WallOfKLSection({ adminInfo }) {
   const [editBadge, setEditBadge] = useState('');
   const [editAuthor, setEditAuthor] = useState('');
   const [editTag, setEditTag] = useState('');
+  const [editInstagram, setEditInstagram] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
   const showToast = (msg) => {
@@ -88,6 +90,7 @@ export default function WallOfKLSection({ adminInfo }) {
       formData.append('badge', uploadBadge);
       formData.append('author', uploadAuthor);
       formData.append('tag', uploadTag);
+      if (uploadInstagram) formData.append('instagram', uploadInstagram);
 
       const res = await fetch('/api/wallofkl', {
         method: 'POST',
@@ -102,6 +105,7 @@ export default function WallOfKLSection({ adminInfo }) {
         setUploadPreview(null);
         setUploadTitle('');
         setUploadAuthor('');
+        setUploadInstagram('');
         fetchGallery();
       } else {
         setError(data.error || 'Upload failed');
@@ -120,6 +124,7 @@ export default function WallOfKLSection({ adminInfo }) {
     setEditBadge(img.badge || '');
     setEditAuthor(img.author || '');
     setEditTag(img.tag || '');
+    setEditInstagram(img.instagram || '');
   };
 
   const handleSaveEdit = async (e) => {
@@ -138,6 +143,7 @@ export default function WallOfKLSection({ adminInfo }) {
           badge: editBadge,
           author: editAuthor,
           tag: editTag,
+          instagram: editInstagram,
         }),
       });
 
@@ -329,6 +335,11 @@ export default function WallOfKLSection({ adminInfo }) {
                 <input type="text" value={uploadAuthor} onChange={(e) => setUploadAuthor(e.target.value)} placeholder="e.g. Rahul V (Y24)" style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }} />
               </div>
 
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Participant Instagram Handle (optional)</label>
+                <input type="text" value={uploadInstagram} onChange={(e) => setUploadInstagram(e.target.value)} placeholder="e.g. @kl_forge (without @ works too)" style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }} />
+              </div>
+
               <button type="submit" disabled={uploading} style={{ marginTop: 10, background: '#f59e0b', color: '#000', fontWeight: 800, padding: 12, borderRadius: 10, border: 'none', cursor: 'pointer' }}>
                 {uploading ? 'Uploading...' : 'Publish to Wall of KL'}
               </button>
@@ -362,6 +373,11 @@ export default function WallOfKLSection({ adminInfo }) {
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Author / Photographer Name</label>
                 <input type="text" value={editAuthor} onChange={(e) => setEditAuthor(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Participant Instagram Handle (optional)</label>
+                <input type="text" value={editInstagram} onChange={(e) => setEditInstagram(e.target.value)} placeholder="@handle" style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }} />
               </div>
 
               <button type="submit" disabled={savingEdit} style={{ marginTop: 10, background: '#71C4FF', color: '#000', fontWeight: 800, padding: 12, borderRadius: 10, border: 'none', cursor: 'pointer' }}>

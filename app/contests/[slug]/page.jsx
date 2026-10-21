@@ -22,7 +22,7 @@ export default function SingleContestPage({ params }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [activeTab, setActiveTab] = useState('overview'); // overview | submit | rules | winners | history
+  const [activeTab, setActiveTab] = useState('overview'); // overview | submit | rules | history
 
   const [template, setTemplate] = useState(null);
   const [activeCycle, setActiveCycle] = useState(null);
@@ -451,7 +451,6 @@ export default function SingleContestPage({ params }) {
   const cycle = targetCycle || activeCycle;
   const isHistorical = requestedCycleNum && activeCycle && parseInt(requestedCycleNum, 10) !== activeCycle.cycleNumber;
   const status = cycle?.status || 'upcoming';
-  const winners = cycle?.winners || [];
 
   return (
     <div className="events-page single-contest-page">
@@ -520,9 +519,6 @@ export default function SingleContestPage({ params }) {
           </button>
           <button className={`sc-tab ${activeTab === 'rules' ? 'sc-tab--active' : ''}`} onClick={() => setActiveTab('rules')}>
             <ShieldCheck size={16} /> Rules & Guidelines
-          </button>
-          <button className={`sc-tab ${activeTab === 'winners' ? 'sc-tab--active' : ''}`} onClick={() => setActiveTab('winners')}>
-            <Trophy size={16} /> Winners {winners.length > 0 && <span className="sc-tab-dot" />}
           </button>
           {!(template.type === 'one_time' || template.type === 'immediate') && historyCycles.length > 1 && (
             <button className={`sc-tab ${activeTab === 'history' ? 'sc-tab--active' : ''}`} onClick={() => setActiveTab('history')}>
@@ -618,8 +614,47 @@ export default function SingleContestPage({ params }) {
                       </div>
                     </div>
                     <p className="sc-text-p">You can update your entry or links anytime before the deadline.</p>
+
+                    {/* Post-submit preview — show the actual uploaded files so
+                        users can confirm what landed. Before this, a successful
+                        submit only showed the green checkmark + the form below,
+                        which made many users assume their upload silently
+                        failed because no image was visible. */}
+                    {(() => {
+                      const allUploaded = Array.isArray(userSubmission?.files) ? userSubmission.files : [];
+                      if (allUploaded.length === 0) return null;
+                      return (
+                        <div className="sc-submitted-preview">
+                          {allUploaded.map((f, i) => {
+                            const isImage = (f.fieldType || '').startsWith('image')
+                              || (f.mimeType || '').startsWith('image/');
+                            const isVideo = (f.fieldType || '').startsWith('video')
+                              || (f.mimeType || '').startsWith('video/');
+                            return (
+                              <div key={i} className="sc-submitted-preview__item">
+                                {isImage && f.url ? (
+                                  <a href={f.url} target="_blank" rel="noreferrer">
+                                    <img src={f.url} alt={f.originalName || 'Uploaded image'} className="sc-submitted-preview__img" />
+                                  </a>
+                                ) : isVideo && f.url ? (
+                                  <video src={f.url} controls className="sc-submitted-preview__img" />
+                                ) : (
+                                  <a href={f.url} target="_blank" rel="noreferrer" className="sc-submitted-preview__file">
+                                    {f.originalName || 'Open file'}
+                                  </a>
+                                )}
+                                {f.fieldLabel && (
+                                  <div className="sc-submitted-preview__caption">{f.fieldLabel}</div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
+
 
                 <form onSubmit={handleSubmission} className="sc-form">
                   {Array.isArray(template?.customFields) && template.customFields.length > 0 ? (
@@ -769,75 +804,8 @@ export default function SingleContestPage({ params }) {
           </div>
         )}
 
-        {/* TAB 4: WINNERS PODIUM */}
-        {activeTab === 'winners' && (
-          <div className="sc-tab-content">
-            {winners.length === 0 ? (
-              <div className="sc-card sc-card--center">
-                <Trophy size={40} style={{ color: 'rgba(255,255,255,0.3)' }} />
-                <h2>Results Awaiting</h2>
-                <p>Winners for {cycle?.cycleLabel} have not been declared yet. Results will be published here after judging concludes.</p>
-              </div>
-            ) : (
-              <div className="sc-winners-container">
-                {/* Announcement banner */}
-                {cycle?.announcementNotes && (
-                  <div className="sc-announcement-card">
-                    <Sparkles size={18} />
-                    <div>
-                      <h3>Judges' Announcement</h3>
-                      <p>{cycle.announcementNotes}</p>
-                    </div>
-                  </div>
-                )}
 
-                {/* Podium grid — same style as admin */}
-                <div className="sc-winner-grid">
-                  {[
-                    { rank: 1, label: '1st Place', emoji: '🥇', cls: 'gold' },
-                    { rank: 2, label: '2nd Place', emoji: '🥈', cls: 'silver' },
-                    { rank: 3, label: '3rd Place', emoji: '🥉', cls: 'bronze' },
-                  ].map(({ rank, label, emoji, cls }) => {
-                    const w = winners.find(w => Number(w.rank) === rank);
-                    return (
-                      <div key={rank} className={`sc-winner sc-winner--${cls}`}>
-                        <div className="sc-winner__rank">{emoji}</div>
-                        <div className="sc-winner__medal">{label}</div>
-                        {w ? (
-                          <>
-                            <p className="sc-winner__name">{w.name || w.memberId || 'Participant'}</p>
-                            {(w.rollNumber) && <p className="sc-winner__roll">{w.rollNumber}</p>}
-                            {w.awardTitle && <span className="sc-winner__award">{w.awardTitle}</span>}
-                            {w.judgeNotes && <div className="sc-winner__notes">"{w.judgeNotes}"</div>}
-                          </>
-                        ) : (
-                          <p className="sc-winner__roll" style={{ color: 'rgba(255,255,255,0.3)', marginTop: 8 }}>Not awarded</p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Special mentions */}
-                {winners.filter(w => Number(w.rank) === 99).length > 0 && (
-                  <div className="sc-mentions-section">
-                    <h4 className="sc-mentions-title">⭐ Special Mentions</h4>
-                    <div className="sc-mentions-row">
-                      {winners.filter(w => Number(w.rank) === 99).map((w, i) => (
-                        <div key={i} className="sc-mention-chip">
-                          <span className="sc-mention-chip__name">{w.name || w.memberId}</span>
-                          {w.rollNumber && <span className="sc-mention-chip__roll">{w.rollNumber}</span>}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 5: HISTORY ARCHIVE */}
+        {/* TAB 4: HISTORY ARCHIVE */}
         {activeTab === 'history' && (
           <div className="sc-tab-content">
             <div className="sc-card">

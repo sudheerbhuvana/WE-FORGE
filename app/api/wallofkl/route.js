@@ -60,6 +60,9 @@ export async function GET(req) {
         badge: imgMeta.badge || null,
         tag: imgMeta.tag || null,
         author: imgMeta.author || null,
+        // Optional participant Instagram handle — admins fill it when promoting
+        // a winning submission to the wall. Empty string when omitted.
+        instagram: imgMeta.instagram || '',
         url: `/media/contest-selected/${encodeURIComponent(filename)}`,
         sizeBytes: stat.size,
         modifiedAt: stat.mtime ? stat.mtime.toISOString() : new Date().toISOString(),
@@ -119,7 +122,9 @@ export async function POST(req) {
 
       await fs.writeFile(filePath, buffer);
 
-      // Save metadata entry
+      // Save metadata entry. `instagram` is optional — admin pastes the
+      // participant's handle when promoting a winning submission. Stored as
+      // the raw string the user typed; we render-normalise the leading `@`.
       const metadataPath = path.join(dirPath, 'metadata.json');
       let metadata = {};
       try {
@@ -132,6 +137,7 @@ export async function POST(req) {
         badge: badge || '🏆 CONTEST WINNING CAPTURE',
         author: author || 'KL FORGE Contender',
         tag: tag || 'Official Winner',
+        instagram: ((formData.get('instagram') || '').toString().trim()) || '',
       };
 
       await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
@@ -144,7 +150,7 @@ export async function POST(req) {
     } else {
       // Handle Metadata Update (JSON)
       const body = await req.json();
-      const { filename, title, badge, author, tag, orderIndex, isFeatured } = body;
+      const { filename, title, badge, author, tag, orderIndex, isFeatured, instagram } = body;
 
       if (!filename) {
         return NextResponse.json({ success: false, error: 'Filename is required' }, { status: 400 });
@@ -157,6 +163,10 @@ export async function POST(req) {
         return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_badge permission' }, { status: 403 });
       }
       if (author !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.edit_author')) {
+        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_author permission' }, { status: 403 });
+      }
+      if (instagram !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.edit_author')) {
+        // Instagram is treated as author metadata, so reuse that permission.
         return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_author permission' }, { status: 403 });
       }
       if (orderIndex !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.reorder')) {
@@ -178,6 +188,9 @@ export async function POST(req) {
         badge: badge !== undefined ? badge : metadata[filename]?.badge || '🏆 CONTEST WINNER',
         author: author !== undefined ? author : metadata[filename]?.author || '',
         tag: tag !== undefined ? tag : metadata[filename]?.tag || '',
+        instagram: instagram !== undefined
+          ? (typeof instagram === 'string' ? instagram.trim() : '')
+          : (metadata[filename]?.instagram || ''),
         orderIndex: orderIndex !== undefined ? orderIndex : metadata[filename]?.orderIndex || 0,
         isFeatured: isFeatured !== undefined ? isFeatured : !!metadata[filename]?.isFeatured,
       };

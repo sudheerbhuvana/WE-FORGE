@@ -137,6 +137,9 @@ async function main() {
     { id: 'cf_desc', label: 'Detailed Description', type: 'textarea', required: true, placeholder: 'Tell us about your entry', maxSizeMB: 10, maxCount: 1, options: [] },
     { id: 'cf_image', label: 'Poster / Image Upload', type: 'image', required: true, placeholder: '', maxSizeMB: 12, maxCount: 3, options: [] },
     { id: 'cf_links', label: 'Work Links (GitHub, Figma, Drive)', type: 'link', required: false, placeholder: '', maxSizeMB: 10, maxCount: 3, options: [] },
+    // Optional Instagram handle — surfaces on the Wall of KL gallery when the
+    // admin promotes this submission. Leave blank if you'd rather stay anonymous.
+    { id: 'cf_instagram', label: 'Instagram Handle (optional)', type: 'text', required: false, placeholder: 'e.g. @your_handle (without @ is fine too)', maxSizeMB: 10, maxCount: 1, options: [] },
   ];
 
   const template = await ContestTemplate.create({

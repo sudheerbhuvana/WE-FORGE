@@ -190,6 +190,11 @@ export default function WallOfKLPage() {
               const variant = layoutMode === 'bento' ? getBentoVariant(idx) : 'standard';
               const displayBadge = img.badge || badgeInfo.label;
               const displayTag = img.tag || (img.author ? `Captured by ${img.author}` : badgeInfo.tag);
+              // Render Instagram handle only when the admin provided one.
+              // We accept "@handle" or "handle" and link to the canonical URL.
+              const rawHandle = (img.instagram || '').trim();
+              const cleanHandle = rawHandle.replace(/^@+/, '');
+              const instagramUrl = cleanHandle ? `https://instagram.com/${cleanHandle}` : '';
 
               return (
                 <div
@@ -223,6 +228,18 @@ export default function WallOfKLPage() {
                           {displayTag}
                         </span>
                         <h3 className="wallkl-card-title">{img.title}</h3>
+                        {cleanHandle && (
+                          <a
+                            href={instagramUrl}
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            className="wallkl-card-instagram"
+                            onClick={(e) => e.stopPropagation()}
+                            title={`@${cleanHandle} on Instagram`}
+                          >
+                            <Camera size={12} /> @{cleanHandle}
+                          </a>
+                        )}
                       </div>
 
                       <div className="wallkl-card-meta">
@@ -317,6 +334,21 @@ export default function WallOfKLPage() {
                 <div className="wallkl-lightbox-meta">
                   {activeImage.tag || 'Official KL FORGE Contest Showcase'} • {activeImage.filename}
                 </div>
+                {(() => {
+                  const handle = (activeImage.instagram || '').trim().replace(/^@+/, '');
+                  if (!handle) return null;
+                  return (
+                    <a
+                      href={`https://instagram.com/${handle}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="wallkl-lightbox-instagram"
+                      title={`@${handle} on Instagram`}
+                    >
+                      <Camera size={13} /> @{handle} on Instagram
+                    </a>
+                  );
+                })()}
               </div>
 
               <div className="wallkl-lightbox-actions">

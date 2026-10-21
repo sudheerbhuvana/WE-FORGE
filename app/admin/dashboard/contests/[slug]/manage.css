@@ -65,14 +65,20 @@
 
 /* ===== Page Header (single horizontal row) ===== */
 .cm-page-header {
-  display: flex; align-items: center; gap: 14px;
-  padding: 16px 20px;
+  display: flex; align-items: center; gap: 16px;
+  padding: 18px 22px;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
   border: 1px solid var(--cm-border);
   border-radius: var(--cm-radius);
   margin-bottom: 14px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;            /* allow actions to drop to a second line on narrow screens */
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+.cm-page-header > .cm-page-header__thumb { flex: 0 0 auto; }
+.cm-page-header > .cm-page-header__main  { flex: 1 1 260px; min-width: 0; }
+.cm-page-header > .cm-page-header__actions {
+  flex: 0 1 auto;
+  margin-left: auto;          /* push the action cluster to the right */
 }
 .cm-page-header__thumb {
   width: 56px; height: 56px; border-radius: var(--cm-radius-sm);
@@ -88,14 +94,14 @@
 }
 .cm-page-header__main { flex: 1; min-width: 0; }
 .cm-page-header__chips {
-  display: flex; flex-wrap: nowrap; gap: 6px; margin-bottom: 6px;
-  overflow: hidden;
-  white-space: nowrap;
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;
 }
 .cm-page-header__title {
-  margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--cm-text);
+  margin: 0; font-size: 1.4rem; font-weight: 700; color: var(--cm-text);
   letter-spacing: -0.01em; line-height: 1.2;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  /* let the title breathe when the header wraps; truncate only on extreme squeeze */
+  overflow: hidden; text-overflow: ellipsis;
+  word-break: break-word;
 }
 .cm-page-header__desc {
   display: none;
@@ -103,6 +109,59 @@
 .cm-page-header__actions {
   display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
   flex-shrink: 0;
+}
+
+/* Primary action gets a subtle "this is the main CTA" emphasis without
+   changing colour drastically — dropdown items live in `.cm-more-menu`. */
+.cm-btn--primary-action { padding: 8px 14px; }
+
+/* The More dropdown container. */
+.cm-more-wrap { position: relative; }
+.cm-btn--more[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--cm-border-strong);
+}
+.cm-more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: linear-gradient(180deg, #16171f 0%, #11121a 100%);
+  border: 1px solid var(--cm-border-strong);
+  border-radius: var(--cm-radius-sm);
+  padding: 6px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  z-index: 50;
+  display: flex; flex-direction: column;
+}
+.cm-more-menu__item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  background: transparent;
+  border: none;
+  color: var(--cm-text);
+  font-size: 0.86rem; font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 100ms ease, color 100ms ease;
+}
+.cm-more-menu__item:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.06);
+}
+.cm-more-menu__item:disabled {
+  opacity: 0.45; cursor: not-allowed;
+}
+.cm-more-menu__item--danger { color: #fda4af; }
+.cm-more-menu__item--danger:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.12);
+  color: #fecaca;
+}
+.cm-more-menu__divider {
+  height: 1px;
+  background: var(--cm-border);
+  margin: 4px 6px;
 }
 
 @media (max-width: 1200px) {
@@ -118,15 +177,14 @@
 /* ===== Contest Lifecycle Stepper Bar ===== */
 .cm-lifecycle-stepper {
   display: flex;
-  align-items: center;
-  gap: 12px;
+  align-items: stretch;
+  gap: 0;
+  flex-wrap: wrap;             /* let the 4 steps wrap on narrow screens instead of overflow-scrolling */
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0.008) 100%);
   border: 1px solid var(--cm-border);
   border-radius: var(--cm-radius);
-  padding: 16px 20px;
+  padding: 14px 18px;
   margin-bottom: 14px;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 
 .cm-lifecycle-stepper::-webkit-scrollbar { display: none; }
