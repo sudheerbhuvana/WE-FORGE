@@ -12,11 +12,21 @@ function LoginContent() {
   const searchParams = useSearchParams();
   const [email, setEmail] = React.useState('');
   const error = searchParams.get('error');
+  // NextAuth appends callbackUrl to the sign-in page, so we know where the user
+  // was actually trying to go (e.g. /contests/my-contest?tab=submit).
+  const callbackUrl = searchParams.get('callbackUrl');
   const isSuspended = error === 'SUSPENDED' || error === 'CallbackRouteError'; 
   const isLoginError = error && !isSuspended;
 
+  // Only accept same-origin relative paths, so the param can't be used to
+  // bounce a freshly-authenticated user to an external site.
+  const safeCallback =
+    callbackUrl && callbackUrl.startsWith('/') && !callbackUrl.startsWith('//')
+      ? callbackUrl
+      : '/profile';
+
   if (status === 'authenticated') {
-    router.push('/profile');
+    router.push(safeCallback);
     return null;
   }
 
@@ -80,7 +90,7 @@ function LoginContent() {
         )}
 
         <button
-          onClick={() => signIn('azure-ad', { callbackUrl: '/profile' })}
+          onClick={() => signIn('azure-ad', { callbackUrl: safeCallback })}
           className="login-btn"
         >
           <img src="https://authjs.dev/img/providers/azure.svg" alt="Microsoft" width={20} height={20} />

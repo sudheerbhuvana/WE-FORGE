@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, use } from 'react';
 import { useSession, signIn } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { 
   Trophy, Clock, Calendar, Users, Award, ShieldCheck, CheckCircle2, Plus, Trash2, 
   ExternalLink, FileText, Send, Lock, Zap, History, Sparkles, AlertCircle, Eye, ArrowRight,
@@ -16,13 +16,36 @@ export default function SingleContestPage({ params }) {
   const { slug } = use(params);
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const requestedCycleNum = searchParams.get('cycle');
+  const requestedTab = searchParams.get('tab');
+
+  const VALID_TABS = ['overview', 'submit', 'rules', 'history'];
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
-  const [activeTab, setActiveTab] = useState('overview'); // overview | submit | rules | history
+
+  // The tab lives in the URL (?tab=submit) rather than only in component state.
+  // That makes the Submit tab shareable/bookmarkable and, critically, lets it
+  // survive the OAuth round trip — previously clicking "Sign In to Submit"
+  // sent callbackUrl without the tab, so users came back to Overview.
+  const [activeTab, setActiveTabState] = useState(
+    VALID_TABS.includes(requestedTab) ? requestedTab : 'overview'
+  );
+
+  // Changing tabs updates the URL. replace() so tab switching doesn't stack up
+  // in browser history — Back should leave the contest, not walk the tabs.
+  const setActiveTab = (tab) => {
+    if (!VALID_TABS.includes(tab)) return;
+    setActiveTabState(tab);
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab === 'overview') params.delete('tab');
+    else params.set('tab', tab);
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
 
   const [template, setTemplate] = useState(null);
   const [activeCycle, setActiveCycle] = useState(null);
@@ -57,6 +80,13 @@ export default function SingleContestPage({ params }) {
     window.scrollTo(0, 0);
     loadContestData();
   }, [slug, requestedCycleNum, authStatus]);
+
+  // Reflect ?tab= changes that didn't come from our own setActiveTab (back /
+  // forward navigation, or the post-login redirect).
+  useEffect(() => {
+    const next = VALID_TABS.includes(requestedTab) ? requestedTab : 'overview';
+    setActiveTabState(prev => (prev === next ? prev : next));
+  }, [requestedTab]);
 
   const loadContestData = async () => {
     setLoading(true);
@@ -147,6 +177,16 @@ export default function SingleContestPage({ params }) {
 
   // Entries left before the cap. entryLimit === 0 means unlimited.
   const canAddMoreEntry = entryLimit === 0 || userSubmissions.length < entryLimit;
+
+  // Where to send the user after they authenticate. Preserves the tab they were
+  // on (and ?cycle=), so "Sign In to Submit" returns them to the submit form
+  // instead of dumping them back on Overview.
+  const buildReturnUrl = (tab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (tab) params.set('tab', tab); else params.delete('tab');
+    const qs = params.toString();
+    return qs ? `/contests/${slug}?${qs}` : `/contests/${slug}`;
+  };
 
   const handleAddLink = () => {
     if (subLinks.length >= 5) return;
@@ -663,7 +703,7 @@ export default function SingleContestPage({ params }) {
                 <Lock size={32} />
                 <h2>Authentication Required</h2>
                 <p>Log in with your KL University account to submit your contest entry.</p>
-                <button className="sc-btn sc-btn--primary" onClick={() => signIn('azure-ad', { callbackUrl: `/contests/${slug}` })}>
+                <button className="sc-btn sc-btn--primary" onClick={() => signIn('azure-ad', { callbackUrl: buildReturnUrl('submit') })}>
                   Sign In to Submit
                 </button>
               </div>
