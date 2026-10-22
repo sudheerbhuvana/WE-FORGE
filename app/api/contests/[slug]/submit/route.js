@@ -34,15 +34,34 @@ export async function GET(req, { params }) {
     }
 
     if (!cycle) {
-      return NextResponse.json({ submission: null });
+      return NextResponse.json({ submissions: [], submission: null, limit: 1, remaining: 1, used: 0 });
     }
 
-    const submission = await ContestSubmission.findOne({
+    // A member may hold several entries in one cycle, so return them all.
+    // `submission` stays as the first one for backwards compatibility with any
+    // caller that has not moved to the array yet.
+    const submissions = await ContestSubmission.find({
       cycleId: cycle._id,
       memberId: actor.id,
-    }).lean();
+    })
+      .sort({ entryNumber: 1, submittedAt: 1 })
+      .lean();
 
-    return NextResponse.json({ submission: submission || null });
+    const limitRaw = template.maxSubmissionsPerMember;
+    const limit = Number.isFinite(limitRaw) && limitRaw >= 0 ? limitRaw : 1;
+    const used = submissions.length;
+
+    // `remaining` is -1 for unlimited: Infinity is not representable in JSON
+    // (it serialises to null and would reach the client as a falsy 0).
+    const remaining = limit === 0 ? -1 : Math.max(0, limit - used);
+
+    return NextResponse.json({
+      submissions,
+      submission: submissions[0] || null,
+      limit,
+      remaining,
+      used,
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -217,17 +236,47 @@ export async function POST(req, { params }) {
       }))
       .slice(0, 10);
 
-    const isNew = !(await ContestSubmission.exists({ cycleId: cycle._id, memberId: actor.id }));
+    // How many entries this member already holds in this cycle.
+    const existingSubs = await ContestSubmission.find({
+      cycleId: cycle._id,
+      memberId: actor.id,
+    })
+      .sort({ entryNumber: 1, submittedAt: 1 })
+      .lean();
 
-    // Merge uploaded files with any previously-uploaded files (so re-submitting
-    // doesn't blow away existing files unless explicitly replaced).
-    const existingSub = isNew ? null : await ContestSubmission.findOne({
-      cycleId: cycle._id, memberId: actor.id,
-    }).lean();
-    const previousFiles = Array.isArray(existingSub?.files) ? existingSub.files : [];
-    const replacedFieldIds = new Set(uploadedFiles.map(f => f.fieldId));
+    const limitRaw = template.maxSubmissionsPerMember;
+    const limit = Number.isFinite(limitRaw) && limitRaw >= 0 ? limitRaw : 1;
+
+    // Optional `submissionId` in the body means "update this entry".
+    // Without it we are adding a new one, which the per-member cap governs.
+    const targetId = (req.nextUrl?.searchParams?.get('submissionId')) || null;
+
+    let editing = null;
+    if (targetId) {
+      editing = existingSubs.find((s) => String(s._id) === String(targetId)) || null;
+      if (!editing) {
+        return NextResponse.json({ error: 'Submission not found for this cycle' }, { status: 404 });
+      }
+    } else {
+      if (limit > 0 && existingSubs.length >= limit) {
+        return NextResponse.json(
+          {
+            error:
+              limit === 1
+                ? 'You have already submitted an entry for this cycle'
+                : `You have reached the limit of ${limit} entries for this cycle`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Merge newly-uploaded files with the ones already on the entry being
+    // edited. A brand-new entry has nothing to merge.
+    const previousFiles = Array.isArray(editing?.files) ? editing.files : [];
+    const replacedFieldIds = new Set(uploadedFiles.map((f) => f.fieldId));
     const mergedFiles = [
-      ...previousFiles.filter(pf => !replacedFieldIds.has(pf.fieldId)),
+      ...previousFiles.filter((pf) => !replacedFieldIds.has(pf.fieldId)),
       ...uploadedFiles,
     ];
 
@@ -247,17 +296,24 @@ export async function POST(req, { params }) {
       updatedAt: new Date(),
     };
 
-    const submission = await ContestSubmission.findOneAndUpdate(
-      { cycleId: cycle._id, memberId: actor.id },
-      { 
-        $set: submissionData,
-        $setOnInsert: { status: 'submitted', submittedAt: new Date() }
-      },
-      { new: true, upsert: true }
-    );
+    let submission;
+    if (editing) {
+      submission = await ContestSubmission.findByIdAndUpdate(
+        editing._id,
+        { $set: submissionData },
+        { new: true }
+      );
+    } else {
+      submission = await ContestSubmission.create({
+        ...submissionData,
+        entryNumber: existingSubs.length + 1,
+        status: 'submitted',
+        submittedAt: new Date(),
+      });
+    }
 
-    // Update cycle counts if new submission
-    if (isNew) {
+    // Refresh cycle counts (new entry, or participant/total changed).
+    {
       const subCount = await ContestSubmission.countDocuments({ cycleId: cycle._id });
       const partCount = (await ContestSubmission.distinct('memberId', { cycleId: cycle._id })).length;
       await ContestCycle.findByIdAndUpdate(cycle._id, {
@@ -265,7 +321,14 @@ export async function POST(req, { params }) {
       });
     }
 
-    return NextResponse.json({ success: true, submission });
+    const usedNow = await ContestSubmission.countDocuments({ cycleId: cycle._id, memberId: actor.id });
+    return NextResponse.json({
+      success: true,
+      submission,
+      limit,
+      used: usedNow,
+      remaining: limit === 0 ? -1 : Math.max(0, limit - usedNow),
+    });
   } catch (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -289,7 +352,25 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ error: 'Cannot withdraw submission after deadline' }, { status: 400 });
     }
 
-    await ContestSubmission.deleteOne({ cycleId: cycle._id, memberId: actor.id });
+    // Withdraw ONE entry. With several entries allowed, `submissionId` selects
+    // which one; without it we fall back to the member's most recent entry so the
+    // old single-entry client keeps working.
+    const { searchParams } = new URL(req.url);
+    const submissionId = searchParams.get('submissionId');
+
+    let filter = { cycleId: cycle._id, memberId: actor.id };
+    if (submissionId) {
+      filter = { ...filter, _id: submissionId };
+    } else {
+      const latest = await ContestSubmission.findOne(filter).sort({ entryNumber: -1, submittedAt: -1 }).select('_id');
+      if (!latest) return NextResponse.json({ error: 'No submission found to withdraw' }, { status: 404 });
+      filter = { ...filter, _id: latest._id };
+    }
+
+    const deleted = await ContestSubmission.findOneAndDelete(filter);
+    if (!deleted) {
+      return NextResponse.json({ error: 'Submission not found' }, { status: 404 });
+    }
 
     // Recalculate cycle counts
     const subCount = await ContestSubmission.countDocuments({ cycleId: cycle._id });
