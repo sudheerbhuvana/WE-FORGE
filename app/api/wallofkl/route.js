@@ -1,83 +1,99 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
 import path from 'path';
-import { requirePermission, canManageWallOfKL, isElite, hasPermission } from '@/lib/permissions';
+import connectDB from '@/lib/db';
+import WallOfKLMedia from '@/lib/models/WallOfKLMedia';
+import { requirePermission, isElite, hasPermission } from '@/lib/permissions';
+import { uploadToR2, deleteFromR2, isR2Configured } from '@/lib/r2';
 
 export const dynamic = 'force-dynamic';
 
-const getDirPath = () => path.join(process.cwd(), 'public', 'media', 'contest-selected');
+const LOCAL_DIR = () => path.join(process.cwd(), 'public', 'media', 'contest-selected');
+const R2_PREFIX = 'wallofkl';
 
-export async function GET(req) {
+const IMAGE_EXTS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.avif']);
+
+const extOf = (name) => path.extname(name || '').toLowerCase();
+const isImageName = (name) => IMAGE_EXTS.has(extOf(name));
+
+const sanitizeName = (name) =>
+  (name || 'image').replace(/[^a-z0-9.]/gi, '_').toLowerCase().slice(-120);
+
+const toMillis = (value) => {
+  if (!value) return 0;
+  const t = new Date(value).getTime();
+  return Number.isFinite(t) ? t : 0;
+};
+
+/**
+ * Legacy local-filesystem listing (pre-R2). Kept so a dev machine that still has
+ * old captures in public/media/contest-selected shows them instead of an empty
+ * wall. In production these would 404, so they are only used when the database
+ * has no entries at all.
+ */
+async function readLegacyLocal(dirPath) {
   try {
-    const dirPath = getDirPath();
-
-    let filenames = [];
-    try {
-      filenames = await fs.readdir(dirPath);
-    } catch (err) {
-      if (err.code === 'ENOENT') {
-        await fs.mkdir(dirPath, { recursive: true });
-        filenames = [];
-      } else {
-        throw err;
-      }
-    }
-
-    let metadata = {};
-    const metadataPath = path.join(dirPath, 'metadata.json');
-    try {
-      const metaContent = await fs.readFile(metadataPath, 'utf8');
-      metadata = JSON.parse(metaContent);
-    } catch (e) {
-      // metadata file doesn't exist
-    }
-
-    const imageExtensions = new Set(['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.bmp', '.avif']);
-    const images = [];
-
+    const filenames = await fs.readdir(dirPath);
+    const out = [];
     for (const filename of filenames) {
       if (filename.startsWith('.') || filename === 'metadata.json') continue;
-
-      const ext = path.extname(filename).toLowerCase();
-      if (!imageExtensions.has(ext)) continue;
-
+      if (!isImageName(filename)) continue;
       const filePath = path.join(dirPath, filename);
-      let stat = { size: 0, mtime: new Date() };
-      try {
-        stat = await fs.stat(filePath);
-      } catch (e) {}
-
-      const imgMeta = metadata[filename] || {};
-      const nameWithoutExt = path.basename(filename, ext);
-      const defaultTitle = nameWithoutExt
-        .replace(/[-_]/g, ' ')
-        .replace(/\b\w/g, (char) => char.toUpperCase());
-
-      images.push({
-        id: filename,
+      let stat = null;
+      try { stat = await fs.stat(filePath); } catch { continue; }
+      out.push({
         filename,
-        title: imgMeta.title || defaultTitle,
-        badge: imgMeta.badge || null,
-        tag: imgMeta.tag || null,
-        author: imgMeta.author || null,
-        // Optional participant Instagram handle — admins fill it when promoting
-        // a winning submission to the wall. Empty string when omitted.
-        instagram: imgMeta.instagram || '',
         url: `/media/contest-selected/${encodeURIComponent(filename)}`,
+        title: path
+          .basename(filename, extOf(filename))
+          .replace(/[-_]/g, ' ')
+          .replace(/\b\w/g, (c) => c.toUpperCase()),
+        badge: null,
+        tag: null,
+        author: null,
+        instagram: '',
         sizeBytes: stat.size,
         modifiedAt: stat.mtime ? stat.mtime.toISOString() : new Date().toISOString(),
       });
     }
+    return out;
+  } catch {
+    return [];
+  }
+}
 
-    images.sort((a, b) => new Date(b.modifiedAt) - new Date(a.modifiedAt));
+export async function GET(req) {
+  try {
+    await connectDB();
 
-    return NextResponse.json({
-      success: true,
-      count: images.length,
-      images,
-    });
+    const docs = await WallOfKLMedia.find({}).lean();
+    const images = docs.map((d) => ({
+      id: d.filename,
+      filename: d.filename,
+      title: d.title || path.basename(d.filename, extOf(d.filename)),
+      badge: d.badge || null,
+      tag: d.tag || null,
+      author: d.author || null,
+      instagram: d.instagram || '',
+      url: d.url,
+      sizeBytes: d.sizeBytes || 0,
+      modifiedAt: (d.updatedAt || d.createdAt || new Date()).toISOString(),
+    }));
+
+    // Fall back to whatever is still on local disk — dev only. In production
+    // `public/` is a build-time manifest, so these files 404 in the browser;
+    // listing them would re-introduce the exact broken-image bug being fixed.
+    let legacy = [];
+    if (images.length === 0 && process.env.NODE_ENV !== 'production') {
+      legacy = await readLegacyLocal(LOCAL_DIR());
+    }
+
+    const all = [...images, ...legacy];
+    all.sort((a, b) => toMillis(b.modifiedAt) - toMillis(a.modifiedAt));
+
+    return NextResponse.json({ success: true, count: all.length, images: all });
   } catch (error) {
-    console.error('Error listing contest-selected media:', error);
+    console.error('Error listing Wall of KL media:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch contest media gallery' },
       { status: 500 }
@@ -85,70 +101,19 @@ export async function GET(req) {
   }
 }
 
-// POST endpoint for updating metadata or uploading a new image to contest-selected
 export async function POST(req) {
-  const { actor, response } = await requirePermission(a => isElite(a) || hasPermission(a, 'wallofkl.upload') || hasPermission(a, 'wallofkl.edit_title'));
+  const { actor, response } = await requirePermission(
+    (a) => isElite(a) || hasPermission(a, 'wallofkl.upload') || hasPermission(a, 'wallofkl.edit_title')
+  );
   if (response) return response;
 
   try {
-    const dirPath = getDirPath();
-    await fs.mkdir(dirPath, { recursive: true });
+    await connectDB();
 
     const contentType = req.headers.get('content-type') || '';
 
-    if (contentType.includes('multipart/form-data')) {
-      if (!isElite(actor) && !hasPermission(actor, 'wallofkl.upload')) {
-        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.upload permission' }, { status: 403 });
-      }
-      // Handle Image Upload
-      const formData = await req.formData();
-      const file = formData.get('file');
-      const title = (formData.get('title') || '').toString().trim();
-      const badge = (formData.get('badge') || '').toString().trim();
-      const author = (formData.get('author') || '').toString().trim();
-      const tag = (formData.get('tag') || '').toString().trim();
-
-      if (!file) {
-        return NextResponse.json({ success: false, error: 'No file uploaded' }, { status: 400 });
-      }
-
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      const timestamp = Date.now();
-      const safeName = file.name.replace(/[^a-z0-9.]/gi, '_').toLowerCase();
-      const filename = `${timestamp}_${safeName}`;
-      const filePath = path.join(dirPath, filename);
-
-      await fs.writeFile(filePath, buffer);
-
-      // Save metadata entry. `instagram` is optional — admin pastes the
-      // participant's handle when promoting a winning submission. Stored as
-      // the raw string the user typed; we render-normalise the leading `@`.
-      const metadataPath = path.join(dirPath, 'metadata.json');
-      let metadata = {};
-      try {
-        const metaContent = await fs.readFile(metadataPath, 'utf8');
-        metadata = JSON.parse(metaContent);
-      } catch (e) {}
-
-      metadata[filename] = {
-        title: title || file.name.replace(/\.[^.]+$/, '').replace(/[-_]/g, ' '),
-        badge: badge || '🏆 CONTEST WINNING CAPTURE',
-        author: author || 'KL FORGE Contender',
-        tag: tag || 'Official Winner',
-        instagram: ((formData.get('instagram') || '').toString().trim()) || '',
-      };
-
-      await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-
-      return NextResponse.json({
-        success: true,
-        message: 'Image uploaded to Wall of KL successfully',
-        filename,
-      });
-    } else {
-      // Handle Metadata Update (JSON)
+    // ---- Metadata-only update (JSON) ----
+    if (!contentType.includes('multipart/form-data')) {
       const body = await req.json();
       const { filename, title, badge, author, tag, orderIndex, isFeatured, instagram } = body;
 
@@ -156,64 +121,121 @@ export async function POST(req) {
         return NextResponse.json({ success: false, error: 'Filename is required' }, { status: 400 });
       }
 
-      if (title !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.edit_title')) {
-        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_title permission' }, { status: 403 });
-      }
-      if (badge !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.edit_badge')) {
-        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_badge permission' }, { status: 403 });
-      }
-      if (author !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.edit_author')) {
-        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_author permission' }, { status: 403 });
-      }
-      if (instagram !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.edit_author')) {
-        // Instagram is treated as author metadata, so reuse that permission.
-        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.edit_author permission' }, { status: 403 });
-      }
-      if (orderIndex !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.reorder')) {
-        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.reorder permission' }, { status: 403 });
-      }
-      if (isFeatured !== undefined && !isElite(actor) && !hasPermission(actor, 'wallofkl.feature')) {
-        return NextResponse.json({ success: false, error: 'Forbidden: Missing wallofkl.feature permission' }, { status: 403 });
+      const guards = [
+        [title, 'wallofkl.edit_title'],
+        [badge, 'wallofkl.edit_badge'],
+        [author, 'wallofkl.edit_author'],
+        [instagram, 'wallofkl.edit_author'], // Instagram counts as author metadata
+        [orderIndex, 'wallofkl.reorder'],
+        [isFeatured, 'wallofkl.feature'],
+      ];
+      for (const [value, perm] of guards) {
+        if (value !== undefined && !isElite(actor) && !hasPermission(actor, perm)) {
+          return NextResponse.json(
+            { success: false, error: `Forbidden: Missing ${perm} permission` },
+            { status: 403 }
+          );
+        }
       }
 
-      const metadataPath = path.join(dirPath, 'metadata.json');
-      let metadata = {};
-      try {
-        const metaContent = await fs.readFile(metadataPath, 'utf8');
-        metadata = JSON.parse(metaContent);
-      } catch (e) {}
+      const existing = await WallOfKLMedia.findOne({ filename });
+      if (!existing) {
+        return NextResponse.json({ success: false, error: 'Image not found' }, { status: 404 });
+      }
 
-      metadata[filename] = {
-        title: title !== undefined ? title : metadata[filename]?.title || filename,
-        badge: badge !== undefined ? badge : metadata[filename]?.badge || '🏆 CONTEST WINNER',
-        author: author !== undefined ? author : metadata[filename]?.author || '',
-        tag: tag !== undefined ? tag : metadata[filename]?.tag || '',
-        instagram: instagram !== undefined
-          ? (typeof instagram === 'string' ? instagram.trim() : '')
-          : (metadata[filename]?.instagram || ''),
-        orderIndex: orderIndex !== undefined ? orderIndex : metadata[filename]?.orderIndex || 0,
-        isFeatured: isFeatured !== undefined ? isFeatured : !!metadata[filename]?.isFeatured,
-      };
+      if (title !== undefined) existing.title = typeof title === 'string' ? title.trim() : existing.title;
+      if (badge !== undefined) existing.badge = typeof badge === 'string' ? badge.trim() : existing.badge;
+      if (author !== undefined) existing.author = typeof author === 'string' ? author.trim() : existing.author;
+      if (tag !== undefined) existing.tag = typeof tag === 'string' ? tag.trim() : existing.tag;
+      if (instagram !== undefined) existing.instagram = typeof instagram === 'string' ? instagram.trim() : '';
+      if (orderIndex !== undefined) existing.orderIndex = Number(orderIndex) || 0;
+      if (isFeatured !== undefined) existing.isFeatured = !!isFeatured;
+      existing.updatedAt = new Date();
+      await existing.save();
 
-      await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
-
-      return NextResponse.json({
-        success: true,
-        message: 'Image details updated successfully',
-      });
+      return NextResponse.json({ success: true, message: 'Image details updated successfully' });
     }
+
+    // ---- Upload (multipart) ----
+    if (!isElite(actor) && !hasPermission(actor, 'wallofkl.upload')) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden: Missing wallofkl.upload permission' },
+        { status: 403 }
+      );
+    }
+
+    const formData = await req.formData();
+    const file = formData.get('file');
+
+    if (!file || typeof file.arrayBuffer !== 'function') {
+      return NextResponse.json({ success: false, error: 'No file uploaded' }, { status: 400 });
+    }
+    if (!isImageName(file.name)) {
+      return NextResponse.json(
+        { success: false, error: 'Only image files (jpg, png, webp, gif, avif) are allowed' },
+        { status: 400 }
+      );
+    }
+
+    const str = (k) => (formData.get(k) || '').toString().trim();
+    const title = str('title');
+    const badge = str('badge');
+    const author = str('author');
+    const tag = str('tag');
+    const instagram = str('instagram');
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const filename = `${Date.now()}_${sanitizeName(file.name)}`;
+    const key = `${R2_PREFIX}/${filename}`;
+    const useR2 = isR2Configured();
+
+    let url;
+    if (useR2) {
+      try {
+        url = await uploadToR2(buffer, key, file.type || 'image/jpeg');
+      } catch (e) {
+        return NextResponse.json({ success: false, error: `Upload failed: ${e.message}` }, { status: 500 });
+      }
+    } else {
+      // Dev fallback: R2 env vars missing, write to public/ so `next dev` works.
+      const dirPath = LOCAL_DIR();
+      await fs.mkdir(dirPath, { recursive: true });
+      await fs.writeFile(path.join(dirPath, filename), buffer);
+      url = `/media/contest-selected/${encodeURIComponent(filename)}`;
+    }
+
+    await WallOfKLMedia.create({
+      filename,
+      url,
+      s3Key: useR2 ? key : '',
+      title: title || path.basename(file.name, extOf(file.name)).replace(/[-_]/g, ' '),
+      badge: badge || '🏆 CONTEST WINNING CAPTURE',
+      author: author || 'KL FORGE Contender',
+      tag: tag || 'Official Winner',
+      instagram,
+      mimeType: file.type || '',
+      sizeBytes: buffer.length,
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: 'Image uploaded to Wall of KL successfully',
+      filename,
+      url,
+    });
   } catch (error) {
     console.error('Error in Wall of KL POST API:', error);
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
 
-// DELETE endpoint for removing an image from contest-selected
 export async function DELETE(req) {
-  const { response } = await requirePermission(a => isElite(a) || hasPermission(a, 'wallofkl.delete'));
+  const { response } = await requirePermission((a) => isElite(a) || hasPermission(a, 'wallofkl.delete'));
   if (response) return response;
 
   try {
+    await connectDB();
+
     const { searchParams } = new URL(req.url);
     const filename = searchParams.get('filename');
 
@@ -221,25 +243,27 @@ export async function DELETE(req) {
       return NextResponse.json({ success: false, error: 'Filename parameter required' }, { status: 400 });
     }
 
-    const dirPath = getDirPath();
-    const filePath = path.join(dirPath, filename);
+    const doc = await WallOfKLMedia.findOneAndDelete({ filename });
 
-    try {
-      await fs.unlink(filePath);
-    } catch (e) {
-      // File might not exist
+    if (!doc) {
+      // Not in Mongo — may be a legacy local file.
+      try {
+        await fs.unlink(path.join(LOCAL_DIR(), filename));
+      } catch {
+        /* already gone */
+      }
+      return NextResponse.json({ success: true, message: 'Image removed from Wall of KL' });
     }
 
-    // Clean up metadata
-    const metadataPath = path.join(dirPath, 'metadata.json');
-    try {
-      const metaContent = await fs.readFile(metadataPath, 'utf8');
-      const metadata = JSON.parse(metaContent);
-      if (metadata[filename]) {
-        delete metadata[filename];
-        await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2));
+    if (doc.s3Key) {
+      await deleteFromR2(doc.s3Key);
+    } else {
+      try {
+        await fs.unlink(path.join(LOCAL_DIR(), filename));
+      } catch {
+        /* already gone */
       }
-    } catch (e) {}
+    }
 
     return NextResponse.json({ success: true, message: 'Image removed from Wall of KL' });
   } catch (error) {
