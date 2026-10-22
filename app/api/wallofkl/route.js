@@ -209,9 +209,10 @@ export async function POST(req) {
       url,
       s3Key: useR2 ? key : '',
       title: title || path.basename(file.name, extOf(file.name)).replace(/[-_]/g, ' '),
-      badge: badge || '🏆 CONTEST WINNING CAPTURE',
-      author: author || 'KL FORGE Contender',
-      tag: tag || 'Official Winner',
+      // Only store what the admin actually typed — no invented badge/author/tag.
+      badge,
+      author,
+      tag,
       instagram,
       mimeType: file.type || '',
       sizeBytes: buffer.length,

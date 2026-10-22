@@ -644,3 +644,12 @@
 .wallkl-lightbox-instagram:hover {
   background: linear-gradient(135deg, rgba(225, 48, 108, 0.34) 0%, rgba(193, 53, 132, 0.34) 100%);
 }
+
+
+.wallkl-card-author {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.55);
+}

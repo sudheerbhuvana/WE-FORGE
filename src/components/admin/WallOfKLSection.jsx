@@ -25,18 +25,14 @@ export default function WallOfKLSection({ adminInfo }) {
   const [uploadFile, setUploadFile] = useState(null);
   const [uploadPreview, setUploadPreview] = useState(null);
   const [uploadTitle, setUploadTitle] = useState('');
-  const [uploadBadge, setUploadBadge] = useState('🏆 CONTEST WINNING CAPTURE');
   const [uploadAuthor, setUploadAuthor] = useState('');
-  const [uploadTag, setUploadTag] = useState('Official Winner');
   const [uploadInstagram, setUploadInstagram] = useState('');
   const [uploading, setUploading] = useState(false);
 
   // Edit modal state
   const [editingImage, setEditingImage] = useState(null);
   const [editTitle, setEditTitle] = useState('');
-  const [editBadge, setEditBadge] = useState('');
   const [editAuthor, setEditAuthor] = useState('');
-  const [editTag, setEditTag] = useState('');
   const [editInstagram, setEditInstagram] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
@@ -87,9 +83,7 @@ export default function WallOfKLSection({ adminInfo }) {
       const formData = new FormData();
       formData.append('file', uploadFile);
       formData.append('title', uploadTitle);
-      formData.append('badge', uploadBadge);
       formData.append('author', uploadAuthor);
-      formData.append('tag', uploadTag);
       if (uploadInstagram) formData.append('instagram', uploadInstagram);
 
       const res = await fetch('/api/wallofkl', {
@@ -121,9 +115,7 @@ export default function WallOfKLSection({ adminInfo }) {
     if (!canEditWallOfKL) return;
     setEditingImage(img);
     setEditTitle(img.title || '');
-    setEditBadge(img.badge || '');
     setEditAuthor(img.author || '');
-    setEditTag(img.tag || '');
     setEditInstagram(img.instagram || '');
   };
 
@@ -140,9 +132,7 @@ export default function WallOfKLSection({ adminInfo }) {
         body: JSON.stringify({
           filename: editingImage.filename,
           title: editTitle,
-          badge: editBadge,
           author: editAuthor,
-          tag: editTag,
           instagram: editInstagram,
         }),
       });
@@ -326,11 +316,6 @@ export default function WallOfKLSection({ adminInfo }) {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Badge Pill Text</label>
-                <input type="text" value={uploadBadge} onChange={(e) => setUploadBadge(e.target.value)} placeholder="e.g. 🏆 WEEK #4 CHAMPION" style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }} />
-              </div>
-
-              <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Photographer / Author Name</label>
                 <input type="text" value={uploadAuthor} onChange={(e) => setUploadAuthor(e.target.value)} placeholder="e.g. Rahul V (Y24)" style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }} />
               </div>
@@ -363,11 +348,6 @@ export default function WallOfKLSection({ adminInfo }) {
               <div>
                 <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Title</label>
                 <input type="text" value={editTitle} onChange={(e) => setEditTitle(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }} />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '0.8rem', color: 'rgba(255,255,255,0.6)', marginBottom: 6 }}>Badge Text (e.g. 🏆 WEEK 4 CHAMPION)</label>
-                <input type="text" value={editBadge} onChange={(e) => setEditBadge(e.target.value)} style={{ width: '100%', padding: '10px 14px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#fff', outline: 'none' }} />
               </div>
 
               <div>

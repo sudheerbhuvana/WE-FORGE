@@ -22,12 +22,15 @@ import {
 } from 'lucide-react';
 import './page.css';
 
-const WINNER_BADGES = [
-  { label: '🏆 WEEKLY CHAMPION', tag: 'Gold Champion', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)' },
-  { label: '📸 SHOT OF THE WEEK', tag: 'Best Photography', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)' },
-  { label: '🎨 CREATIVE SPOTLIGHT', tag: 'Creative Choice', color: '#c084fc', bg: 'rgba(192, 132, 252, 0.15)', border: 'rgba(192, 132, 252, 0.4)' },
-  { label: '🌟 HONORABLE MENTION', tag: 'Top Contender', color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.4)' },
-  { label: '✨ WEEKLY SELECTION', tag: 'Contest Entry', color: '#fb7185', bg: 'rgba(251, 113, 133, 0.15)', border: 'rgba(251, 113, 133, 0.4)' },
+// Accent palette only. These are NOT labels — nothing here is rendered as text.
+// A capture only ever shows the badge/tag the admin actually typed; if they left
+// it blank the card shows no badge at all.
+const ACCENTS = [
+  { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)' },
+  { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.4)' },
+  { color: '#c084fc', bg: 'rgba(192, 132, 252, 0.15)', border: 'rgba(192, 132, 252, 0.4)' },
+  { color: '#34d399', bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.4)' },
+  { color: '#fb7185', bg: 'rgba(251, 113, 133, 0.15)', border: 'rgba(251, 113, 133, 0.4)' },
 ];
 
 export default function WallOfKLPage() {
@@ -124,7 +127,7 @@ export default function WallOfKLPage() {
             <input
               type="text"
               className="wallkl-search-input"
-              placeholder="Search winning captures or titles..."
+              placeholder="Search captures or titles..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -139,7 +142,7 @@ export default function WallOfKLPage() {
 
           <div className="wallkl-toolbar-right">
             <span className="wallkl-count-badge">
-              {filteredImages.length} {filteredImages.length === 1 ? 'Winning Capture' : 'Winning Captures'}
+              {filteredImages.length} {filteredImages.length === 1 ? 'Capture' : 'Captures'}
             </span>
 
             <div className="wallkl-layout-toggles">
@@ -176,20 +179,21 @@ export default function WallOfKLPage() {
         ) : filteredImages.length === 0 ? (
           <div className="wallkl-empty">
             <ImageIcon size={48} className="wallkl-empty-icon" />
-            <h3 className="wallkl-empty-title">No Contest Captures Found</h3>
+            <h3 className="wallkl-empty-title">No Captures Found</h3>
             <p className="wallkl-empty-desc">
               {search
-                ? `No winning entries matching "${search}". Try searching another keyword.`
-                : 'No winning contest entries currently selected for the Wall of KL showcase.'}
+                ? `No captures matching "${search}". Try searching another keyword.`
+                : 'No captures have been added to the Wall of KL yet.'}
             </p>
           </div>
         ) : (
           <div className={`wallkl-gallery wallkl-gallery--${layoutMode}`}>
             {filteredImages.map((img, idx) => {
-              const badgeInfo = WINNER_BADGES[idx % WINNER_BADGES.length];
+              const accent = ACCENTS[idx % ACCENTS.length];
               const variant = layoutMode === 'bento' ? getBentoVariant(idx) : 'standard';
-              const displayBadge = img.badge || badgeInfo.label;
-              const displayTag = img.tag || (img.author ? `Captured by ${img.author}` : badgeInfo.tag);
+              // Show only real data. No badge / tag / author invented when blank.
+              const displayBadge = img.badge || '';
+              const displayTag = img.tag || '';
               // Render Instagram handle only when the admin provided one.
               // We accept "@handle" or "handle" and link to the canonical URL.
               const rawHandle = (img.instagram || '').trim();
@@ -210,23 +214,30 @@ export default function WallOfKLPage() {
                       loading="lazy"
                     />
 
-                    {/* Top Winner Badge Pin */}
-                    <div 
-                      className="wallkl-winner-badge"
-                      style={{ 
-                        background: badgeInfo.bg, 
-                        borderColor: badgeInfo.border, 
-                        color: badgeInfo.color 
-                      }}
-                    >
-                      {displayBadge}
-                    </div>
+                    {/* Badge — only when the admin supplied one */}
+                    {displayBadge && (
+                      <div
+                        className="wallkl-winner-badge"
+                        style={{
+                          background: accent.bg,
+                          borderColor: accent.border,
+                          color: accent.color
+                        }}
+                      >
+                        {displayBadge}
+                      </div>
+                    )}
 
                     <div className="wallkl-card-overlay">
                       <div className="wallkl-card-info">
-                        <span className="wallkl-card-tag" style={{ color: badgeInfo.color }}>
-                          {displayTag}
-                        </span>
+                        {displayTag && (
+                          <span className="wallkl-card-tag" style={{ color: accent.color }}>
+                            {displayTag}
+                          </span>
+                        )}
+                        {img.author && (
+                          <span className="wallkl-card-author">By {img.author}</span>
+                        )}
                         <h3 className="wallkl-card-title">{img.title}</h3>
                         {cleanHandle && (
                           <a
@@ -243,7 +254,7 @@ export default function WallOfKLPage() {
                       </div>
 
                       <div className="wallkl-card-meta">
-                        <span>KL FORGE Contest Winner</span>
+                        <span>KL FORGE</span>
                         <div className="wallkl-card-actions">
                           <button
                             type="button"
@@ -321,9 +332,11 @@ export default function WallOfKLPage() {
             <div className="wallkl-lightbox-footer">
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#fbbf24', fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
-                    {activeImage.badge || '🏆 CONTEST WINNING CAPTURE'}
-                  </span>
+                  {activeImage.badge && (
+                    <span style={{ background: 'rgba(245, 158, 11, 0.15)', border: '1px solid rgba(245, 158, 11, 0.3)', color: '#fbbf24', fontSize: '0.72rem', fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>
+                      {activeImage.badge}
+                    </span>
+                  )}
                   {activeImage.author && (
                     <span style={{ color: 'rgba(255, 255, 255, 0.5)', fontSize: '0.75rem', fontWeight: 600 }}>
                       By {activeImage.author}
@@ -332,7 +345,7 @@ export default function WallOfKLPage() {
                 </div>
                 <h3 className="wallkl-lightbox-title">{activeImage.title}</h3>
                 <div className="wallkl-lightbox-meta">
-                  {activeImage.tag || 'Official KL FORGE Contest Showcase'} • {activeImage.filename}
+                  {[activeImage.tag, activeImage.filename].filter(Boolean).join(' • ')}
                 </div>
                 {(() => {
                   const handle = (activeImage.instagram || '').trim().replace(/^@+/, '');
