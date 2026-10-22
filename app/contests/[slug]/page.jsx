@@ -30,6 +30,13 @@ export default function SingleContestPage({ params }) {
   const [historyCycles, setHistoryCycles] = useState([]);
   const [userSubmission, setUserSubmission] = useState(null);
 
+  // Multiple entries per member are allowed (ContestTemplate.maxSubmissionsPerMember).
+  // `userSubmissions` is every entry this member holds in the active cycle;
+  // `editingId` is the _id the form is currently bound to (null = new entry).
+  const [userSubmissions, setUserSubmissions] = useState([]);
+  const [entryLimit, setEntryLimit] = useState(1);   // 0 = unlimited
+  const [editingId, setEditingId] = useState(null);
+
   // Form State
   const [submitting, setSubmitting] = useState(false);
   const [subTitle, setSubTitle] = useState('');
@@ -71,30 +78,24 @@ export default function SingleContestPage({ params }) {
         const subRes = await fetch(`/api/contests/${slug}/submit?cycle=${data.targetCycle.cycleNumber}`);
         if (subRes.ok) {
           const sData = await subRes.json();
-          if (sData.submission) {
-            setUserSubmission(sData.submission);
-            setSubTitle(sData.submission.title || '');
-            setSubDesc(sData.submission.description || '');
-            setSubFileUrl(sData.submission.fileUrl || '');
-            if (Array.isArray(sData.submission.workLinks) && sData.submission.workLinks.length > 0) {
-              setSubLinks(sData.submission.workLinks);
-            }
-            if (Array.isArray(sData.submission.customAnswers)) {
-              const map = {};
-              sData.submission.customAnswers.forEach(ca => { map[ca.fieldId] = ca.value; });
-              setFormAnswers(map);
-            }
+          const list = Array.isArray(sData.submissions) && sData.submissions.length > 0
+            ? sData.submissions
+            : (sData.submission ? [sData.submission] : []);
 
-            // Group existing uploaded files by fieldId for display
-            if (Array.isArray(sData.submission.files)) {
-              const grouped = {};
-              sData.submission.files.forEach(f => {
-                if (!grouped[f.fieldId]) grouped[f.fieldId] = [];
-                grouped[f.fieldId].push(f);
-              });
-              setUploadedFiles(grouped);
-            }
+          setUserSubmissions(list);
+          setEntryLimit(typeof sData.limit === 'number' ? sData.limit : 1);
+
+          // Open the most recent entry in the form, as before.
+          if (list.length > 0) {
+            const latest = list[list.length - 1];
+            setUserSubmission(latest);
+            loadEntryIntoForm(latest);
+          } else {
+            setUserSubmission(null);
           }
+        } else {
+          setUserSubmissions([]);
+          setUserSubmission(null);
         }
       }
     } catch (err) {
@@ -103,6 +104,49 @@ export default function SingleContestPage({ params }) {
       setLoading(false);
     }
   };
+
+  const resetFormState = () => {
+    setSubTitle('');
+    setSubDesc('');
+    setSubFileUrl('');
+    setSubLinks([{ title: 'Project / GitHub Link', url: '' }]);
+    setFormAnswers({});
+    setFilesByField({});
+    setUploadedFiles({});
+    setFileErrors({});
+    setEditingId(null);
+  };
+
+  // Load one entry into the form for editing. Passing null starts a blank entry.
+  const loadEntryIntoForm = (sub) => {
+    if (!sub) {
+      resetFormState();
+      return;
+    }
+    setEditingId(sub._id);
+    setSubTitle(sub.title || '');
+    setSubDesc(sub.description || '');
+    setSubFileUrl(sub.fileUrl || '');
+    setSubLinks(
+      Array.isArray(sub.workLinks) && sub.workLinks.length > 0
+        ? sub.workLinks
+        : [{ title: 'Project / GitHub Link', url: '' }]
+    );
+    const map = {};
+    (sub.customAnswers || []).forEach((ca) => { map[ca.fieldId] = ca.value; });
+    setFormAnswers(map);
+    const grouped = {};
+    (sub.files || []).forEach((f) => {
+      if (!grouped[f.fieldId]) grouped[f.fieldId] = [];
+      grouped[f.fieldId].push(f);
+    });
+    setUploadedFiles(grouped);
+    setFilesByField({});
+    setFileErrors({});
+  };
+
+  // Entries left before the cap. entryLimit === 0 means unlimited.
+  const canAddMoreEntry = entryLimit === 0 || userSubmissions.length < entryLimit;
 
   const handleAddLink = () => {
     if (subLinks.length >= 5) return;
@@ -355,7 +399,13 @@ export default function SingleContestPage({ params }) {
 
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/contests/${slug}/submit`, {
+      // ?submissionId= updates that entry; without it the server creates a new one.
+      const wasEditing = Boolean(editingId);
+      const url = wasEditing
+        ? `/api/contests/${slug}/submit?submissionId=${encodeURIComponent(editingId)}`
+        : `/api/contests/${slug}/submit`;
+
+      const res = await fetch(url, {
         method: 'POST',
         body: formData,
       });
@@ -365,19 +415,27 @@ export default function SingleContestPage({ params }) {
         throw new Error(data.error || 'Submission failed');
       }
 
-      setUserSubmission(data.submission);
-
-      // Clear local queues (they're now on the server) and refresh uploadedFiles map
-      const grouped = {};
-      (data.submission.files || []).forEach(f => {
-        if (!grouped[f.fieldId]) grouped[f.fieldId] = [];
-        grouped[f.fieldId].push(f);
+      const saved = data.submission;
+      setUserSubmission(saved);
+      setUserSubmissions(prev => {
+        const without = prev.filter(s => String(s._id) !== String(saved._id));
+        return [...without, saved].sort((a, b) => (a.entryNumber || 0) - (b.entryNumber || 0));
       });
-      setUploadedFiles(grouped);
-      setFilesByField({});
-      setFileErrors({});
+      if (typeof data.limit === 'number') setEntryLimit(data.limit);
 
-      setSuccessMsg('Your contest entry has been submitted successfully!');
+      if (wasEditing) {
+        // Keep them on the entry they just edited, with its files shown.
+        loadEntryIntoForm(saved);
+        setSuccessMsg('Your entry has been updated successfully!');
+      } else {
+        // Clear to a blank form so they can add another entry.
+        resetFormState();
+        setSuccessMsg(
+          canAddMoreEntry
+            ? 'Your contest entry has been submitted successfully!'
+            : 'Your contest entry has been submitted successfully! You have reached the entry limit for this cycle.'
+        );
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -385,19 +443,35 @@ export default function SingleContestPage({ params }) {
     }
   };
 
-  const handleWithdraw = async () => {
-    if (!confirm('Are you sure you want to withdraw your submission?')) return;
+  const handleWithdraw = async (sub) => {
+    const target = sub || userSubmission;
+    if (!target) return;
+    const label = userSubmissions.length > 1
+      ? `Entry ${target.entryNumber || ''}`.trim()
+      : 'your submission';
+    if (!confirm(`Are you sure you want to withdraw ${label}?`)) return;
+
     try {
-      const res = await fetch(`/api/contests/${slug}/submit`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Withdrawal failed');
-      setUserSubmission(null);
-      setSubTitle('');
-      setSubDesc('');
-      setSubFileUrl('');
-      setSubLinks([{ title: 'Project / GitHub Link', url: '' }]);
-      setFilesByField({});
-      setUploadedFiles({});
-      setFileErrors({});
+      const url = userSubmissions.length > 1
+        ? `/api/contests/${slug}/submit?submissionId=${encodeURIComponent(target._id)}`
+        : `/api/contests/${slug}/submit`;
+      const res = await fetch(url, { method: 'DELETE' });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        throw new Error(d.error || 'Withdrawal failed');
+      }
+
+      const remaining = userSubmissions.filter(s => String(s._id) !== String(target._id));
+      setUserSubmissions(remaining);
+
+      if (remaining.length === 0) {
+        setUserSubmission(null);
+        resetFormState();
+      } else if (String(editingId) === String(target._id)) {
+        const next = remaining[remaining.length - 1];
+        setUserSubmission(next);
+        loadEntryIntoForm(next);
+      }
       setSuccessMsg('Submission withdrawn.');
     } catch (err) {
       setError(err.message);
@@ -604,15 +678,72 @@ export default function SingleContestPage({ params }) {
                 <h2>Submit Entry ({cycle?.cycleLabel})</h2>
                 <p className="sc-subtext">Submit your project details and work links before the deadline ({new Date(cycle.endTime).toLocaleString()}).</p>
 
-                {userSubmission && (
+                {/* All of this member's entries for the active cycle. With a cap of
+                    one this collapses back to the single "Entry Submitted" box. */}
+                {userSubmissions.length > 0 && (
                   <div className="sc-submitted-box">
                     <div className="sc-submitted-header">
                       <CheckCircle2 size={20} style={{ color: '#4caf81' }} />
                       <div>
-                        <h4>Entry Submitted</h4>
-                        <p>Submitted on {new Date(userSubmission.submittedAt).toLocaleDateString()}</p>
+                        <h4>
+                          {userSubmissions.length === 1
+                            ? 'Entry Submitted'
+                            : `${userSubmissions.length} ${entryLimit === 0 ? 'Entries' : `of ${entryLimit}`} Submitted`}
+                        </h4>
+                        <p>
+                          {userSubmissions.length === 1
+                            ? `Submitted on ${new Date(userSubmissions[0].submittedAt).toLocaleDateString()}`
+                            : 'Select an entry to edit, or submit another.'}
+                        </p>
                       </div>
                     </div>
+
+                    {userSubmissions.length > 1 && (
+                      <ul className="sc-entry-list">
+                        {userSubmissions.map((s) => {
+                          const isActive = String(editingId) === String(s._id);
+                          const thumb = (s.files || [])[0];
+                          return (
+                            <li key={s._id} className={`sc-entry-list__item${isActive ? ' is-active' : ''}`}>
+                              <div className="sc-entry-list__info">
+                                <span className="sc-entry-list__num">Entry {s.entryNumber || 1}</span>
+                                <span className="sc-entry-list__title">{s.title || 'Untitled entry'}</span>
+                                <span className="sc-entry-list__date">
+                                  {new Date(s.submittedAt).toLocaleDateString()}
+                                </span>
+                              </div>
+                              <div className="sc-entry-list__actions">
+                                <button
+                                  type="button"
+                                  className="sc-btn sc-btn--ghost sc-btn--sm"
+                                  onClick={() => loadEntryIntoForm(s)}
+                                >
+                                  {isActive ? 'Editing' : 'Edit'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="sc-btn sc-btn--danger sc-btn--sm"
+                                  onClick={() => handleWithdraw(s)}
+                                >
+                                  Withdraw
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+
+                    {canAddMoreEntry && (
+                      <button
+                        type="button"
+                        className="sc-btn sc-btn--ghost sc-btn--sm sc-entry-list__add"
+                        onClick={() => { resetFormState(); setSuccessMsg(''); }}
+                      >
+                        + Submit another entry
+                      </button>
+                    )}
+
                     <p className="sc-text-p">You can update your entry or links anytime before the deadline.</p>
 
                     {/* Post-submit preview — show the actual uploaded files so
@@ -621,6 +752,9 @@ export default function SingleContestPage({ params }) {
                         which made many users assume their upload silently
                         failed because no image was visible. */}
                     {(() => {
+                      // Only meaningful when a single entry exists; the entries list
+                      // above already shows the files per entry when there are several.
+                      if (userSubmissions.length > 1) return null;
                       const allUploaded = Array.isArray(userSubmission?.files) ? userSubmission.files : [];
                       if (allUploaded.length === 0) return null;
                       return (
@@ -766,13 +900,19 @@ export default function SingleContestPage({ params }) {
                   )}
 
                   <div className="sc-form-actions">
-                    {userSubmission && (
-                      <button type="button" className="sc-btn sc-btn--danger" onClick={handleWithdraw}>
-                        Withdraw Submission
+                    {editingId && (
+                      <button type="button" className="sc-btn sc-btn--danger" onClick={() => handleWithdraw(userSubmission)}>
+                        Withdraw Entry {userSubmission?.entryNumber || ''}
                       </button>
                     )}
                     <button type="submit" className="sc-btn sc-btn--primary" disabled={submitting}>
-                      {submitting ? 'Submitting...' : userSubmission ? 'Update Entry' : 'Submit Entry'}
+                      {submitting
+                        ? 'Submitting...'
+                        : editingId
+                          ? 'Update Entry'
+                          : canAddMoreEntry
+                            ? 'Submit Entry'
+                            : 'Entry Limit Reached'}
                     </button>
                   </div>
                 </form>

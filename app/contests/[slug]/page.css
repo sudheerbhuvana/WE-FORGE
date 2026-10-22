@@ -946,3 +946,74 @@
   color: rgba(255, 255, 255, 0.55);
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
+
+/* Multiple entries per member: the list of entries held in this cycle. */
+.sc-entry-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-entry-list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.sc-entry-list__item.is-active {
+  border-color: rgba(76, 175, 129, 0.45);
+  background: rgba(76, 175, 129, 0.07);
+}
+
+.sc-entry-list__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sc-entry-list__num {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4caf81;
+}
+
+.sc-entry-list__title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.92);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sc-entry-list__date {
+  font-size: 0.72rem;
+  color: rgba(255, 255, 255, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-entry-list__actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.sc-entry-list__add {
+  margin-top: 12px;
+}
+
+.sc-btn--sm {
+  padding: 6px 12px;
+  font-size: 0.78rem;
+}

@@ -24,6 +24,8 @@ const EMPTY_CONTEST_FORM = {
   visibility: 'public',
   featured: false,
   isPublished: true,
+  // 1 = one entry per member (historical). 0 = unlimited. See ContestTemplate.
+  maxSubmissionsPerMember: 1,
   startDate: '',
   endDate: '',
   startDay: 0,
@@ -214,6 +216,7 @@ export default function ContestsSection({ contestsList = [], adminInfo, refreshD
       startDayOfMonth: c.schedule?.startDayOfMonth ?? 1,
       endDayOfMonth: c.schedule?.endDayOfMonth ?? 28,
       customFields: Array.isArray(c.customFields) && c.customFields.length > 0 ? c.customFields : EMPTY_CONTEST_FORM.customFields,
+      maxSubmissionsPerMember: typeof c.maxSubmissionsPerMember === 'number' ? c.maxSubmissionsPerMember : 1,
     });
     setShowContestForm(true);
   };
@@ -467,6 +470,25 @@ export default function ContestsSection({ contestsList = [], adminInfo, refreshD
                       <option value="recurring_weekly">Weekly Recurring Contest</option>
                       <option value="recurring_monthly">Monthly Recurring Contest</option>
                     </select>
+                  </div>
+
+                  <div className="admin-dash__field">
+                    <label>Entries Allowed Per Member</label>
+                    <select
+                      value={String(contestForm.maxSubmissionsPerMember ?? 1)}
+                      onChange={e => setContestForm({ ...contestForm, maxSubmissionsPerMember: parseInt(e.target.value, 10) || 0 })}
+                      className="admin-dash__input"
+                    >
+                      <option value="1">1 — One entry per member</option>
+                      <option value="2">2 entries per member</option>
+                      <option value="3">3 entries per member</option>
+                      <option value="5">5 entries per member</option>
+                      <option value="0">Unlimited</option>
+                    </select>
+                    <small style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.75rem' }}>
+                      Applies to every cycle of this contest. Members always sign in, so this
+                      is the only guard against bulk submissions.
+                    </small>
                   </div>
 
                   {/* Schedule Parameters */}

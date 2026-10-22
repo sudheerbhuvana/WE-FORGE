@@ -90,6 +90,11 @@ export async function POST(req) {
       featured: !!body.featured,
       schedule: body.schedule || {},
       customFields: Array.isArray(body.customFields) ? body.customFields : [],
+      // Entries allowed per member per cycle. 1 = historical one-entry behaviour,
+      // 0 = unlimited. Clamped so a malformed payload can't widen the cap by accident.
+      maxSubmissionsPerMember: Number.isFinite(parseInt(body.maxSubmissionsPerMember, 10))
+        ? Math.max(0, parseInt(body.maxSubmissionsPerMember, 10))
+        : 1,
       isPublished: body.isPublished !== false,
       createdBy: actor.email,
     };

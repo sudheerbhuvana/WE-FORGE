@@ -77,6 +77,11 @@ export async function PUT(req, { params }) {
     if (typeof body.visibility === 'string') patch.visibility = body.visibility;
     if (typeof body.featured === 'boolean') patch.featured = body.featured;
     if (typeof body.isPaused === 'boolean') patch.isPaused = body.isPaused;
+    // Entries allowed per member per cycle (1 = one entry, 0 = unlimited).
+    if (body.maxSubmissionsPerMember !== undefined) {
+      const parsed = parseInt(body.maxSubmissionsPerMember, 10);
+      if (Number.isFinite(parsed)) patch.maxSubmissionsPerMember = Math.max(0, parsed);
+    }
     if (typeof body.isPublished === 'boolean') {
       if (!isElite(actor) && !hasPermission(actor, 'contests.publish')) {
         return NextResponse.json({ error: 'Forbidden: Missing contests.publish permission' }, { status: 403 });
