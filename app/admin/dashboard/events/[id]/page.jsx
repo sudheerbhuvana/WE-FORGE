@@ -18,6 +18,17 @@ const ROLE_OPTIONS = [
   { value: 'third_place', label: '3rd Place' },
 ];
 
+const toInputDateTime = (dateVal) => {
+  if (!dateVal) return '';
+  try {
+    const d = new Date(dateVal);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().slice(0, 16);
+  } catch {
+    return '';
+  }
+};
+
 export default function AdminEventManagePage() {
   const { id } = useParams();
   const router = useRouter();
@@ -35,13 +46,45 @@ export default function AdminEventManagePage() {
   const [expandedId, setExpandedId] = useState(null);
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [showPosterModal, setShowPosterModal] = useState(false);
+  const [editOpen, setEditOpen]         = useState(false);
+  const [editForm, setEditForm]         = useState({});
+  const [posterFile, setPosterFile]     = useState(null);
+  const [posterPreview, setPosterPreview] = useState(null);
+  const [editSaving, setEditSaving]     = useState(false);
 
   // Load event details
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/events/${id}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((d) => !cancelled && setEvent(d?.event || d))
+      .then((d) => {
+        if (cancelled || !d) return;
+        const ev = d?.event || d;
+        setEvent(ev);
+        if (ev) {
+          setEditForm({
+            title: ev.title || '',
+            description: ev.description || '',
+            type: ev.type || '',
+            domain: ev.domain || '',
+            venue: ev.venue || '',
+            slots: ev.slots ?? 50,
+            points: ev.points ?? 0,
+            startTime: toInputDateTime(ev.startTime),
+            endTime: toInputDateTime(ev.endTime),
+            registrationDeadline: toInputDateTime(ev.registrationDeadline),
+            status: ev.status || 'upcoming',
+            accessType: ev.accessType || 'public',
+            allowedDomains: Array.isArray(ev.allowedDomains) ? ev.allowedDomains.join(', ') : (ev.allowedDomains || ''),
+            allowedMembers: Array.isArray(ev.allowedMembers) ? ev.allowedMembers.join(', ') : (ev.allowedMembers || ''),
+            roles: Array.isArray(ev.roles) ? ev.roles.join(', ') : (ev.roles || 'Participant, Volunteer, Organizer'),
+            certificateTemplateParticipant: ev.certificateTemplateParticipant || '/templates/certificates/participant.pdf',
+            certificateTemplateWinner: ev.certificateTemplateWinner || '/templates/certificates/winner.pdf',
+            isRegistrationOpen: ev.isRegistrationOpen !== false,
+            isPublished: ev.isPublished !== false,
+          });
+        }
+      })
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -272,6 +315,37 @@ export default function AdminEventManagePage() {
     window.open(`/api/admin/events/${id}/export`, '_blank');
   };
 
+  const saveEdit = async (e) => {
+    e.preventDefault();
+    setEditSaving(true);
+    setActionErr('');
+    try {
+      const fd = new FormData();
+      Object.entries(editForm).forEach(([k, v]) => {
+        if (v !== undefined && v !== null) {
+          fd.append(k, String(v));
+        }
+      });
+      if (posterFile) {
+        fd.append('poster', posterFile);
+      }
+      const r = await fetch(`/api/events/${id}`, { method: 'PUT', body: fd });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error || 'Save failed');
+      const updated = d?.event || d;
+      setEvent(updated);
+      setPosterFile(null);
+      setPosterPreview(null);
+      setEditOpen(false);
+      setActionMsg('Event details saved successfully.');
+      setTimeout(() => setActionMsg(''), 4000);
+    } catch (err) {
+      setActionErr(err.message);
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   const fillPercent = event?.slots ? Math.min(100, Math.round(((event.registeredCount || 0) / event.slots) * 100)) : 0;
 
   return (
@@ -404,6 +478,223 @@ export default function AdminEventManagePage() {
                   <Download size={12} /> Certs ZIP
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* ===== Edit Event Details ===== */}
+          {event && (
+            <div className="cm-card" style={{ marginBottom: 16 }}>
+              <div
+                className="cm-row cm-row--between"
+                style={{ cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => setEditOpen(o => !o)}
+              >
+                <h3 className="cm-card__title" style={{ margin: 0 }}>
+                  ✏️ Edit Event Details
+                </h3>
+                <span style={{ color: 'rgba(255,255,255,0.45)', fontSize: '0.8rem' }}>
+                  {editOpen ? '▲ Collapse' : '▼ Expand'}
+                </span>
+              </div>
+
+              {editOpen && (
+                <form onSubmit={saveEdit} style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* Poster Image */}
+                  <div className="cm-field">
+                    <label className="cm-label">Event Poster</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginTop: 4 }}>
+                      {(posterPreview || event.posterUrl) && (
+                        <img
+                          src={posterPreview || event.posterUrl}
+                          alt="Poster Preview"
+                          style={{ width: 100, height: 60, objectFit: 'cover', borderRadius: 6, border: '1px solid rgba(255,255,255,0.15)' }}
+                        />
+                      )}
+                      <div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              setPosterFile(file);
+                              setPosterPreview(URL.createObjectURL(file));
+                            }
+                          }}
+                          style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.7)' }}
+                        />
+                        <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>
+                          Upload new JPG, PNG, or WebP to replace existing banner
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Title */}
+                  <div className="cm-field">
+                    <label className="cm-label">Title *</label>
+                    <input className="cm-input" required value={editForm.title || ''}
+                      onChange={e => setEditForm(p => ({ ...p, title: e.target.value }))} />
+                  </div>
+
+                  {/* Description */}
+                  <div className="cm-field">
+                    <label className="cm-label">Description</label>
+                    <textarea className="cm-input" rows={3} value={editForm.description || ''}
+                      onChange={e => setEditForm(p => ({ ...p, description: e.target.value }))} />
+                  </div>
+
+                  {/* Type + Domain + Venue */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+                    <div className="cm-field">
+                      <label className="cm-label">Type</label>
+                      <input className="cm-input" placeholder="e.g. Workshop, Hackathon"
+                        value={editForm.type || ''}
+                        onChange={e => setEditForm(p => ({ ...p, type: e.target.value }))} />
+                    </div>
+                    <div className="cm-field">
+                      <label className="cm-label">Domain</label>
+                      <input className="cm-input" placeholder="e.g. Technical, Cultural"
+                        value={editForm.domain || ''}
+                        onChange={e => setEditForm(p => ({ ...p, domain: e.target.value }))} />
+                    </div>
+                    <div className="cm-field">
+                      <label className="cm-label">Venue</label>
+                      <input className="cm-input" placeholder="e.g. Auditorium, Room 204"
+                        value={editForm.venue || ''}
+                        onChange={e => setEditForm(p => ({ ...p, venue: e.target.value }))} />
+                    </div>
+                  </div>
+
+                  {/* Slots + Points */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                    <div className="cm-field">
+                      <label className="cm-label">Slots</label>
+                      <input className="cm-input" type="number" min={0}
+                        value={editForm.slots ?? ''}
+                        onChange={e => setEditForm(p => ({ ...p, slots: Number(e.target.value) }))} />
+                    </div>
+                    <div className="cm-field">
+                      <label className="cm-label">Points</label>
+                      <input className="cm-input" type="number" min={0}
+                        value={editForm.points ?? ''}
+                        onChange={e => setEditForm(p => ({ ...p, points: Number(e.target.value) }))} />
+                    </div>
+                  </div>
+
+                  {/* Dates */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+                    <div className="cm-field">
+                      <label className="cm-label">Start Date & Time *</label>
+                      <input className="cm-input" type="datetime-local" required
+                        value={editForm.startTime || ''}
+                        onChange={e => setEditForm(p => ({ ...p, startTime: e.target.value }))} />
+                    </div>
+                    <div className="cm-field">
+                      <label className="cm-label">End Date & Time *</label>
+                      <input className="cm-input" type="datetime-local" required
+                        value={editForm.endTime || ''}
+                        onChange={e => setEditForm(p => ({ ...p, endTime: e.target.value }))} />
+                    </div>
+                    <div className="cm-field">
+                      <label className="cm-label">Registration Deadline</label>
+                      <input className="cm-input" type="datetime-local"
+                        value={editForm.registrationDeadline || ''}
+                        onChange={e => setEditForm(p => ({ ...p, registrationDeadline: e.target.value }))} />
+                    </div>
+                  </div>
+
+                  {/* Access Control & Roles */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                    <div className="cm-field">
+                      <label className="cm-label">Access Type</label>
+                      <select className="cm-input" value={editForm.accessType || 'public'}
+                        onChange={e => setEditForm(p => ({ ...p, accessType: e.target.value }))}>
+                        <option value="public">Public (Open to All)</option>
+                        <option value="domain">Domain Restricted</option>
+                        <option value="private">Private (Invite / Roll list)</option>
+                      </select>
+                    </div>
+                    <div className="cm-field">
+                      <label className="cm-label">Roles Allowed</label>
+                      <input className="cm-input" placeholder="Participant, Volunteer, Organizer"
+                        value={editForm.roles || ''}
+                        onChange={e => setEditForm(p => ({ ...p, roles: e.target.value }))} />
+                    </div>
+                  </div>
+
+                  {/* Conditional Domain or Private Access Details */}
+                  {editForm.accessType === 'domain' && (
+                    <div className="cm-field">
+                      <label className="cm-label">Allowed Domains (comma-separated)</label>
+                      <input className="cm-input" placeholder="e.g. Technical, Creative, Events"
+                        value={editForm.allowedDomains || ''}
+                        onChange={e => setEditForm(p => ({ ...p, allowedDomains: e.target.value }))} />
+                    </div>
+                  )}
+
+                  {editForm.accessType === 'private' && (
+                    <div className="cm-field">
+                      <label className="cm-label">Allowed Member Roll Numbers (comma-separated)</label>
+                      <textarea className="cm-input" rows={2} placeholder="e.g. 2200030001, 2200030002"
+                        value={editForm.allowedMembers || ''}
+                        onChange={e => setEditForm(p => ({ ...p, allowedMembers: e.target.value }))} />
+                    </div>
+                  )}
+
+                  {/* Certificate Templates */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+                    <div className="cm-field">
+                      <label className="cm-label">Participant Certificate Template</label>
+                      <input className="cm-input" placeholder="/templates/certificates/participant.pdf"
+                        value={editForm.certificateTemplateParticipant || ''}
+                        onChange={e => setEditForm(p => ({ ...p, certificateTemplateParticipant: e.target.value }))} />
+                    </div>
+                    <div className="cm-field">
+                      <label className="cm-label">Winner Certificate Template</label>
+                      <input className="cm-input" placeholder="/templates/certificates/winner.pdf"
+                        value={editForm.certificateTemplateWinner || ''}
+                        onChange={e => setEditForm(p => ({ ...p, certificateTemplateWinner: e.target.value }))} />
+                    </div>
+                  </div>
+
+                  {/* Status + Toggles */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+                    <div className="cm-field">
+                      <label className="cm-label">Status</label>
+                      <select className="cm-input" value={editForm.status || 'upcoming'}
+                        onChange={e => setEditForm(p => ({ ...p, status: e.target.value }))}>
+                        <option value="upcoming">Upcoming</option>
+                        <option value="ongoing">Ongoing</option>
+                        <option value="ended">Ended</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                      </select>
+                    </div>
+                    <div className="cm-field" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'rgba(255,255,255,0.8)', fontSize: '0.85rem' }}>
+                        <input type="checkbox" checked={!!editForm.isRegistrationOpen}
+                          onChange={e => setEditForm(p => ({ ...p, isRegistrationOpen: e.target.checked }))} />
+                        Registration Open
+                      </label>
+                    </div>
+                    <div className="cm-field" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'rgba(255,255,255,0.8)', fontSize: '0.85rem' }}>
+                        <input type="checkbox" checked={!!editForm.isPublished}
+                          onChange={e => setEditForm(p => ({ ...p, isPublished: e.target.checked }))} />
+                        Published
+                      </label>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                    <button type="submit" className="cm-btn cm-btn--primary" disabled={editSaving}>
+                      {editSaving ? 'Saving…' : '💾 Save Changes'}
+                    </button>
+                    <button type="button" className="cm-btn" onClick={() => setEditOpen(false)}>Cancel</button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
 

@@ -39,13 +39,14 @@ export async function PUT(request, { params }) {
         const formData = await request.formData();
 
         // 1. Info & Content fields -> events.edit_info
-        if (formData.has('title') || formData.has('description') || formData.has('type') || formData.has('venue') || formData.has('location') || formData.has('customFields') || formData.has('roles') || formData.has('slots') || formData.has('points')) {
+        if (formData.has('title') || formData.has('description') || formData.has('type') || formData.has('domain') || formData.has('venue') || formData.has('location') || formData.has('customFields') || formData.has('roles') || formData.has('slots') || formData.has('points')) {
             if (!isElite(actor) && !isDomainHead(actor) && !hasPermission(actor, 'events.edit_info')) {
                 return NextResponse.json({ error: 'Forbidden: Missing events.edit_info permission' }, { status: 403 });
             }
             if (formData.has('title')) event.title = formData.get('title').trim();
             if (formData.has('description')) event.description = formData.get('description').trim();
             if (formData.has('type')) event.type = formData.get('type').trim();
+            if (formData.has('domain')) event.domain = formData.get('domain').trim();
             if (formData.has('points')) event.points = Number(formData.get('points'));
             if (formData.has('slots')) event.slots = Number(formData.get('slots'));
             if (formData.has('venue')) event.venue = formData.get('venue').trim();
@@ -96,17 +97,19 @@ export async function PUT(request, { params }) {
             if (formData.has('certificateTemplateWinner')) event.certificateTemplateWinner = formData.get('certificateTemplateWinner');
         }
 
-        // Recalculate status based on new dates
-        const now = new Date();
-        const start = new Date(event.startTime);
-        const end = new Date(event.endTime || event.eventDate);
+        // Recalculate status based on new dates only if status was not explicitly set to terminal states
+        if (!formData.has('status') || !['cancelled', 'completed'].includes(formData.get('status'))) {
+            const now = new Date();
+            const start = new Date(event.startTime);
+            const end = new Date(event.endTime || event.eventDate);
 
-        if (end < now) {
-            event.status = 'ended';
-        } else if (start <= now && end >= now) {
-            event.status = 'ongoing';
-        } else {
-            event.status = 'upcoming';
+            if (end < now) {
+                event.status = 'ended';
+            } else if (start <= now && end >= now) {
+                event.status = 'ongoing';
+            } else {
+                event.status = 'upcoming';
+            }
         }
         const photoFile = formData.get('poster');
         if (photoFile && photoFile.size > 0) {

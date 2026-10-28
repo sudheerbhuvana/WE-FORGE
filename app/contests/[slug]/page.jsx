@@ -976,13 +976,43 @@ export default function SingleContestPage({ params }) {
 
         {/* TAB 3: RULES & GUIDELINES */}
         {activeTab === 'rules' && (() => {
-          // Parse "1. text 2. text" into individual rule items
           const rulesText = template.rules || 'Standard KLFORGE competition rules apply. Ensure all submitted work is original.';
-          const ruleItems = rulesText
-            .split(/(?=\d+\.\s)/)
-            .map(s => s.replace(/^\d+\.\s*/, '').trim())
-            .filter(Boolean);
-          const hasNumbered = /^\d+\.\s/.test(rulesText);
+          
+          const parseRulesText = (text) => {
+            if (!text) return [];
+            if (text.includes('\n')) {
+              const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+              if (lines.length > 1) {
+                return lines.map(l => l.replace(/^\d+[\.\)]\s*/, '').trim()).filter(Boolean);
+              }
+            }
+            const items = [];
+            let remaining = text.trim();
+            const startMatch = remaining.match(/^1[\.\)]\s*/);
+            if (!startMatch) return [remaining];
+            remaining = remaining.slice(startMatch[0].length);
+            let currentNum = 1;
+
+            while (remaining.length > 0) {
+              const nextNum = currentNum + 1;
+              const nextRegex = new RegExp(`(?:\\s|^)${nextNum}[\\.\\)]\\s+`);
+              const match = remaining.match(nextRegex);
+              if (match && match.index !== undefined) {
+                const rule = remaining.slice(0, match.index).trim();
+                if (rule) items.push(rule);
+                remaining = remaining.slice(match.index + match[0].length);
+                currentNum = nextNum;
+              } else {
+                const finalRule = remaining.trim();
+                if (finalRule) items.push(finalRule);
+                break;
+              }
+            }
+            return items.length > 0 ? items : [text];
+          };
+
+          const ruleItems = parseRulesText(rulesText);
+          const hasNumbered = ruleItems.length > 1 || /^\d+[\.\)]\s/.test(rulesText);
 
           return (
             <div className="sc-tab-content">
