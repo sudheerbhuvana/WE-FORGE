@@ -778,7 +778,13 @@ export default function SingleContestPage({ params }) {
                       <button
                         type="button"
                         className="sc-btn sc-btn--ghost sc-btn--sm sc-entry-list__add"
-                        onClick={() => { resetFormState(); setSuccessMsg(''); }}
+                        onClick={() => {
+                          resetFormState();
+                          setSuccessMsg('');
+                          setTimeout(() => {
+                            document.getElementById('sc-new-entry-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }, 50);
+                        }}
                       >
                         + Submit another entry
                       </button>
@@ -830,7 +836,14 @@ export default function SingleContestPage({ params }) {
                 )}
 
 
-                <form onSubmit={handleSubmission} className="sc-form">
+                {!editingId && userSubmissions.length > 0 && (
+                  <div id="sc-new-entry-form" className="sc-new-entry-banner">
+                    <Sparkles size={16} />
+                    <span>New Entry — fill in the form below and submit</span>
+                  </div>
+                )}
+
+                <form id={editingId ? undefined : (userSubmissions.length === 0 ? undefined : 'sc-new-entry-form-anchor')} onSubmit={handleSubmission} className="sc-form">
                   {Array.isArray(template?.customFields) && template.customFields.length > 0 ? (
                     template.customFields.map((field) => {
                       const val = formAnswers[field.id] || '';

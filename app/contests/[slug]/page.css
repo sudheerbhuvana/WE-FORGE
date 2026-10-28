@@ -1017,3 +1017,19 @@
   padding: 6px 12px;
   font-size: 0.78rem;
 }
+
+/* New-entry indicator banner */
+.sc-new-entry-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: rgba(139, 92, 246, 0.12);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  border-radius: 8px;
+  color: #a78bfa;
+  font-size: 0.85rem;
+  font-weight: 500;
+  scroll-margin-top: 120px;
+}

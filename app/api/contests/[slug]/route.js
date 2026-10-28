@@ -133,3 +133,7 @@ export async function DELETE(req, { params }) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+// PATCH is an alias for PUT — the admin dashboard uses PATCH to save edits.
+export { PUT as PATCH };
+
