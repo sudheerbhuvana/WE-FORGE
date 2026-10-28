@@ -975,27 +975,64 @@ export default function SingleContestPage({ params }) {
         )}
 
         {/* TAB 3: RULES & GUIDELINES */}
-        {activeTab === 'rules' && (
-          <div className="sc-tab-content">
-            <div className="sc-card">
-              <h2>Rules & Guidelines</h2>
-              <div className="sc-rules-box">
-                {template.rules || 'Standard KLFORGE competition rules apply. Ensure all submitted work is original.'}
-              </div>
+        {activeTab === 'rules' && (() => {
+          // Parse "1. text 2. text" into individual rule items
+          const rulesText = template.rules || 'Standard KLFORGE competition rules apply. Ensure all submitted work is original.';
+          const ruleItems = rulesText
+            .split(/(?=\d+\.\s)/)
+            .map(s => s.replace(/^\d+\.\s*/, '').trim())
+            .filter(Boolean);
+          const hasNumbered = /^\d+\.\s/.test(rulesText);
 
-              <div className="sc-guidelines-box" style={{ marginTop: 24 }}>
-                <h3>Eligibility</h3>
-                <p>{template.eligibility}</p>
-                {template.submissionGuidelines && (
-                  <>
-                    <h3 style={{ marginTop: 16 }}>Submission Guidelines</h3>
-                    <p>{template.submissionGuidelines}</p>
-                  </>
+          return (
+            <div className="sc-tab-content">
+              <div className="sc-card">
+                <div className="sc-rules-header">
+                  <ShieldCheck size={22} />
+                  <h2>Rules & Guidelines</h2>
+                </div>
+
+                <div className="sc-rules-box">
+                  {hasNumbered ? (
+                    <ol className="sc-rules-list">
+                      {ruleItems.map((rule, i) => (
+                        <li key={i} className="sc-rules-item">
+                          <span className="sc-rules-num">{i + 1}</span>
+                          <span>{rule}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : (
+                    <p>{rulesText}</p>
+                  )}
+                </div>
+
+                {(template.eligibility || template.submissionGuidelines) && (
+                  <div className="sc-guidelines-box">
+                    {template.eligibility && (
+                      <div className="sc-guideline-section">
+                        <div className="sc-guideline-section__title">
+                          <Users size={16} />
+                          <h3>Eligibility</h3>
+                        </div>
+                        <p>{template.eligibility}</p>
+                      </div>
+                    )}
+                    {template.submissionGuidelines && (
+                      <div className="sc-guideline-section">
+                        <div className="sc-guideline-section__title">
+                          <FileText size={16} />
+                          <h3>Submission Guidelines</h3>
+                        </div>
+                        <p>{template.submissionGuidelines}</p>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
 
         {/* TAB 4: HISTORY ARCHIVE */}

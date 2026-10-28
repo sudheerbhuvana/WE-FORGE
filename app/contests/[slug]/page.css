@@ -1033,3 +1033,91 @@
   font-weight: 500;
   scroll-margin-top: 120px;
 }
+
+/* ── Rules & Guidelines tab ── */
+.sc-rules-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  color: #a78bfa;
+}
+.sc-rules-header h2 {
+  margin: 0;
+}
+
+.sc-rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sc-rules-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.85);
+  transition: background 0.15s;
+}
+.sc-rules-item:hover {
+  background: rgba(139, 92, 246, 0.08);
+  border-color: rgba(139, 92, 246, 0.2);
+}
+
+.sc-rules-num {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(139, 92, 246, 0.18);
+  color: #a78bfa;
+  border-radius: 50%;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-top: 1px;
+}
+
+.sc-guidelines-box {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sc-guideline-section {
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.sc-guideline-section__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a78bfa;
+  margin-bottom: 8px;
+}
+.sc-guideline-section__title h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.sc-guideline-section p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.6;
+}
+
